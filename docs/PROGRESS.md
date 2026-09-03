@@ -266,6 +266,45 @@ docs/
 
 ---
 
+## Completed — UX & Study Notes (Sprint 3)
+
+### 1. Day-Wise Sidebar
+
+The left navigation is now a flat, **day-ordered list** (`Day 1` → `Day 16`), each
+entry showing the lesson title and its topic. `LessonController` exposes a `days`
+helper (`Lesson::with('topic.domain')->orderBy('order')`) shared by the home,
+lesson, and lab pages. The old domain → topic grouping remains as a fallback.
+
+### 2. 3D / Isometric Device Icons
+
+All six device symbols in `sprite.blade.php` redrawn with **isometric 3D geometry**
+(top / front / right faces, depth shading, ground shadows) so topologies feel like
+physical hardware:
+
+- **Router** — 3-face Cisco chassis (ports, LEDs, vents)
+- **Switch** — isometric chassis, 2×6 port rows, status LEDs
+- **PC** — isometric monitor + stand + base, screen glow
+- **Server** — isometric 1U slab with drive bays and LEDs
+- **Firewall** — isometric chassis with grille + port panel
+- **Cloud** — gradient cloud with soft shadow and dashed ground
+
+Applied everywhere automatically since every diagram/lesson uses the shared sprite.
+
+### 3. Downloadable Notebook-Style PDF Notes
+
+Each lesson page has a **"Download PDF notes"** button that generates a
+handwritten, notebook-style PDF (ruled paper, red margin, Caveat/Patrick Hand
+fonts, blue-ink text) containing the full lesson: explanations, tables, sketched
+topology diagrams, device galleries, callouts, animation step narrations, and a
+quiz review with correct answers highlighted.
+
+- `resources/views/components/notes/notebook.blade.php` — hidden print DOM
+- `resources/views/components/notes/sketch-topology.blade.php` — ink-sketch topology
+- `resources/js/notes-pdf.js` — `Alpine.data('notesPdf')`; lazy-loads `jspdf`
+  and `html2canvas` on demand, slices the canvas into A4 pages
+
+---
+
 ## What's Next (Sprint 2)
 
 - **Multi-device lab canvas** — add switch + PC alongside the router, drag cables to connect

@@ -1,6 +1,7 @@
 import './bootstrap';
 import Alpine from 'alpinejs';
 import routerLabData from './router-sim.js';
+import notesPdfData from './notes-pdf.js';
 
 window.Alpine = Alpine;
 
@@ -193,5 +194,6 @@ Alpine.data('quizApp', (questions) => ({
 }));
 
 Alpine.data('routerLab', routerLabData);
+Alpine.data('notesPdf', notesPdfData);
 
 Alpine.start();

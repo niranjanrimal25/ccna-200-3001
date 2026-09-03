@@ -10,3 +10,226 @@
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
 }
+
+/* ---------------------------------------------------------------------------
+ * Notebook-style PDF notes (handwritten, ruled paper look)
+ * ------------------------------------------------------------------------- */
+.notes-print {
+    position: fixed;
+    left: -10000px;
+    top: 0;
+    width: 816px;
+    background: #ffffff;
+    color: #1b2a52;
+    z-index: -1;
+}
+
+.notes-sheet {
+    width: 816px;
+    min-height: 1056px;
+    box-sizing: border-box;
+    padding: 88px 84px 96px 116px;
+    background-color: #fffdf5;
+    background-image:
+        linear-gradient(transparent 0, transparent 31px, rgba(120, 150, 200, 0.28) 31px, rgba(120, 150, 200, 0.28) 32px),
+        linear-gradient(90deg, transparent 0, transparent 92px, rgba(235, 120, 120, 0.55) 92px, rgba(235, 120, 120, 0.55) 94px, transparent 94px);
+    background-size: 100% 32px, 100% 100%;
+    font-family: 'Patrick Hand', 'Segoe Print', 'Comic Sans MS', 'Comic Sans', cursive;
+    color: #1b2a52;
+}
+
+.notes-header {
+    margin-bottom: 8px;
+}
+
+.notes-kicker {
+    font-family: 'Caveat', cursive;
+    font-size: 18px;
+    font-weight: 600;
+    color: #46608c;
+}
+
+.notes-title {
+    font-family: 'Caveat', cursive;
+    font-size: 42px;
+    font-weight: 700;
+    line-height: 1.1;
+    color: #14306b;
+    margin-top: 2px;
+}
+
+.notes-subtitle {
+    font-size: 17px;
+    line-height: 24px;
+    color: #46608c;
+    margin-top: 6px;
+}
+
+.notes-section {
+    margin-top: 26px;
+}
+
+.notes-h2 {
+    font-family: 'Caveat', cursive;
+    font-size: 27px;
+    font-weight: 700;
+    color: #14306b;
+    border-bottom: 2px dashed rgba(120, 150, 200, 0.55);
+    padding-bottom: 3px;
+    margin-bottom: 10px;
+}
+
+/* Markdown prose inside explanations */
+.notes-prose {
+    font-size: 19px;
+    line-height: 32px;
+    color: #1b2a52;
+}
+
+.notes-prose p { margin: 0 0 10px; }
+.notes-prose strong { font-weight: 700; }
+.notes-prose ul, .notes-prose ol { margin: 0 0 10px; padding-left: 26px; }
+.notes-prose li { margin-bottom: 2px; }
+.notes-prose code {
+    font-family: 'Patrick Hand', cursive;
+    background: rgba(120, 150, 200, 0.15);
+    border: 1px solid rgba(27, 42, 82, 0.25);
+    border-radius: 4px;
+    padding: 0 4px;
+    font-size: 17px;
+}
+.notes-prose pre {
+    background: rgba(120, 150, 200, 0.12);
+    border: 1px dashed rgba(27, 42, 82, 0.4);
+    border-radius: 6px;
+    padding: 10px 14px;
+    overflow-x: hidden;
+    white-space: pre-wrap;
+    font-size: 17px;
+    line-height: 24px;
+    margin: 0 0 10px;
+}
+.notes-prose h1, .notes-prose h2, .notes-prose h3, .notes-prose h4 {
+    font-family: 'Caveat', cursive;
+    color: #14306b;
+    margin: 14px 0 6px;
+}
+.notes-prose h1 { font-size: 30px; }
+.notes-prose h2 { font-size: 26px; }
+.notes-prose h3 { font-size: 23px; }
+
+/* Tables (both section tables and markdown tables) */
+.notes-table, .notes-prose table {
+    border-collapse: collapse;
+    margin: 10px 0;
+    font-size: 16px;
+    line-height: 22px;
+}
+.notes-table th, .notes-table td,
+.notes-prose table th, .notes-prose table td {
+    border: 2px solid rgba(27, 42, 82, 0.55);
+    padding: 4px 10px;
+    text-align: left;
+    vertical-align: top;
+}
+.notes-table th, .notes-prose table th {
+    font-family: 'Caveat', cursive;
+    font-size: 20px;
+    font-weight: 700;
+    background: rgba(120, 150, 200, 0.14);
+    color: #14306b;
+}
+
+/* Callouts */
+.notes-callout {
+    border: 2px dashed rgba(27, 42, 82, 0.4);
+    border-radius: 8px;
+    padding: 8px 14px;
+    background: rgba(255, 220, 120, 0.16);
+    font-size: 18px;
+    line-height: 26px;
+    margin-top: 4px;
+}
+.notes-label {
+    font-family: 'Caveat', cursive;
+    font-weight: 700;
+    font-size: 21px;
+    color: #b3541e;
+}
+
+/* Device gallery sketch */
+.notes-gallery {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+.notes-gallery-item {
+    flex: 1 1 45%;
+    border: 2px solid rgba(27, 42, 82, 0.5);
+    border-radius: 8px;
+    padding: 8px 12px;
+    background: #fffdf5;
+}
+.notes-gallery-label {
+    font-family: 'Caveat', cursive;
+    font-weight: 700;
+    font-size: 22px;
+    color: #14306b;
+}
+.notes-gallery-desc {
+    font-size: 17px;
+    line-height: 24px;
+    color: #1b2a52;
+}
+
+/* Topology sketch */
+.notes-sketch {
+    margin: 8px 0;
+}
+.notes-sketch-svg {
+    width: 100%;
+    height: auto;
+    display: block;
+    border: 2px solid rgba(27, 42, 82, 0.5);
+    border-radius: 8px;
+}
+
+/* Animation step narration */
+.notes-steps {
+    margin: 8px 0 0;
+    padding-left: 26px;
+    font-size: 18px;
+    line-height: 26px;
+    color: #1b2a52;
+}
+.notes-steps li { margin-bottom: 2px; }
+
+/* Quiz review */
+.notes-q { margin-top: 10px; }
+.notes-q-text {
+    font-family: 'Caveat', cursive;
+    font-weight: 700;
+    font-size: 21px;
+    color: #14306b;
+    line-height: 24px;
+}
+.notes-q-opts {
+    list-style: none;
+    padding-left: 4px;
+    margin: 4px 0 0;
+    font-size: 17px;
+    line-height: 24px;
+    color: #1b2a52;
+}
+.notes-q-correct {
+    color: #0f6b3c;
+    font-weight: 700;
+}
+
+.notes-footer {
+    margin-top: 40px;
+    text-align: center;
+    font-family: 'Caveat', cursive;
+    font-size: 20px;
+    color: #46608c;
+}

@@ -11,6 +11,13 @@
         <span>{{ $lesson->topic->title }}</span>
     </nav>
 
+    <div class="mt-4 flex flex-wrap items-center gap-3">
+        <span class="rounded-full border border-blue-500/40 bg-blue-500/15 px-3 py-1 text-xs font-bold uppercase tracking-wider text-blue-300">
+            Day {{ $day }}
+        </span>
+        <span class="text-xs text-slate-500">{{ $lesson->topic->title }}</span>
+    </div>
+
     <h1 class="mt-3 text-3xl font-bold text-slate-100">{{ $lesson->title }}</h1>
 
     @if ($lesson->summary)
@@ -20,6 +27,18 @@
     @if ($lesson->source_ref)
         <p class="mt-2 text-xs text-slate-600">Source: {{ $lesson->source_ref }}</p>
     @endif
+
+    <div x-data="notesPdf" class="mt-5">
+        <button @click="download()" :disabled="busy"
+                class="inline-flex items-center gap-2 rounded-md border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-medium text-slate-200 transition-colors hover:border-blue-600 hover:bg-slate-800 disabled:opacity-50">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v12m0 0l-4-4m4 4l4-4M4 20h16" />
+            </svg>
+            <span x-show="!busy">Download PDF notes</span>
+            <span x-show="busy">Preparing notes…</span>
+        </button>
+        <p class="mt-2 text-xs text-slate-600">Handwritten notebook-style notes with diagrams, tables, and quiz review.</p>
+    </div>
 
     <div class="mt-8 space-y-8">
         @foreach ($lesson->sections as $section)
@@ -56,4 +75,6 @@
             </a>
         @endif
     </nav>
+
+    <x-notes.notebook :lesson="$lesson" :day="$day" />
 @endsection

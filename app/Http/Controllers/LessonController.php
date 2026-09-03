@@ -17,6 +17,7 @@ class LessonController extends Controller
 
         return view('lessons.index', [
             'domains' => $domains,
+            'days' => $this->days(),
             'navDomains' => $this->navDomains(),
         ]);
     }
@@ -39,8 +40,10 @@ class LessonController extends Controller
 
         return view('lessons.show', [
             'lesson' => $lesson,
+            'day' => $lesson->order,
             'prev' => $prev,
             'next' => $next,
+            'days' => $this->days(),
             'navDomains' => $this->navDomains(),
         ]);
     }
@@ -48,5 +51,14 @@ class LessonController extends Controller
     private function navDomains()
     {
         return Domain::with('topics.lessons')->orderBy('order')->get();
+    }
+
+    /**
+     * All lessons ordered by their `order` (day number), for the
+     * day-wise sidebar.
+     */
+    private function days()
+    {
+        return Lesson::with('topic.domain')->orderBy('order')->get();
     }
 }
