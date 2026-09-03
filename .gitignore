@@ -25,3 +25,6 @@ Thumbs.db
 
 # Local preview artifact (generated; uses hashed build assets)
 /lab-preview.html
+
+# Local preview entry point (redirects to lab-preview.html)
+/index.html
