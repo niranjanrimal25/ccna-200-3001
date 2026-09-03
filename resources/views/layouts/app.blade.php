@@ -76,6 +76,16 @@
                                     🖥 Cisco 2911 Router
                                 </a>
                             </li>
+                            <li>
+                                <a href="{{ route('labs.practice') }}"
+                                   @class([
+                                       'block rounded-md px-3 py-1.5 text-sm transition-colors',
+                                       'bg-blue-600/20 text-blue-300' => request()->routeIs('labs.practice'),
+                                       'text-slate-400 hover:bg-slate-800 hover:text-slate-200' => !request()->routeIs('labs.practice'),
+                                   ])>
+                                    🧪 Practice Lab
+                                </a>
+                            </li>
                         </ul>
                     </nav>
                 @elseif (isset($navDomains))
@@ -119,15 +129,29 @@
                                     🖥 Cisco 2911 Router
                                 </a>
                             </li>
+                            <li>
+                                <a href="{{ route('labs.practice') }}"
+                                   @class([
+                                       'block rounded-md px-3 py-1.5 text-sm transition-colors',
+                                       'bg-blue-600/20 text-blue-300' => request()->routeIs('labs.practice'),
+                                       'text-slate-400 hover:bg-slate-800 hover:text-slate-200' => !request()->routeIs('labs.practice'),
+                                   ])>
+                                    🧪 Practice Lab
+                                </a>
+                            </li>
                         </ul>
                     </nav>
                 @endif
             </aside>
 
             <main class="flex-1 min-w-0">
-                <div class="mx-auto max-w-3xl px-5 py-8 lg:py-12">
+                @hasSection('fullwidth')
                     @yield('content')
-                </div>
+                @else
+                    <div class="mx-auto max-w-3xl px-5 py-8 lg:py-12">
+                        @yield('content')
+                    </div>
+                @endif
             </main>
         </div>
     </body>

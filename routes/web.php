@@ -10,3 +10,5 @@ Route::get('/topics/{topic:slug}/lessons/{lesson:slug}', [LessonController::clas
     ->name('lessons.show');
 
 Route::get('/labs/router', [LabController::class, 'router'])->name('labs.router');
+
+Route::get('/labs/practice', [LabController::class, 'practice'])->name('labs.practice');
