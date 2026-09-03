@@ -1,0 +1,217 @@
+{
+  "slug": "static-routing",
+  "title": "Static Routing",
+  "summary": "Configuring static routes with next-hops and exit-interfaces, default gateways for end hosts, and default routes on Cisco routers.",
+  "source_ref": "transcript_11_part_2.txt",
+  "order": 12,
+  "sections": [
+    {
+      "type": "explanation",
+      "title": "Review: the limits of connected and local routes",
+      "order": 1,
+      "content": {
+        "body": "Connected and local routes let a router reach its **own addresses** and **directly connected networks** — but nothing else. A router receiving a packet for a **remote network** (one not directly connected) has no matching route and must drop it.\n\nFor example, R1 with interfaces on 192.168.1.0/24, 192.168.12.0/24, and 192.168.13.0/24 cannot reach 192.168.4.0/24 (PC4's network).\n\n**Static routes** solve this: manually configured routes that tell a router how to reach remote destinations."
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "Default gateway for end hosts",
+      "order": 2,
+      "content": {
+        "body": "End hosts can send directly to destinations on their **own** network. For anything outside it, they send the packet to their **default gateway** (an old term for router).\n\nA host's default gateway configuration is a **default route**: a route to **`0.0.0.0/0`**. With a /0 mask, *no* bits are fixed, so it matches **every** IP address (over 4 billion). It is the **least specific** route possible, used only when no more-specific route matches. (A /32 route is the most specific, matching a single address.)\n\nSo a default route says: *\"if nothing more specific matches, don't drop it — send it this way instead.\"* End hosts usually need nothing more than this."
+      }
+    },
+    {
+      "type": "animation",
+      "title": "R1 has no route to PC4",
+      "order": 3,
+      "content": {
+        "diagram_type": "topology",
+        "nodes": [
+          { "id": "pc1", "label": "PC1", "icon": "pc", "x": 60, "y": 180 },
+          { "id": "r1", "label": "R1", "icon": "router", "x": 240, "y": 90 },
+          { "id": "r3", "label": "R3", "icon": "router", "x": 460, "y": 90 },
+          { "id": "r4", "label": "R4", "icon": "router", "x": 660, "y": 90 },
+          { "id": "pc4", "label": "PC4", "icon": "pc", "x": 840, "y": 180 }
+        ],
+        "links": [
+          { "from": "pc1", "to": "r1", "kind": "ethernet" },
+          { "from": "r1", "to": "r3", "kind": "wan" },
+          { "from": "r3", "to": "r4", "kind": "wan" },
+          { "from": "r4", "to": "pc4", "kind": "ethernet" }
+        ],
+        "steps": [
+          {
+            "narration": "PC1 (192.168.1.10) wants to reach PC4 (192.168.4.10), which is in a different network, so it sends the packet to its default gateway, R1.",
+            "animate": { "packet_from": "pc1", "packet_to": "r1", "label": "to 192.168.4.10" }
+          },
+          {
+            "narration": "R1 de-encapsulates the frame and checks its routing table. It has only connected and local routes — none match 192.168.4.10.",
+            "animate": { "highlight": "r1" }
+          },
+          {
+            "narration": "With no matching route, R1 drops the packet. R1 needs a static route to 192.168.4.0/24.",
+            "animate": { "packet_from": "r1", "packet_to": "pc1", "label": "dropped", "status": "fail" }
+          }
+        ]
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "Configuring a static route",
+      "order": 4,
+      "content": {
+        "body": "A static route tells the router which **next-hop** to use for a destination network:\n\n```\nR1(config)# ip route 192.168.4.0 255.255.255.0 192.168.13.3\n```\n\nFormat: `ip route <destination network> <netmask> <next-hop IP>`.\n\nThe route appears in the routing table with code **S** and the next-hop:\n\n```\nS   192.168.4.0/24 [1/0] via 192.168.13.3\n```\n\nThe `[1/0]` are the route's **administrative distance** and **metric** — concepts covered later.\n\nRemember, the CLI needs the **netmask in dotted decimal**, not slash notation."
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "Two-way reachability",
+      "order": 5,
+      "content": {
+        "body": "For PC1 and PC4 to communicate, **every router in the path needs a route to both networks** — otherwise traffic can go one way but the replies get dropped. This is **two-way reachability**.\n\nUsing the path PC1 → R1 → R3 → R4 → PC4:\n\n| Router | Needs a route to | Next-hop |\n|---|---|---|\n| R1 | 192.168.4.0/24 | 192.168.13.3 (R3) |\n| R3 | 192.168.1.0/24 | 192.168.13.1 (R1) |\n| R3 | 192.168.4.0/24 | 192.168.34.4 (R4) |\n| R4 | 192.168.1.0/24 | 192.168.34.3 (R3) |\n\nR1 already has a connected route to 1.0/24 and R4 to 4.0/24, so only the red routes must be added.\n\nA router doesn't need routes to *every* network in the path — R1 only needs to know \"send 4.0/24 traffic to R3; R3 will handle the rest.\""
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "Next-hop vs exit-interface",
+      "order": 6,
+      "content": {
+        "body": "There are three ways to write a static route:\n\n1. **Next-hop only** — `ip route 192.168.4.0 255.255.255.0 192.168.13.3`\n2. **Exit-interface only** — `ip route 192.168.1.0 255.255.255.0 g0/0`\n3. **Both** — `ip route 192.168.4.0 255.255.255.0 g0/1 192.168.24.4`\n\nWith exit-interface only, the route shows the destination as \"**directly connected**\" even though it isn't, and forwarding relies on **proxy ARP** (beyond the CCNA scope). All three are valid; use whichever you prefer."
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "Default routes on Cisco routers",
+      "order": 7,
+      "content": {
+        "body": "A **default route** is a static route to `0.0.0.0/0`:\n\n```\nR1(config)# ip route 0.0.0.0 0.0.0.0 203.0.113.2\n```\n\nIt's the **least specific** route, matching every destination, so it's used when nothing more specific matches — commonly to send all non-internal traffic toward the Internet.\n\nIn `show ip route`, the default route shows an **asterisk** (`S*`) marking it a *candidate default*, and the router reports the **\"Gateway of last resort\"**. Before a default route exists, that line says *\"Gateway of last resort is not set\"*."
+      }
+    },
+    {
+      "type": "animation",
+      "title": "PC1 pings PC4 with static routes",
+      "order": 8,
+      "content": {
+        "diagram_type": "topology",
+        "nodes": [
+          { "id": "pc1", "label": "PC1", "icon": "pc", "x": 60, "y": 180 },
+          { "id": "r1", "label": "R1", "icon": "router", "x": 240, "y": 90 },
+          { "id": "r3", "label": "R3", "icon": "router", "x": 460, "y": 90 },
+          { "id": "r4", "label": "R4", "icon": "router", "x": 660, "y": 90 },
+          { "id": "pc4", "label": "PC4", "icon": "pc", "x": 840, "y": 180 }
+        ],
+        "links": [
+          { "from": "pc1", "to": "r1", "kind": "ethernet" },
+          { "from": "r1", "to": "r3", "kind": "wan" },
+          { "from": "r3", "to": "r4", "kind": "wan" },
+          { "from": "r4", "to": "pc4", "kind": "ethernet" }
+        ],
+        "steps": [
+          {
+            "narration": "PC1 sends the packet to its default gateway, R1. R1 looks up 192.168.4.10 and finds the static route via 192.168.13.3 (R3).",
+            "animate": { "packet_from": "pc1", "packet_to": "r1", "label": "request" }
+          },
+          {
+            "narration": "R1 forwards the packet to R3.",
+            "animate": { "packet_from": "r1", "packet_to": "r3", "label": "request" }
+          },
+          {
+            "narration": "R3's route to 4.0/24 points to R4 (192.168.34.4), so it forwards the packet onward.",
+            "animate": { "packet_from": "r3", "packet_to": "r4", "label": "request" }
+          },
+          {
+            "narration": "R4 has a connected route to 4.0/24, so it delivers the packet to PC4.",
+            "animate": { "packet_from": "r4", "packet_to": "pc4", "label": "request" }
+          },
+          {
+            "narration": "PC4 replies. The reverse path works because every router also has a route back to 192.168.1.0/24 — two-way reachability. The ping succeeds.",
+            "animate": { "packet_from": "pc4", "packet_to": "pc1", "label": "reply", "status": "ok" }
+          }
+        ]
+      }
+    },
+    {
+      "type": "table",
+      "title": "Static route configuration options",
+      "order": 9,
+      "content": {
+        "headers": ["Syntax", "Meaning"],
+        "rows": [
+          ["ip route 192.168.4.0 255.255.255.0 192.168.13.3", "Next-hop only"],
+          ["ip route 192.168.1.0 255.255.255.0 g0/0", "Exit-interface only"],
+          ["ip route 192.168.4.0 255.255.255.0 g0/1 192.168.24.4", "Exit-interface + next-hop"],
+          ["ip route 0.0.0.0 0.0.0.0 203.0.113.2", "Default route"]
+        ]
+      }
+    },
+    {
+      "type": "callout",
+      "title": "Exam tip",
+      "order": 10,
+      "content": {
+        "body": "A **default route is `0.0.0.0 0.0.0.0`** plus a next-hop — the network *and* mask are both all zeros. It appears as `S*` and sets the *gateway of last resort*. When a static route is configured with only an exit-interface, the routing table shows the destination as \"directly connected\" even though it isn't.",
+        "style": "exam_tip"
+      }
+    }
+  ],
+  "quiz": {
+    "questions": [
+      {
+        "order": 1,
+        "question": "Which of the following commands configures a default route on a Cisco router?",
+        "explanation": "A default route uses 0.0.0.0 for both the network and the mask, and a next-hop IP. You must write the mask in dotted decimal (not slash notation), and the mask must be all zeros.",
+        "options": [
+          { "label": "A", "text": "ip route 0.0.0.0 0.0.0.0 10.1.1.255", "is_correct": true },
+          { "label": "B", "text": "ip route 0.0.0.0/0 10.1.1.255", "is_correct": false },
+          { "label": "C", "text": "ip route 0.0.0.0 255.255.255.255 10.1.1.255", "is_correct": false },
+          { "label": "D", "text": "ip default-route 10.1.1.255", "is_correct": false }
+        ]
+      },
+      {
+        "order": 2,
+        "question": "R1's routing table has only a default route (next-hop 203.0.113.2) and a connected route to 203.0.113.0/24 on G0/2. Which interface will it use to forward packets destined for 8.8.8.8?",
+        "explanation": "8.8.8.8 matches only the default route, whose next-hop is 203.0.113.2. That next-hop is on the directly-connected 203.0.113.0/24 network via G0/2, so R1 forwards out G0/2.",
+        "options": [
+          { "label": "A", "text": "GigabitEthernet0/0", "is_correct": false },
+          { "label": "B", "text": "GigabitEthernet0/1", "is_correct": false },
+          { "label": "C", "text": "GigabitEthernet0/2", "is_correct": true },
+          { "label": "D", "text": "It will drop the packet", "is_correct": false }
+        ]
+      },
+      {
+        "order": 3,
+        "question": "R1 needs to reach PC4's network (192.168.4.0/24) via R2 at 192.168.12.2. Which command configures this static route?",
+        "explanation": "The format is `ip route <network> <mask> <next-hop>`. R2's address 192.168.12.2 is the next-hop toward 192.168.4.0/24.",
+        "options": [
+          { "label": "A", "text": "ip route 192.168.4.0 255.255.255.0 192.168.12.2", "is_correct": true },
+          { "label": "B", "text": "ip route 192.168.12.2 255.255.255.0 192.168.4.0", "is_correct": false },
+          { "label": "C", "text": "ip route 192.168.4.0/24 192.168.12.2", "is_correct": false },
+          { "label": "D", "text": "ip route 0.0.0.0 0.0.0.0 192.168.12.2", "is_correct": false }
+        ]
+      },
+      {
+        "order": 4,
+        "question": "A route in R1's table shows code S and reads '172.20.0.0/16 is directly connected'. What command was used to configure it?",
+        "explanation": "The code S means it is a static route, not a connected (C) route. When you configure a static route with only an exit-interface, it appears as 'directly connected'. So the command was `ip route 172.20.0.0 255.255.0.0 g0/1`.",
+        "options": [
+          { "label": "A", "text": "ip route 172.20.0.0 255.255.0.0 10.0.0.1", "is_correct": false },
+          { "label": "B", "text": "ip address 172.20.0.0 255.255.0.0", "is_correct": false },
+          { "label": "C", "text": "ip route 172.20.0.0 255.255.0.0", "is_correct": false },
+          { "label": "D", "text": "ip route 172.20.0.0 255.255.0.0 g0/1", "is_correct": true }
+        ]
+      },
+      {
+        "order": 5,
+        "question": "R3 has connected routes to 192.168.13.0/24 and 192.168.34.0/24. How many static routes must it have to know ALL destination networks in the four-router topology (1.0/24, 4.0/24, 12.0/24, 24.0/24, 13.0/24, 34.0/24)?",
+        "explanation": "R3 already knows its connected networks (13.0/24 and 34.0/24). It needs routes to the four remaining networks: 192.168.1.0/24, 192.168.4.0/24, 192.168.12.0/24, and 192.168.24.0/24 — four static routes.",
+        "options": [
+          { "label": "A", "text": "Two routes", "is_correct": false },
+          { "label": "B", "text": "Six routes", "is_correct": false },
+          { "label": "C", "text": "Three routes", "is_correct": false },
+          { "label": "D", "text": "Four routes", "is_correct": true }
+        ]
+      }
+    ]
+  }
+}

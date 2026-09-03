@@ -1,0 +1,124 @@
+{
+  "slug": "subnetting-part-3",
+  "title": "Subnetting: Class A and VLSM",
+  "summary": "Subnetting Class A networks and using Variable Length Subnet Masks (VLSM) to size each subnet to its actual needs.",
+  "source_ref": "transcript_15.txt",
+  "order": 16,
+  "sections": [
+    {
+      "type": "explanation",
+      "title": "Subnetting Class A networks",
+      "order": 1,
+      "content": {
+        "body": "Class A networks have a /8 prefix, leaving **24 host bits** to borrow from — lots of room. The process is identical to Class B and C; only the numbers get larger.\n\n**Example:** divide `10.0.0.0/8` into 2,000 subnets. Count borrowed bits: 2, 4, 8, 16, 32, 64, 128, 256, 512, 1,024, **2,048** → that's **11 borrowed bits**, so a **/19** prefix (255.255.224.0). The remaining 13 host bits give 2¹³ − 2 = **8,190** hosts per subnet."
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "Class A: identify the subnet",
+      "order": 2,
+      "content": {
+        "body": "Given host `10.217.182.223/11`, find its subnet's network address, broadcast address, first/last usable, and host count.\n\n/11 borrows 3 bits from a /8. Zero the 21 host bits → **network address 10.192.0.0**. Set them to 1 → **broadcast 10.223.255.255**. First usable is **10.192.0.1**, last usable **10.223.255.254**. With 21 host bits, the subnet holds **2,097,150** usable addresses."
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "FLSM vs VLSM",
+      "order": 3,
+      "content": {
+        "body": "- **FLSM (Fixed Length Subnet Mask)** — every subnet uses the same prefix length. Simple, but sizes every subnet for the *largest* requirement, wasting addresses on the small ones.\n- **VLSM (Variable Length Subnet Mask)** — each subnet gets its own prefix length, sized to what it actually needs. More efficient, but you must work carefully.\n\nConsider a company with four LANs needing 110, 45, 29, and 8 hosts plus a 2-host point-to-point link, all from `192.168.1.0/24`. With FLSM, the 110-host LAN forces a /25 at best — and a /25 can't even be split five ways. VLSM handles it easily."
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "VLSM worked example",
+      "order": 4,
+      "content": {
+        "body": "**VLSM steps:** assign the **largest subnet first**, at the start of the address space, then the next largest, and so on.\n\nStarting from `192.168.1.0/24`:\n\n1. **Tokyo LAN A (110 hosts)** → /25 (126 usable). Network `192.168.1.0/25`, broadcast `192.168.1.127`.\n2. **Toronto LAN B (45 hosts)** → /26 (62 usable). Network `192.168.1.128/26`, broadcast `192.168.1.191`.\n3. **Toronto LAN A (29 hosts)** → /27 (30 usable). Network `192.168.1.192/27`, broadcast `192.168.1.223`.\n4. **Tokyo LAN B (8 hosts)** → /28 (14 usable). Network `192.168.1.224/28`, broadcast `192.168.1.239`. (A /29 gives only 6 usable — too small.)\n5. **Point-to-point link (2 hosts)** → /30 (2 usable). Network `192.168.1.240/30`, broadcast `192.168.1.243`.\n\nEach subnet's network address is the previous subnet's broadcast + 1."
+      }
+    },
+    {
+      "type": "table",
+      "title": "VLSM assignment",
+      "order": 5,
+      "content": {
+        "headers": ["Subnet", "Prefix", "Network", "Broadcast", "First / Last usable"],
+        "rows": [
+          ["Tokyo LAN A (110)", "/25", "192.168.1.0", "192.168.1.127", ".1 / .126"],
+          ["Toronto LAN B (45)", "/26", "192.168.1.128", "192.168.1.191", ".129 / .190"],
+          ["Toronto LAN A (29)", "/27", "192.168.1.192", "192.168.1.223", ".193 / .222"],
+          ["Tokyo LAN B (8)", "/28", "192.168.1.224", "192.168.1.239", ".225 / .238"],
+          ["Point-to-point (2)", "/30", "192.168.1.240", "192.168.1.243", ".241 / .242"]
+        ]
+      }
+    },
+    {
+      "type": "callout",
+      "title": "Exam tip",
+      "order": 6,
+      "content": {
+        "body": "For VLSM, always **start with the largest subnet and work down**. When a subnet needs 8 hosts, use **/28** (14 usable) — a /29 only provides 6 after subtracting network and broadcast. For a 2-host point-to-point link on the exam, use **/30**.",
+        "style": "exam_tip"
+      }
+    }
+  ],
+  "quiz": {
+    "questions": [
+      {
+        "order": 1,
+        "question": "You are given 10.0.0.0/8 and must create 2,000 subnets. What prefix length must you use?",
+        "explanation": "2,000 subnets require 11 borrowed bits (2¹¹ = 2,048). 8 + 11 = 19, so the prefix is /19.",
+        "options": [
+          { "label": "A", "text": "/19", "is_correct": true },
+          { "label": "B", "text": "/18", "is_correct": false },
+          { "label": "C", "text": "/20", "is_correct": false },
+          { "label": "D", "text": "/11", "is_correct": false }
+        ]
+      },
+      {
+        "order": 2,
+        "question": "What is the network address of the subnet that host 10.217.182.223/11 belongs to?",
+        "explanation": "Zero the 21 host bits of 10.217.182.223 and convert back: 10.192.0.0.",
+        "options": [
+          { "label": "A", "text": "10.217.0.0", "is_correct": false },
+          { "label": "B", "text": "10.192.0.0", "is_correct": true },
+          { "label": "C", "text": "10.217.182.0", "is_correct": false },
+          { "label": "D", "text": "10.0.0.0", "is_correct": false }
+        ]
+      },
+      {
+        "order": 3,
+        "question": "What is the broadcast address of the subnet that host 10.217.182.223/11 belongs to?",
+        "explanation": "Set the 21 host bits of 10.217.182.223 to 1 and convert back: 10.223.255.255.",
+        "options": [
+          { "label": "A", "text": "10.223.255.255", "is_correct": true },
+          { "label": "B", "text": "10.255.255.255", "is_correct": false },
+          { "label": "C", "text": "10.223.255.254", "is_correct": false },
+          { "label": "D", "text": "10.217.255.255", "is_correct": false }
+        ]
+      },
+      {
+        "order": 4,
+        "question": "What does VLSM (Variable Length Subnet Mask) allow you to do?",
+        "explanation": "VLSM lets different subnets use different prefix lengths, so each subnet can be sized to its actual need instead of all using the same (largest) size.",
+        "options": [
+          { "label": "A", "text": "Use the same prefix length for every subnet", "is_correct": false },
+          { "label": "B", "text": "Create subnets of different sizes for different needs", "is_correct": true },
+          { "label": "C", "text": "Assign more than one IP address to a single host", "is_correct": false },
+          { "label": "D", "text": "Borrow host bits to increase the number of hosts", "is_correct": false }
+        ]
+      },
+      {
+        "order": 5,
+        "question": "A subnet must hold exactly 8 hosts. Which prefix length should you assign it?",
+        "explanation": "A /28 provides 14 usable addresses (fits 8). A /29 provides only 6 usable addresses after subtracting network and broadcast, which is not enough.",
+        "options": [
+          { "label": "A", "text": "/29", "is_correct": false },
+          { "label": "B", "text": "/28", "is_correct": true },
+          { "label": "C", "text": "/30", "is_correct": false },
+          { "label": "D", "text": "/27", "is_correct": false }
+        ]
+      }
+    ]
+  }
+}

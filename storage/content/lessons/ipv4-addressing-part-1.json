@@ -1,0 +1,262 @@
+{
+  "slug": "ipv4-addressing-part-1",
+  "title": "IPv4 Addressing",
+  "summary": "How 32-bit IPv4 addresses are structured: binary and dotted decimal, network vs host portions, prefix lengths, address classes, netmasks, and the network and broadcast addresses.",
+  "source_ref": "transcript_7.txt",
+  "order": 7,
+  "sections": [
+    {
+      "type": "explanation",
+      "title": "From LANs to Layer 3",
+      "order": 1,
+      "content": {
+        "body": "The previous lessons covered **Ethernet LAN switching**, where switches forward frames between hosts on the *same* network. This lesson moves up the OSI model from **Layer 2 (data link)** to **Layer 3 (network)** and asks: how is traffic forwarded between *different* networks?\n\nLayer 3, the network layer, is responsible for:\n\n- **Connectivity between end hosts on different networks** — outside of the local area network.\n- **Logical addressing** — IP addresses. Unlike MAC addresses (assigned at manufacture), IP addresses are *logical*: you assign them when you configure a device.\n- **Path selection** — choosing the best path to a destination. On the Internet there can be many possible paths, and selecting the best one is a Layer 3 function.\n\n**Routers operate at Layer 3.** This lesson focuses specifically on the logical Layer 3 addresses: IP addresses."
+      }
+    },
+    {
+      "type": "animation",
+      "title": "A broadcast stays in its own LAN",
+      "order": 2,
+      "content": {
+        "diagram_type": "topology",
+        "nodes": [
+          { "id": "pc1", "label": "PC1", "icon": "pc", "x": 90, "y": 120 },
+          { "id": "pc2", "label": "PC2", "icon": "pc", "x": 90, "y": 240 },
+          { "id": "sw1", "label": "SW1", "icon": "switch", "x": 250, "y": 180 },
+          { "id": "r1", "label": "R1", "icon": "router", "x": 410, "y": 180 },
+          { "id": "sw2", "label": "SW2", "icon": "switch", "x": 570, "y": 180 },
+          { "id": "pc3", "label": "PC3", "icon": "pc", "x": 730, "y": 120 },
+          { "id": "pc4", "label": "PC4", "icon": "pc", "x": 730, "y": 240 }
+        ],
+        "links": [
+          { "from": "pc1", "to": "sw1", "kind": "ethernet" },
+          { "from": "pc2", "to": "sw1", "kind": "ethernet" },
+          { "from": "sw1", "to": "r1", "kind": "ethernet" },
+          { "from": "r1", "to": "sw2", "kind": "ethernet" },
+          { "from": "sw2", "to": "pc3", "kind": "ethernet" },
+          { "from": "sw2", "to": "pc4", "kind": "ethernet" }
+        ],
+        "steps": [
+          {
+            "narration": "PC1 sends a broadcast frame (destination MAC FF-FF-FF-FF-FF-FF). Switches do not separate networks — they connect and expand a single LAN.",
+            "animate": { "packet_from": "pc1", "packet_to": "sw1", "label": "broadcast" }
+          },
+          {
+            "narration": "SW1 floods the frame out every port except the one it arrived on, so PC2 receives it.",
+            "animate": { "packet_from": "sw1", "packet_to": "pc2", "label": "broadcast" }
+          },
+          {
+            "narration": "The frame also reaches R1 — but a broadcast is limited to the local network. R1 does not forward it to the second LAN.",
+            "animate": { "packet_from": "sw1", "packet_to": "r1", "label": "broadcast", "highlight": "r1" }
+          }
+        ]
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "The IPv4 address: 32 bits",
+      "order": 3,
+      "content": {
+        "body": "**IP (Internet Protocol) version 4** is the primary Layer 3 protocol in use today. The IPv4 header contains a **source IP address** and a **destination IP address** field, each **32 bits** (4 bytes) long.\n\nAn IPv4 address is 32 bits, written as four groups of 8 bits. For example, `192.168.1.254`:\n\n| Group | 192 | 168 | 1 | 254 |\n|---|---|---|---|---|\n| Bits | 8 | 8 | 8 | 8 |\n\nBecause 32 bits of binary are hard for humans to read, IP addresses are written in **dotted decimal**: four decimal numbers separated by dots. Each decimal number represents one 8-bit group."
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "Binary, decimal, and hexadecimal",
+      "order": 4,
+      "content": {
+        "body": "**Decimal (base 10)** — each digit increases by a factor of 10. In `3294`, the digits are 3 thousands, 2 hundreds, 9 tens, and 4 ones.\n\n**Hexadecimal (base 16)** — each digit increases by a factor of 16. Decimal `3294` is `0xCE6` (C = 12 × 256, E = 14 × 16, 6 = 6 × 1). Hex digits A–F represent 10–15.\n\n**Binary (base 2)** — each digit increases by a factor of 2. This is how computers actually store numbers. Each group of 8 bits in an IP address is called an **octet**."
+      }
+    },
+    {
+      "type": "table",
+      "title": "Bit values in an octet",
+      "order": 5,
+      "content": {
+        "headers": ["Bit position", "128", "64", "32", "16", "8", "4", "2", "1"],
+        "rows": [
+          ["192", "1", "1", "0", "0", "0", "0", "0", "0"],
+          ["168", "1", "0", "1", "0", "1", "0", "0", "0"],
+          ["1", "0", "0", "0", "0", "0", "0", "0", "1"],
+          ["254", "1", "1", "1", "1", "1", "1", "1", "0"]
+        ]
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "Converting between binary and decimal",
+      "order": 6,
+      "content": {
+        "body": "**Binary → decimal:** write the value of each bit position (128, 64, 32, 16, 8, 4, 2, 1) above the octet, then add up the values where a 1 appears.\n\n- `10001111` = 128 + 8 + 4 + 2 + 1 = **143**\n- `01110110` = 64 + 32 + 16 + 4 + 2 = **118**\n- `11101100` = 128 + 64 + 32 + 8 + 4 = **236**\n\n**Decimal → binary:** write out the bit positions, then from 128 downward subtract each value when possible (write 1) and skip when it would go negative (write 0).\n\n- `221` = 128 + 64 + 16 + 8 + 4 + 1 = **11011101**\n- `127` = 64 + 32 + 16 + 8 + 4 + 2 + 1 = **01111111**\n- `207` = 128 + 64 + 8 + 4 + 2 + 1 = **11001111**\n\nThe range of an 8-bit octet is **0** (all 0s) to **255** (all 1s)."
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "Network portion vs host portion",
+      "order": 7,
+      "content": {
+        "body": "An IPv4 address has two parts: the **network portion** (identifies the network) and the **host portion** (identifies the specific host).\n\nThe **prefix length** (the `/24` written after an address) says how many leading bits form the network portion:\n\n- **/24** — the first 24 bits (3 octets) are the network; the last 8 bits are the host. `192.168.1` is the network, `254` is the host.\n- **/16** — the first 16 bits (2 octets) are the network; the last 2 octets are the host.\n- **/8** — only the first octet is the network; the last 3 octets are the host.\n\nHosts on the same network share the same network portion and differ only in the host portion."
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "IPv4 address classes",
+      "order": 8,
+      "content": {
+        "body": "IPv4 addresses are split into five classes, determined by the **first octet** (its leading bits).\n\n- **Class A** — leading bit `0`, first octet **0–127**, prefix length /8.\n- **Class B** — leading bits `10`, first octet **128–191**, prefix length /16.\n- **Class C** — leading bits `110`, first octet **192–223**, prefix length /24.\n- **Class D** — leading bits `1110`, first octet **224–239** — reserved for **multicast**.\n- **Class E** — leading bits `1111`, first octet **240–255** — reserved for experimental use.\n\nFor the CCNA, focus on **A, B, and C**.\n\nThe **127 range** (127.0.0.0 – 127.255.255.255) is reserved for **loopback** addresses, used to test a device's own TCP/IP stack — traffic sent there is processed locally, as if it came from another device. So the usable Class A range is usually given as **1–126**."
+      }
+    },
+    {
+      "type": "table",
+      "title": "IPv4 address classes (A, B, C)",
+      "order": 9,
+      "content": {
+        "headers": ["Class", "Leading bits", "First octet", "Prefix length", "Networks", "Hosts per network"],
+        "rows": [
+          ["A", "0", "0 – 127", "/8", "128", "~16.7 million"],
+          ["B", "10", "128 – 191", "/16", "~16,000", "~65,000"],
+          ["C", "110", "192 – 223", "/24", "~2 million", "256"]
+        ]
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "Prefix length vs netmask",
+      "order": 10,
+      "content": {
+        "body": "There are two ways to write the network prefix length:\n\n- **CIDR (slash) notation** — `/8`, `/16`, `/24`. Newer and easier; used on Juniper devices.\n- **Dotted-decimal netmask** — the network portion is all 1s, the host portion all 0s. Cisco devices use this form.\n\n| Class | Prefix length | Netmask |\n|---|---|---|\n| A | /8 | 255.0.0.0 |\n| B | /16 | 255.255.0.0 |\n| C | /24 | 255.255.255.0 |\n\nBoth forms mean the exact same thing."
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "Network and broadcast addresses",
+      "order": 11,
+      "content": {
+        "body": "Every network has two special addresses that **cannot be assigned to hosts**:\n\n- **Network address** — the host portion is all 0s. It identifies the network itself (the first address of the range). In `192.168.1.0/24`, the network address is `192.168.1.0`.\n- **Broadcast address** — the host portion is all 1s. It sends a packet to *every* host on the network (the last address of the range). In `192.168.1.0/24`, the broadcast address is `192.168.1.255`.\n\nThe **first usable address** is one above the network address (e.g. `192.168.1.1`), and the **last usable address** is one below the broadcast address (e.g. `192.168.1.254`).\n\nA packet sent to the broadcast address is encapsulated in a frame with the **broadcast MAC address** (all Fs)."
+      }
+    },
+    {
+      "type": "callout",
+      "title": "Exam tip",
+      "order": 12,
+      "content": {
+        "body": "When a question asks you to identify the network or broadcast address, look at the **host portion** (the bits after the prefix length). Host bits all 0 = network address; host bits all 1 = broadcast address. Neither can be assigned to a host, so subtract 2 when counting usable addresses.",
+        "style": "exam_tip"
+      }
+    }
+  ],
+  "quiz": {
+    "questions": [
+      {
+        "order": 1,
+        "question": "Convert this binary IPv4 address to dotted decimal: 00111111.00111000.11100111.00010011",
+        "explanation": "Each octet converts independently: 00111111 = 63, 00111000 = 56, 11100111 = 231, 00010011 = 19. So the address is 63.56.231.19.",
+        "options": [
+          { "label": "A", "text": "63.56.231.19", "is_correct": true },
+          { "label": "B", "text": "63.56.231.35", "is_correct": false },
+          { "label": "C", "text": "99.56.231.19", "is_correct": false },
+          { "label": "D", "text": "63.56.247.19", "is_correct": false }
+        ]
+      },
+      {
+        "order": 2,
+        "question": "Convert this binary IPv4 address to dotted decimal: 11110011.01111111.01100010.00000001",
+        "explanation": "11110011 = 243, 01111111 = 127, 01100010 = 98, 00000001 = 1. So the address is 243.127.98.1.",
+        "options": [
+          { "label": "A", "text": "243.127.98.128", "is_correct": false },
+          { "label": "B", "text": "243.127.98.1", "is_correct": true },
+          { "label": "C", "text": "211.127.98.1", "is_correct": false },
+          { "label": "D", "text": "243.255.98.1", "is_correct": false }
+        ]
+      },
+      {
+        "order": 3,
+        "question": "Convert this binary IPv4 address to dotted decimal: 01101111.00000110.01011001.11000111",
+        "explanation": "01101111 = 111, 00000110 = 6, 01011001 = 89, 11000111 = 199. So the address is 111.6.89.199.",
+        "options": [
+          { "label": "A", "text": "111.6.89.199", "is_correct": true },
+          { "label": "B", "text": "111.12.89.199", "is_correct": false },
+          { "label": "C", "text": "111.6.89.135", "is_correct": false },
+          { "label": "D", "text": "239.6.89.199", "is_correct": false }
+        ]
+      },
+      {
+        "order": 4,
+        "question": "Convert this binary IPv4 address to dotted decimal: 11001111.11000110.00101111.01001100",
+        "explanation": "11001111 = 207, 11000110 = 198, 00101111 = 47, 01001100 = 76. So the address is 207.198.47.76.",
+        "options": [
+          { "label": "A", "text": "207.198.47.70", "is_correct": false },
+          { "label": "B", "text": "207.198.143.76", "is_correct": false },
+          { "label": "C", "text": "207.198.47.76", "is_correct": true },
+          { "label": "D", "text": "143.198.47.76", "is_correct": false }
+        ]
+      },
+      {
+        "order": 5,
+        "question": "Convert this binary IPv4 address to dotted decimal: 01100100.11001001.00100001.11111101",
+        "explanation": "01100100 = 100, 11001001 = 201, 00100001 = 33, 11111101 = 253. So the address is 100.201.33.253.",
+        "options": [
+          { "label": "A", "text": "100.201.33.253", "is_correct": true },
+          { "label": "B", "text": "100.201.33.125", "is_correct": false },
+          { "label": "C", "text": "100.201.65.253", "is_correct": false },
+          { "label": "D", "text": "228.201.33.253", "is_correct": false }
+        ]
+      },
+      {
+        "order": 6,
+        "question": "Convert the IPv4 address 88.46.90.91 to binary notation.",
+        "explanation": "88 = 01011000, 46 = 00101110, 90 = 01011010, 91 = 01011011. So the address is 01011000.00101110.01011010.01011011.",
+        "options": [
+          { "label": "A", "text": "01011000.00101110.01011010.01011011", "is_correct": true },
+          { "label": "B", "text": "01011000.00101110.01011010.01101011", "is_correct": false },
+          { "label": "C", "text": "01011000.00101111.01011010.01011011", "is_correct": false },
+          { "label": "D", "text": "01011100.00101110.01011010.01011011", "is_correct": false }
+        ]
+      },
+      {
+        "order": 7,
+        "question": "Convert the IPv4 address 221.234.246.163 to binary notation.",
+        "explanation": "221 = 11011101, 234 = 11101010, 246 = 11110110, 163 = 10100011. So the address is 11011101.11101010.11110110.10100011.",
+        "options": [
+          { "label": "A", "text": "11011101.11101010.11110110.10100011", "is_correct": true },
+          { "label": "B", "text": "11011101.11101010.11110110.11000011", "is_correct": false },
+          { "label": "C", "text": "11011101.11101011.11110110.10100011", "is_correct": false },
+          { "label": "D", "text": "11011101.11101110.11110110.10100011", "is_correct": false }
+        ]
+      },
+      {
+        "order": 8,
+        "question": "Convert the IPv4 address 3.41.143.222 to binary notation.",
+        "explanation": "3 = 00000011, 41 = 00101001, 143 = 10001111, 222 = 11011110. So the address is 00000011.00101001.10001111.11011110.",
+        "options": [
+          { "label": "A", "text": "00000011.00101001.10001111.11011110", "is_correct": true },
+          { "label": "B", "text": "00000011.00101001.10001111.11111110", "is_correct": false },
+          { "label": "C", "text": "00000011.00101001.10101111.11011110", "is_correct": false },
+          { "label": "D", "text": "00000111.00101001.10001111.11011110", "is_correct": false }
+        ]
+      },
+      {
+        "order": 9,
+        "question": "Convert the IPv4 address 10.200.231.91 to binary notation.",
+        "explanation": "10 = 00001010, 200 = 11001000, 231 = 11100111, 91 = 01011011. So the address is 00001010.11001000.11100111.01011011.",
+        "options": [
+          { "label": "A", "text": "00001010.11001000.11100111.01011011", "is_correct": true },
+          { "label": "B", "text": "00001010.11001000.11100111.01010111", "is_correct": false },
+          { "label": "C", "text": "00001010.11001000.11100101.01011011", "is_correct": false },
+          { "label": "D", "text": "00001010.11001001.11100111.01011011", "is_correct": false }
+        ]
+      },
+      {
+        "order": 10,
+        "question": "Convert the IPv4 address 248.87.255.152 to binary notation.",
+        "explanation": "248 = 11111000, 87 = 01010111, 255 = 11111111, 152 = 10011000. So the address is 11111000.01010111.11111111.10011000.",
+        "options": [
+          { "label": "A", "text": "11111000.01010111.11111111.10011000", "is_correct": true },
+          { "label": "B", "text": "11111000.01010111.11111111.10010000", "is_correct": false },
+          { "label": "C", "text": "11111000.01010111.11111110.10011000", "is_correct": false },
+          { "label": "D", "text": "11111000.01011111.11111111.10011000", "is_correct": false }
+        ]
+      }
+    ]
+  }
+}

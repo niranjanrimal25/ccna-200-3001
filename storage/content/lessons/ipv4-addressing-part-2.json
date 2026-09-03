@@ -1,0 +1,154 @@
+{
+  "slug": "ipv4-addressing-part-2",
+  "title": "IPv4 Addressing: Usable Addresses and Configuration",
+  "summary": "Calculating the maximum number of hosts, network, broadcast, and first/last usable addresses of a network, and configuring IP addresses on Cisco router interfaces.",
+  "source_ref": "transcript_8.txt",
+  "order": 8,
+  "sections": [
+    {
+      "type": "explanation",
+      "title": "Review: IPv4 classes",
+      "order": 1,
+      "content": {
+        "body": "Quick recap of the IPv4 address classes:\n\n- **Class A** — leading bit `0`, first octet 0–127, prefix /8, host portion 24 bits.\n- **Class B** — leading bits `10`, first octet 128–191, prefix /16, host portion 16 bits.\n- **Class C** — leading bits `110`, first octet 192–223, prefix /24, host portion 8 bits.\n\nThe **0** range is also reserved within Class A, so although Class A is often stated as 0–127, the truly usable range is **1–126** (0 and 127 are reserved)."
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "Maximum usable hosts: 2ⁿ − 2",
+      "order": 2,
+      "content": {
+        "body": "The number of possible addresses in a network is **2ⁿ**, where **n is the number of host bits**. Two of those addresses are reserved, so the maximum number of **usable** host addresses is:\n\n**2ⁿ − 2**\n\n- **Class C, /24** (8 host bits): 2⁸ − 2 = **254** hosts.\n- **Class B, /16** (16 host bits): 2¹⁶ − 2 = **65,534** hosts.\n- **Class A, /8** (24 host bits): 2²⁴ − 2 = **16,777,214** hosts.\n\nThe −2 removes the **network address** (host bits all 0) and the **broadcast address** (host bits all 1), neither of which can be assigned to a host."
+      }
+    },
+    {
+      "type": "table",
+      "title": "Host capacity by class",
+      "order": 3,
+      "content": {
+        "headers": ["Class", "Prefix length", "Host bits", "Total addresses", "Usable hosts"],
+        "rows": [
+          ["A", "/8", "24", "16,777,216", "16,777,214"],
+          ["B", "/16", "16", "65,536", "65,534"],
+          ["C", "/24", "8", "256", "254"]
+        ]
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "First and last usable addresses",
+      "order": 4,
+      "content": {
+        "body": "For any network:\n\n- **Network address** — host portion all 0s (e.g. `192.168.1.0`).\n- **First usable address** — network address **+ 1** (e.g. `192.168.1.1`).\n- **Broadcast address** — host portion all 1s (e.g. `192.168.1.255`).\n- **Last usable address** — broadcast address **− 1** (e.g. `192.168.1.254`).\n\nWorked examples:\n\n| Network | First usable | Last usable | Broadcast |\n|---|---|---|---|\n| 192.168.1.0/24 | 192.168.1.1 | 192.168.1.254 | 192.168.1.255 |\n| 172.16.0.0/16 | 172.16.0.1 | 172.16.255.254 | 172.16.255.255 |\n| 10.0.0.0/8 | 10.0.0.1 | 10.255.255.254 | 10.255.255.255 |"
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "show ip interface brief",
+      "order": 5,
+      "content": {
+        "body": "`show ip interface brief` is the quick way to check every interface's IP address and status. Its columns:\n\n- **Interface** — the interface name (e.g. GigabitEthernet0/0).\n- **IP-Address** — the configured IP address (`unassigned` if none).\n- **OK?** — a legacy validity check; on modern devices you should never see `NO`.\n- **Method** — how the address was assigned (`unset`, then `manual` after you configure it).\n- **Status** — the **Layer 1** state (up/down/administratively down).\n- **Protocol** — the **Layer 2** state (up/down).\n\n**Router interfaces are `administratively down` by default** because the `shutdown` command is applied by default. **Switch interfaces are not** — they are `up/up` when connected, `down/down` when not. If Layer 1 is down, Layer 2 cannot be up; you'll never see `down` (status) with `up` (protocol)."
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "Configuring an interface IP address",
+      "order": 6,
+      "content": {
+        "body": "To configure an IP address on a router interface:\n\n```\nRouter> enable\nRouter# configure terminal\nRouter(config)# interface gigabitethernet0/0\nRouter(config-if)# ip address 10.255.255.254 255.0.0.0\nRouter(config-if)# no shutdown\n```\n\nNotes:\n\n- `no shutdown` cancels the default `shutdown`, bringing the interface up. You'll see two messages: `%LINK... changed state to up` (Layer 1) and `%LINEPROTO... changed state to up` (Layer 2).\n- From interface config mode you can switch directly to another interface (`interface g0/1`) without returning to global config mode.\n- Use `do show ip interface brief` to run a privileged EXEC command without leaving interface config mode.\n- On a Cisco device you enter the **subnet mask in dotted decimal**, not the `/8` prefix form."
+      }
+    },
+    {
+      "type": "table",
+      "title": "Interface configuration commands",
+      "order": 7,
+      "content": {
+        "headers": ["Command", "Shortcut", "Purpose"],
+        "rows": [
+          ["enable", "en", "Enter privileged EXEC mode"],
+          ["configure terminal", "conf t", "Enter global configuration mode"],
+          ["interface gigabitethernet0/0", "int g0/0", "Enter interface config mode"],
+          ["ip address 10.0.0.1 255.0.0.0", "ip add 10.0.0.1 255.0.0.0", "Assign IP address and mask"],
+          ["no shutdown", "no shut", "Enable the interface"],
+          ["do show ip interface brief", "do sh ip int br", "Check status without leaving config mode"]
+        ]
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "show interfaces and descriptions",
+      "order": 8,
+      "content": {
+        "body": "**`show interfaces`** — detailed Layer 1 and Layer 2 information for an interface (specify one, e.g. `show interfaces g0/0`). Key items:\n\n- `GigabitEthernet0/0 is up` — Layer 1 status.\n- `line protocol is up` — Layer 2 status.\n- `Hardware is ... address is 0c1b.8444.f000 (bia 0c1b.8444.f000)` — the MAC address, also called the **BIA (burned-in address)**.\n- `Internet address is 10.255.255.254/8` — the Layer 3 address.\n\n**`show interfaces description`** — status, protocol, and a **description** column. Descriptions are optional but help identify what each interface connects to:\n\n```\nRouter(config)# interface g0/0\nRouter(config-if)# description ## to SW1\n```"
+      }
+    },
+    {
+      "type": "callout",
+      "title": "Exam tip",
+      "order": 9,
+      "content": {
+        "body": "Remember the difference: **status = Layer 1** (is it shutdown? is a cable attached?), **protocol = Layer 2** (is Ethernet functioning with the neighbor?). And the default state: **router interfaces are administratively down**, **switch interfaces are not** — they come up automatically when connected.",
+        "style": "exam_tip"
+      }
+    }
+  ],
+  "quiz": {
+    "questions": [
+      {
+        "order": 1,
+        "question": "PC1 has an IP address of 43.109.23.12/8. What is the network address?",
+        "explanation": "With a /8 prefix, only the first octet is the network portion. Setting the host portion (the last three octets) to 0 gives 43.0.0.0.",
+        "options": [
+          { "label": "A", "text": "43.0.0.0", "is_correct": true },
+          { "label": "B", "text": "43.109.0.0", "is_correct": false },
+          { "label": "C", "text": "43.109.23.0", "is_correct": false },
+          { "label": "D", "text": "0.0.0.0", "is_correct": false }
+        ]
+      },
+      {
+        "order": 2,
+        "question": "PC4 has an IP address of 129.221.23.13/16. What is the maximum number of hosts in the network?",
+        "explanation": "A /16 leaves 16 host bits, so 2¹⁶ − 2 = 65,536 − 2 = 65,534 usable host addresses.",
+        "options": [
+          { "label": "A", "text": "65,536", "is_correct": false },
+          { "label": "B", "text": "65,534", "is_correct": true },
+          { "label": "C", "text": "16,384", "is_correct": false },
+          { "label": "D", "text": "254", "is_correct": false }
+        ]
+      },
+      {
+        "order": 3,
+        "question": "PC8 has an IP address of 209.211.3.22/24. What is the network broadcast address?",
+        "explanation": "With /24, the last octet is the host portion. Setting the host bits to 1 gives 209.211.3.255.",
+        "options": [
+          { "label": "A", "text": "209.211.3.0", "is_correct": false },
+          { "label": "B", "text": "209.211.255.255", "is_correct": false },
+          { "label": "C", "text": "209.211.3.255", "is_correct": true },
+          { "label": "D", "text": "209.255.255.255", "is_correct": false }
+        ]
+      },
+      {
+        "order": 4,
+        "question": "PC5 has an IP address of 2.71.209.233/8. What is the last usable address of the network?",
+        "explanation": "The broadcast address is 2.255.255.255 (host portion all 1s). The last usable address is one below the broadcast: 2.255.255.254.",
+        "options": [
+          { "label": "A", "text": "2.255.255.255", "is_correct": false },
+          { "label": "B", "text": "2.255.255.254", "is_correct": true },
+          { "label": "C", "text": "2.255.255.0", "is_correct": false },
+          { "label": "D", "text": "2.0.0.254", "is_correct": false }
+        ]
+      },
+      {
+        "order": 5,
+        "question": "PC6 has an IP address of 155.200.201.141/16. What is the first usable address of the network?",
+        "explanation": "The network address is 155.200.0.0 (host portion all 0s). The first usable address is one above it: 155.200.0.1.",
+        "options": [
+          { "label": "A", "text": "155.200.0.1", "is_correct": true },
+          { "label": "B", "text": "155.200.0.0", "is_correct": false },
+          { "label": "C", "text": "155.200.1.0", "is_correct": false },
+          { "label": "D", "text": "155.200.255.254", "is_correct": false }
+        ]
+      }
+    ]
+  }
+}

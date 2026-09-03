@@ -1,0 +1,171 @@
+{
+  "slug": "ipv4-header",
+  "title": "The IPv4 Header",
+  "summary": "A field-by-field tour of the IPv4 header: version, IHL, DSCP, ECN, total length, fragmentation fields, TTL, protocol, checksum, and the address fields.",
+  "source_ref": "transcript_10.txt",
+  "order": 10,
+  "sections": [
+    {
+      "type": "explanation",
+      "title": "Where the IPv4 header sits",
+      "order": 1,
+      "content": {
+        "body": "Data moves down the stack by being wrapped in successive headers — **encapsulation**:\n\n1. Upper-layer data is wrapped in a **Layer 4 header** (TCP or UDP) → a **segment**.\n2. The segment is wrapped in a **Layer 3 header** (IP) → a **packet**.\n3. The packet is wrapped in a **Layer 2 header and trailer** → a **frame**.\n\nThese wrapped units are called **PDUs** (protocol data units): the Layer 3 PDU is a packet, the Layer 2 PDU is a frame.\n\nThe IPv4 header holds the information routers need to route a packet to its destination. This lesson examines each field."
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "Version and IHL",
+      "order": 2,
+      "content": {
+        "body": "**Version (4 bits)** — identifies the IP version. IPv4 has a value of `4` (`0100` in binary); IPv6 has `6` (`0110`). The never-deployed Internet Stream Protocol was `5` — the \"lost IPv5\". In an IPv4 header this field is always 4.\n\n**IHL — Internet Header Length (4 bits)** — the total length of the header, in **4-byte increments** (not single bytes).\n\n- Minimum value `5` → 5 × 4 = **20 bytes** (a header with no options).\n- Maximum value `15` → 15 × 4 = **60 bytes**.\n\nSo the optional options field can be at most 60 − 20 = **40 bytes**."
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "DSCP and ECN",
+      "order": 3,
+      "content": {
+        "body": "**DSCP — Differentiated Services Code Point (6 bits)** — used for **QoS (Quality of Service)** to prioritize delay-sensitive traffic like voice and video over best-effort traffic like a web page load.\n\n**ECN — Explicit Congestion Notification (2 bits)** — provides end-to-end notification of network congestion *without dropping packets*. Normally congestion is signaled by dropping packets; ECN flags it instead. It requires both endpoints and the network infrastructure to support it."
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "Total length",
+      "order": 4,
+      "content": {
+        "body": "**Total Length (16 bits)** — the length of the entire packet (IPv4 header + encapsulated Layer 4 segment) in **bytes**. Unlike IHL, this counts single bytes.\n\n- Minimum value 20 (a bare 20-byte header with no data).\n- Maximum value **65,535** (the maximum 16-bit value: 128 + 64 + … + 32,768).\n\nIt's different from IHL, which measures only the header."
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "Fragmentation: identification, flags, fragment offset",
+      "order": 5,
+      "content": {
+        "body": "A packet larger than the **MTU (Maximum Transmission Unit)** — usually **1500 bytes**, matching Ethernet's maximum payload — must be **fragmented**. Fragments are reassembled by the **receiving host**.\n\n- **Identification (16 bits)** — all fragments of the same original packet share this value, so they can be reassembled.\n- **Flags (3 bits)** — bit 0 is reserved (always 0); bit 1 is the **DF (Don't Fragment)** bit — set to 1 to prevent fragmentation; bit 2 is the **MF (More Fragments)** bit — 1 on every fragment except the last.\n- **Fragment Offset (13 bits)** — the position of the fragment within the original packet, so fragments can be reassembled even if they arrive out of order."
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "TTL",
+      "order": 6,
+      "content": {
+        "body": "**Time to Live (8 bits)** — prevents packets from looping forever. Each router decrements the TTL by one; when it reaches **0, the router drops the packet**.\n\nOriginally designed to represent a packet's lifetime in seconds, in practice it is a **hop count**. The recommended default TTL is **64** (the maximum value is 255)."
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "Protocol and header checksum",
+      "order": 7,
+      "content": {
+        "body": "**Protocol (8 bits)** — identifies the encapsulated Layer 4 protocol. Key values to remember:\n\n| Value | Protocol |\n|---|---|\n| 1 | ICMP (ping) |\n| 6 | TCP |\n| 17 | UDP |\n| 89 | OSPF |\n\n**Header Checksum (16 bits)** — a calculated checksum used to detect errors **in the IPv4 header only**. If a router's recalculated checksum doesn't match, it drops the packet. Errors in the *encapsulated data* are the responsibility of the Layer 4 protocol (TCP/UDP checksums) — IP does not check them."
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "Addresses and options",
+      "order": 8,
+      "content": {
+        "body": "**Source IP Address (32 bits)** — the sender's IPv4 address.\n\n**Destination IP Address (32 bits)** — the intended receiver's IPv4 address.\n\n**Options** — an optional, variable-length field (0 to 320 bits / 40 bytes), rarely used. If **IHL is greater than 5**, options are present. For CCNA purposes, you don't need to memorize the options structure."
+      }
+    },
+    {
+      "type": "table",
+      "title": "IPv4 header fields summary",
+      "order": 9,
+      "content": {
+        "headers": ["Field", "Size", "Purpose"],
+        "rows": [
+          ["Version", "4 bits", "IP version (4 for IPv4)"],
+          ["IHL", "4 bits", "Header length in 4-byte units (min 5 = 20 bytes)"],
+          ["DSCP", "6 bits", "QoS prioritization"],
+          ["ECN", "2 bits", "Congestion notification without dropping"],
+          ["Total Length", "16 bits", "Length of the whole packet in bytes"],
+          ["Identification", "16 bits", "Identifies fragments of a packet"],
+          ["Flags", "3 bits", "Reserved / DF / MF bits"],
+          ["Fragment Offset", "13 bits", "Position of a fragment in the packet"],
+          ["TTL", "8 bits", "Hop count; packet dropped at 0"],
+          ["Protocol", "8 bits", "Encapsulated L4 protocol (6 TCP, 17 UDP)"],
+          ["Header Checksum", "16 bits", "Error check for the header only"],
+          ["Source / Destination", "32 bits each", "Sender / receiver IPv4 addresses"],
+          ["Options", "0–320 bits", "Optional; rarely used"]
+        ]
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "Reading a real header",
+      "order": 10,
+      "content": {
+        "body": "In a Wireshark capture of a ping between two routers, the IPv4 header for a 100-byte ping shows:\n\n- **Version** 4, **Header Length** 5 (20 bytes).\n- **Total Length** 100 bytes, **Identification** a small value, **TTL** 255, **Protocol** ICMP (1).\n\nA ping forced larger than the MTU (`ping 192.168.1.2 size 10000`) gets fragmented into 1500-byte fragments: each has the same **Identification** value, the **More Fragments** bit set except on the last fragment, and increasing **Fragment Offset** values. Setting the **DF bit** on a packet larger than the MTU makes the ping **fail** — it can't be sent whole and isn't allowed to fragment."
+      }
+    },
+    {
+      "type": "callout",
+      "title": "Exam tip",
+      "order": 11,
+      "content": {
+        "body": "High-yield facts: the IPv4 **version field is always 4 (0100)**; **TTL** reaching 0 drops the packet; the **header checksum** checks only the header — the encapsulated protocol (TCP/UDP) checks the data; the **options** field is the only variable-length field; and the **MF (More Fragments)** bit is set on every fragment except the last.",
+        "style": "exam_tip"
+      }
+    }
+  ],
+  "quiz": {
+    "questions": [
+      {
+        "order": 1,
+        "question": "What is the fixed binary value of the first field of an IPv4 header?",
+        "explanation": "The first field is the version field. For an IPv4 header it is always 4, which is 0100 in binary.",
+        "options": [
+          { "label": "A", "text": "0010", "is_correct": false },
+          { "label": "B", "text": "0110", "is_correct": false },
+          { "label": "C", "text": "0001", "is_correct": false },
+          { "label": "D", "text": "0100", "is_correct": true }
+        ]
+      },
+      {
+        "order": 2,
+        "question": "Which IPv4 header field will cause the packet to be dropped if it has a value of zero?",
+        "explanation": "TTL (Time to Live) is decremented by one at each router. When it reaches zero, the packet is dropped. DSCP, IHL, and ECN do not cause dropping at zero.",
+        "options": [
+          { "label": "A", "text": "TTL", "is_correct": true },
+          { "label": "B", "text": "DSCP", "is_correct": false },
+          { "label": "C", "text": "IHL", "is_correct": false },
+          { "label": "D", "text": "ECN", "is_correct": false }
+        ]
+      },
+      {
+        "order": 3,
+        "question": "How are errors in an IPv4 packet's encapsulated data detected?",
+        "explanation": "The IPv4 header checksum only checks the IPv4 header itself. The encapsulated Layer 4 protocol (TCP or UDP) uses its own checksum to check for errors in the data.",
+        "options": [
+          { "label": "A", "text": "The IPv4 header checksum checks for errors in the data", "is_correct": false },
+          { "label": "B", "text": "The encapsulated protocol (e.g. TCP or UDP) checks for errors", "is_correct": true },
+          { "label": "C", "text": "Errors in the encapsulated data cannot be detected", "is_correct": false }
+        ]
+      },
+      {
+        "order": 4,
+        "question": "Which field of the IPv4 header is variable in length?",
+        "explanation": "The options field can vary from 0 bits up to 320 bits (40 bytes). All other fields are fixed length — although IHL and total length represent variable lengths, the fields themselves are fixed.",
+        "options": [
+          { "label": "A", "text": "Options", "is_correct": true },
+          { "label": "B", "text": "Header checksum", "is_correct": false },
+          { "label": "C", "text": "Total length", "is_correct": false },
+          { "label": "D", "text": "IHL", "is_correct": false }
+        ]
+      },
+      {
+        "order": 5,
+        "question": "Which bit will be set to 1 on all IPv4 packet fragments except the last fragment?",
+        "explanation": "The More Fragments (MF) bit, part of the flags field, indicates the current fragment is not the last. It is 1 on all fragments except the last, which sets it to 0.",
+        "options": [
+          { "label": "A", "text": "Fragment offset bit", "is_correct": false },
+          { "label": "B", "text": "More fragments bit", "is_correct": true },
+          { "label": "C", "text": "Don't fragment bit", "is_correct": false },
+          { "label": "D", "text": "Packet fragment bit", "is_correct": false }
+        ]
+      }
+    ]
+  }
+}

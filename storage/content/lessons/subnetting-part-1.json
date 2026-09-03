@@ -1,0 +1,133 @@
+{
+  "slug": "subnetting-part-1",
+  "title": "Subnetting: CIDR and the Basics",
+  "summary": "Why classful addressing wastes addresses, how CIDR enables subnetting, and how to split a network into smaller subnets.",
+  "source_ref": "transcript_13.txt",
+  "order": 14,
+  "sections": [
+    {
+      "type": "explanation",
+      "title": "Why subnetting?",
+      "order": 1,
+      "content": {
+        "body": "IPv4 addresses were originally handed out by **IANA** (Internet Assigned Numbers Authority) based on company size: a very large company got a Class A or B network, a small one a Class C.\n\nThis **classful** system is rigid — Class A always /8, Class B /16, Class C /24 — and it wasted addresses:\n\n- A **point-to-point link** between two routers only needs two addresses, but a Class C gives 256 — 252 wasted.\n- A company needing 5,000 addresses had to take a Class B (~65,000) — about 60,000 wasted.\n\nWith only ~4 billion IPv4 addresses total, exhaustion became a real problem. **Subnetting** solves it by splitting larger networks into smaller ones."
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "CIDR",
+      "order": 2,
+      "content": {
+        "body": "**CIDR (Classless Inter-Domain Routing)** was introduced by the **IETF in 1993** to replace classful addressing. It removes the rule that Class A must be /8, Class B /16, and Class C /24, allowing prefix lengths like /25, /26, /27, and so on.\n\nThis lets a larger network be divided into **subnetworks** (subnets) sized to fit actual need. The slash notation itself (`/25`, `/26`) is called **CIDR notation**, introduced with this system. Before CIDR, only dotted-decimal masks were used."
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "Subnetting a /24",
+      "order": 3,
+      "content": {
+        "body": "The point-to-point link between two routers is a perfect example. Instead of using the whole `203.0.113.0/24` (254 usable addresses for 2 hosts), extend the network portion into the host bits:\n\n- **/25** (255.255.255.128) → 7 host bits → 2⁷ − 2 = **126** usable.\n- **/26** (255.255.255.192) → 6 host bits → **62** usable.\n- **/27** (255.255.255.224) → 5 host bits → **30** usable.\n- **/28** (255.255.255.240) → 4 host bits → **14** usable.\n- **/29** (255.255.255.248) → 3 host bits → **6** usable.\n- **/30** (255.255.255.252) → 2 host bits → **2** usable.\n\nA **/30** is perfect for the link: 4 addresses total (network, R1, R2, broadcast) with zero waste. The remaining addresses (`203.0.113.4` through `.255`) stay available for other subnets."
+      }
+    },
+    {
+      "type": "table",
+      "title": "Prefix lengths for a /24 subnet",
+      "order": 4,
+      "content": {
+        "headers": ["Prefix", "Dotted decimal mask", "Host bits", "Usable addresses"],
+        "rows": [
+          ["/25", "255.255.255.128", "7", "126"],
+          ["/26", "255.255.255.192", "6", "62"],
+          ["/27", "255.255.255.224", "5", "30"],
+          ["/28", "255.255.255.240", "4", "14"],
+          ["/29", "255.255.255.248", "3", "6"],
+          ["/30", "255.255.255.252", "2", "2"]
+        ]
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "The special cases: /31 and /32",
+      "order": 5,
+      "content": {
+        "body": "**/31** (255.255.255.254) has only 1 host bit → 2 − 2 = **0** usable addresses, so it was historically unusable. But for a **point-to-point link** there's no need for a network or broadcast address, so both addresses can be assigned to the two routers — a /31 is valid there (Cisco shows a warning to confirm it's a point-to-point link). It's more efficient than /30.\n\n**/32** (255.255.255.255) has no host bits and can't be used to address an interface. It does have a use later: specifying a **single host** in a static route."
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "A worked example: four subnets for 45 hosts",
+      "order": 6,
+      "content": {
+        "body": "You have `192.168.1.0/24` and four networks of **45 hosts** each (R1's address is included in the 45). Find the smallest subnet that fits.\n\nEach network also needs a network and broadcast address, so you need **47** addresses per subnet (45 + 2). Working through the prefix lengths:\n\n- /30 → 2 usable — too small.\n- /29 → 6 — too small.\n- /28 → 14 — too small.\n- /27 → 30 — too small.\n- **/26 → 62 usable — fits.**\n\n47 × 4 = 188 ≤ 256, so the /24 has enough space. (The exact subnet addresses are the subject of the next lesson.)"
+      }
+    },
+    {
+      "type": "callout",
+      "title": "Exam tip",
+      "order": 7,
+      "content": {
+        "body": "Remember the formula: **usable addresses = 2ⁿ − 2** where n is the **host bits**. To fit a given number of hosts, add 2 (for network + broadcast) first, then find the smallest power of two that fits. For point-to-point links, a **/30 gives 2 usable addresses** — and a **/31 is also valid** since the link needs no network/broadcast addresses.",
+        "style": "exam_tip"
+      }
+    }
+  ],
+  "quiz": {
+    "questions": [
+      {
+        "order": 1,
+        "question": "How many usable host addresses are in a /25 network?",
+        "explanation": "A /25 leaves 7 host bits. 2⁷ − 2 = 128 − 2 = 126 usable addresses.",
+        "options": [
+          { "label": "A", "text": "128", "is_correct": false },
+          { "label": "B", "text": "126", "is_correct": true },
+          { "label": "C", "text": "254", "is_correct": false },
+          { "label": "D", "text": "62", "is_correct": false }
+        ]
+      },
+      {
+        "order": 2,
+        "question": "Which prefix length provides exactly two usable host addresses (ideal for a point-to-point link)?",
+        "explanation": "A /30 leaves 2 host bits: 2² − 2 = 4 − 2 = 2 usable addresses — one for each end of a point-to-point link.",
+        "options": [
+          { "label": "A", "text": "/28", "is_correct": false },
+          { "label": "B", "text": "/29", "is_correct": false },
+          { "label": "C", "text": "/30", "is_correct": true },
+          { "label": "D", "text": "/26", "is_correct": false }
+        ]
+      },
+      {
+        "order": 3,
+        "question": "What is the dotted-decimal subnet mask for a /26 prefix length?",
+        "explanation": "/26 means 26 network bits. The first 24 bits are three full octets (255.255.255), plus 2 more bits in the last octet (128 + 64 = 192). So the mask is 255.255.255.192.",
+        "options": [
+          { "label": "A", "text": "255.255.255.128", "is_correct": false },
+          { "label": "B", "text": "255.255.255.192", "is_correct": true },
+          { "label": "C", "text": "255.255.255.224", "is_correct": false },
+          { "label": "D", "text": "255.255.255.240", "is_correct": false }
+        ]
+      },
+      {
+        "order": 4,
+        "question": "Which statement about a /31 network on a point-to-point link is true?",
+        "explanation": "A /31 leaves only 1 host bit, so the formula gives 0 usable addresses. But on a point-to-point link there is no need for network/broadcast addresses, so both addresses can be assigned to the two routers — a /31 is valid there.",
+        "options": [
+          { "label": "A", "text": "It cannot be used under any circumstances", "is_correct": false },
+          { "label": "B", "text": "It provides 2 usable host addresses for normal LANs", "is_correct": false },
+          { "label": "C", "text": "It is valid on a point-to-point link between two routers", "is_correct": true },
+          { "label": "D", "text": "It leaves 126 usable addresses", "is_correct": false }
+        ]
+      },
+      {
+        "order": 5,
+        "question": "You must subnet a network so each subnet can hold 45 hosts. Which prefix length should you use?",
+        "explanation": "Add 2 for the network and broadcast addresses → 47 needed. /26 gives 62 usable addresses (fits); /27 gives only 30 (too small).",
+        "options": [
+          { "label": "A", "text": "/27", "is_correct": false },
+          { "label": "B", "text": "/26", "is_correct": true },
+          { "label": "C", "text": "/28", "is_correct": false },
+          { "label": "D", "text": "/25", "is_correct": false }
+        ]
+      }
+    ]
+  }
+}

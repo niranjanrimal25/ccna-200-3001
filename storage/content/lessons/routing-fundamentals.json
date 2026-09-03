@@ -1,0 +1,169 @@
+{
+  "slug": "routing-fundamentals",
+  "title": "Routing Fundamentals",
+  "summary": "What routing is, how to read a routing table, connected and local routes, and how routers pick the most specific matching route.",
+  "source_ref": "transcript_11_part_1.txt",
+  "order": 11,
+  "sections": [
+    {
+      "type": "explanation",
+      "title": "What is routing?",
+      "order": 1,
+      "content": {
+        "body": "**Routing** is the process routers use to determine the path that IP packets should take across a network to reach their destination.\n\nSwitches forward frames using a **MAC address table**; routers forward packets using a **routing table**, which holds all of the router's known destination **networks**. When a router receives a packet, it looks in the routing table for the best route to forward it.\n\nA **route** is an instruction to the router: *\"to send a packet to destination X, send it to next-hop Y\"* — where a **next-hop** is the next router in the path. If the destination is directly connected, send it straight to the destination; if it's the router's own address, receive it for itself.\n\nThere are two main ways routers learn routes:\n\n- **Dynamic routing** — routers share routes automatically using protocols like OSPF.\n- **Static routing** — an engineer manually configures routes.\n\nThis lesson covers two route types that are neither: **connected** and **local** routes."
+      }
+    },
+    {
+      "type": "animation",
+      "title": "The example network",
+      "order": 2,
+      "content": {
+        "diagram_type": "topology",
+        "nodes": [
+          { "id": "pc1", "label": "PC1", "icon": "pc", "x": 60, "y": 180 },
+          { "id": "r1", "label": "R1", "icon": "router", "x": 240, "y": 90 },
+          { "id": "r2", "label": "R2", "icon": "router", "x": 460, "y": 90 },
+          { "id": "r3", "label": "R3", "icon": "router", "x": 240, "y": 270 },
+          { "id": "r4", "label": "R4", "icon": "router", "x": 460, "y": 270 },
+          { "id": "pc4", "label": "PC4", "icon": "pc", "x": 640, "y": 180 }
+        ],
+        "links": [
+          { "from": "pc1", "to": "r1", "kind": "ethernet" },
+          { "from": "r1", "to": "r2", "kind": "wan" },
+          { "from": "r1", "to": "r3", "kind": "wan" },
+          { "from": "r2", "to": "r4", "kind": "wan" },
+          { "from": "r3", "to": "r4", "kind": "wan" },
+          { "from": "r4", "to": "pc4", "kind": "ethernet" }
+        ],
+        "steps": [
+          {
+            "narration": "Four routers form a WAN (wide area network). R1 and R4 each connect a LAN (192.168.1.0/24 for PC1, 192.168.4.0/24 for PC4). The router-to-router links are the WAN networks.",
+            "animate": { "highlight": ["r1", "r2", "r3", "r4"] }
+          },
+          {
+            "narration": "The link between R1 and R2 is 192.168.12.0/24 (R1 .1, R2 .2); R1–R3 is 192.168.13.0/24 (R1 .1, R3 .3).",
+            "animate": { "packet_from": "r1", "packet_to": "r2", "label": "12.0/24" }
+          },
+          {
+            "narration": "R2–R4 is 192.168.24.0/24 (R2 .2, R4 .4); R3–R4 is 192.168.34.0/24 (R3 .3, R4 .4). Notice each router's address matches its number (R1 = .1, R2 = .2, …).",
+            "animate": { "packet_from": "r3", "packet_to": "r4", "label": "34.0/24" }
+          }
+        ]
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "Connected routes (C)",
+      "order": 3,
+      "content": {
+        "body": "When you configure an IP address on an interface and enable it with `no shutdown`, **two routes are added automatically** — one connected and one local.\n\nA **connected route** is a route to the *network* the interface is connected to, shown with code **C** in `show ip route`. If R1's G0/2 is `192.168.1.1/24`, the connected route is to `192.168.1.0/24`.\n\nIt tells the router: *\"to send a packet to any host in this network, send it out of that interface\"* — matching every address from `192.168.1.0` to `192.168.1.255`."
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "Local routes (L)",
+      "order": 4,
+      "content": {
+        "body": "A **local route** is a route to the *exact* IP address configured on the interface, shown with code **L**. It uses a **/32** mask, meaning all 32 bits are fixed — it matches only that single address (e.g. `192.168.1.1/32`).\n\nIt tells the router: *\"packets to this destination are for me — receive them, don't forward them.\"*\n\nBecause `/32` has all netmask bits set to 1 (255.255.255.255), only the one address matches. This contrasts with `/24`, where only the first 24 bits are fixed."
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "Reading show ip route",
+      "order": 5,
+      "content": {
+        "body": "`show ip route` output has two parts:\n\n- **Codes legend** — maps the route code letters to how the route was learned (`L` = local, `C` = connected, `S` = static, `O` = OSPF, …).\n- **Routes** — the actual route entries.\n\nA connected route appears as:\n\n```\nC   192.168.1.0/24 is directly connected, GigabitEthernet0/2\n```\n\nA local route appears as:\n\n```\nL   192.168.1.1/32 is directly connected, GigabitEthernet0/2\n```\n\nSo an interface with an IP address produces **two** routes: `C` for the network and `L` for the address. R1, with three configured interfaces, has six routes. (Ignore the `variably subnetted` summary lines — they're not routes.)"
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "Most specific matching route",
+      "order": 6,
+      "content": {
+        "body": "A route **matches** a packet's destination if that destination IP falls within the network the route describes. A packet to `192.168.1.60` matches `192.168.1.0/24`, but not `192.168.2.0/24`.\n\nWhen several routes match, the router uses the **most specific** match — the one with the **longest prefix length**. A packet to `192.168.1.1` matches both `192.168.1.0/24` and `192.168.1.1/32`; the `/32` local route wins, so R1 receives the packet for itself.\n\nTwo key differences from switches:\n\n- **Switches flood** unknown-destination frames; **routers never flood** — they **drop** packets with no matching route.\n- Switches look for an **exact match** in the MAC table; routers look for the **most specific match**."
+      }
+    },
+    {
+      "type": "table",
+      "title": "Route types summary",
+      "order": 7,
+      "content": {
+        "headers": ["Route type", "Code", "Mask", "What it matches"],
+        "rows": [
+          ["Connected", "C", "/24 (or configured mask)", "The whole network on the interface"],
+          ["Local", "L", "/32", "Only the interface's own IP address"],
+          ["Static", "S", "Configured", "A manually configured destination"],
+          ["OSPF", "O", "Learned", "A destination learned via OSPF"]
+        ]
+      }
+    },
+    {
+      "type": "callout",
+      "title": "Exam tip",
+      "order": 8,
+      "content": {
+        "body": "Remember the pair: configuring an IP address + `no shutdown` adds a **Connected** route (to the network) and a **Local** route (to the interface's own address). And the router-forwarding rules: **never flood**; **drop** if no route matches; pick the **most specific (longest-prefix)** route when several match.",
+        "style": "exam_tip"
+      }
+    }
+  ],
+  "quiz": {
+    "questions": [
+      {
+        "order": 1,
+        "question": "The IP address configured on a router interface will appear in the routing table as what kind of route?",
+        "explanation": "Configuring an IP address (and enabling the interface) adds two routes: a connected route (to the network) and a local route (to the exact IP address). The interface's own IP address appears as a local route.",
+        "options": [
+          { "label": "A", "text": "Connected", "is_correct": false },
+          { "label": "B", "text": "Static", "is_correct": false },
+          { "label": "C", "text": "Local", "is_correct": true },
+          { "label": "D", "text": "Dynamic", "is_correct": false }
+        ]
+      },
+      {
+        "order": 2,
+        "question": "R1 has a local route to 192.168.3.25/32. What will R1 do when it receives a packet destined for 192.168.3.25?",
+        "explanation": "A local /32 route means that address is configured on one of R1's own interfaces. Packets to it are for R1 itself, so R1 receives the packet rather than forwarding it.",
+        "options": [
+          { "label": "A", "text": "Forward it out G0/2", "is_correct": false },
+          { "label": "B", "text": "Receive the packet for itself", "is_correct": true },
+          { "label": "C", "text": "Flood it out all interfaces", "is_correct": false },
+          { "label": "D", "text": "Drop the packet", "is_correct": false }
+        ]
+      },
+      {
+        "order": 3,
+        "question": "How does a router behave when it receives a packet for which it has no matching route?",
+        "explanation": "Unlike switches, which flood frames with unknown destinations (unknown unicast), routers never flood. If no route matches, the router drops the packet.",
+        "options": [
+          { "label": "A", "text": "It floods the packet out all interfaces", "is_correct": false },
+          { "label": "B", "text": "It drops the packet", "is_correct": true },
+          { "label": "C", "text": "It sends it to the default gateway", "is_correct": false },
+          { "label": "D", "text": "It broadcasts an ARP request", "is_correct": false }
+        ]
+      },
+      {
+        "order": 4,
+        "question": "Which two types of routes are automatically added to the routing table when you configure an IP address on an interface and enable it?",
+        "explanation": "In `show ip route`, C stands for Connected and L for Local. Both are added automatically when you configure an IP address on an interface and bring it up with `no shutdown`.",
+        "options": [
+          { "label": "A", "text": "Connected (C) and Local (L)", "is_correct": true },
+          { "label": "B", "text": "Static (S) and Dynamic (D)", "is_correct": false },
+          { "label": "C", "text": "Local (L) and Static (S)", "is_correct": false },
+          { "label": "D", "text": "Connected (C) and OSPF (O)", "is_correct": false }
+        ]
+      },
+      {
+        "order": 5,
+        "question": "R1's routing table has routes to 10.0.1.0/24 and 10.0.1.23/32. It receives a packet destined for 10.0.1.23. How many routes match, and which is selected?",
+        "explanation": "Both routes match destination 10.0.1.23. The most specific matching route is the /32 local route to 10.0.1.23, so that route is selected — R1 receives the packet for itself.",
+        "options": [
+          { "label": "A", "text": "One match: 10.0.1.0/24", "is_correct": false },
+          { "label": "B", "text": "One match: 10.0.1.23/32", "is_correct": false },
+          { "label": "C", "text": "Two matches; the /32 route is most specific", "is_correct": true },
+          { "label": "D", "text": "No match; the packet is dropped", "is_correct": false }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,195 @@
+{
+  "slug": "life-of-a-packet",
+  "title": "Life of a Packet",
+  "summary": "The complete end-to-end journey of a packet: ARP, encapsulation, de-encapsulation, and re-encapsulation at every hop from source to destination.",
+  "source_ref": "transcript_12.txt",
+  "order": 13,
+  "sections": [
+    {
+      "type": "explanation",
+      "title": "The journey",
+      "order": 1,
+      "content": {
+        "body": "This lesson ties together everything from previous lessons — ARP, encapsulation, de-encapsulation, and routing — by following one packet from PC1 (192.168.1.0/24) to PC4 (192.168.4.0/24) across three routers.\n\nEach network device interface has its own **MAC address**. For this example we use short MACs:\n\n| Device | Interface | MAC |\n|---|---|---|\n| PC1 | eth0 | 1111 |\n| R1 | G0/2 (to PC1's LAN) | AAAA |\n| R1 | G0/0 (to R2) | BBBB |\n| R2 | G0/0 (to R1) | CCCC |\n| R2 | G0/1 (to R4) | DDDD |\n| R4 | G0/1 (to R2) | EEEE |\n| R4 | G0/2 (to PC4's LAN) | FFFE |\n| PC4 | eth0 | 4444 |"
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "Step 1: PC1 finds its default gateway with ARP",
+      "order": 2,
+      "content": {
+        "body": "PC1 wants to send to 192.168.4.1, which is in a **different network**, so it must send the packet to its **default gateway** (R1, 192.168.1.254). But PC1 doesn't know R1's MAC address, so it sends an **ARP request**:\n\n- Source IP = 192.168.1.1 (PC1), destination IP = 192.168.1.254 (R1).\n- Destination MAC = **broadcast** (all Fs), source MAC = 1111.\n\nSW1 floods the broadcast and learns PC1's MAC on its G0/1 port. R1 sees the destination IP is its own and replies with a **unicast ARP reply**: \"I am 192.168.1.254, my MAC is AAAA.\" SW1 learns R1's MAC from that reply. PC1 now knows R1's MAC."
+      }
+    },
+    {
+      "type": "animation",
+      "title": "PC1 to R1",
+      "order": 3,
+      "content": {
+        "diagram_type": "topology",
+        "nodes": [
+          { "id": "pc1", "label": "PC1", "icon": "pc", "x": 60, "y": 160 },
+          { "id": "r1", "label": "R1", "icon": "router", "x": 300, "y": 160 },
+          { "id": "r2", "label": "R2", "icon": "router", "x": 540, "y": 160 },
+          { "id": "r4", "label": "R4", "icon": "router", "x": 780, "y": 160 },
+          { "id": "pc4", "label": "PC4", "icon": "pc", "x": 1020, "y": 160 }
+        ],
+        "links": [
+          { "from": "pc1", "to": "r1", "kind": "ethernet" },
+          { "from": "r1", "to": "r2", "kind": "wan" },
+          { "from": "r2", "to": "r4", "kind": "wan" },
+          { "from": "r4", "to": "pc4", "kind": "ethernet" }
+        ],
+        "steps": [
+          {
+            "narration": "PC1 sends an ARP request (broadcast) to learn its default gateway's MAC address.",
+            "animate": { "packet_from": "pc1", "packet_to": "r1", "label": "ARP request" }
+          },
+          {
+            "narration": "R1 replies with a unicast ARP reply: 'My MAC is AAAA.' PC1 now knows R1's G0/2 MAC.",
+            "animate": { "packet_from": "r1", "packet_to": "pc1", "label": "ARP reply" }
+          },
+          {
+            "narration": "PC1 encapsulates the packet (still destined for 192.168.4.1) in a frame with destination MAC AAAA and sends it to R1.",
+            "animate": { "packet_from": "pc1", "packet_to": "r1", "label": "dst MAC AAAA" }
+          }
+        ]
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "R1 to R2",
+      "order": 4,
+      "content": {
+        "body": "R1 receives the frame and **de-encapsulates** it — removes the Ethernet header and trailer to reveal the packet. The packet is unchanged: source 192.168.1.1, destination 192.168.4.1.\n\nR1 looks up 192.168.4.1 in its routing table. The most specific match is a static route to 192.168.4.0/24 with next-hop **192.168.12.2 (R2)**. R1 doesn't know R2's MAC, so it ARPs: \"Who is 192.168.12.2?\" R2 replies with its MAC (CCCC). R1 **re-encapsulates** the packet in a new frame — source MAC BBBB, destination MAC CCCC — and sends it out G0/0."
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "R2 to R4, and R4 to PC4",
+      "order": 5,
+      "content": {
+        "body": "**R2** de-encapsulates, looks up 192.168.4.1, and finds a route with next-hop 192.168.24.4 (R4). It ARPs for R4's MAC (EEEE), then re-encapsulates: source MAC DDDD, destination MAC EEEE.\n\n**R4** de-encapsulates and finds 192.168.4.0/24 is **directly connected** on G0/2. It ARPs for PC4's MAC (4444), then re-encapsulates: source MAC FFFE, destination MAC 4444 — and delivers the frame to PC4.\n\nAt every hop the **IP addresses never change** (source 192.168.1.1, destination 192.168.4.1), but the **MAC addresses change at every router**, because each hop re-encapsulates the same packet in a new frame."
+      }
+    },
+    {
+      "type": "animation",
+      "title": "The full path",
+      "order": 6,
+      "content": {
+        "diagram_type": "topology",
+        "nodes": [
+          { "id": "pc1", "label": "PC1", "icon": "pc", "x": 60, "y": 160 },
+          { "id": "r1", "label": "R1", "icon": "router", "x": 300, "y": 160 },
+          { "id": "r2", "label": "R2", "icon": "router", "x": 540, "y": 160 },
+          { "id": "r4", "label": "R4", "icon": "router", "x": 780, "y": 160 },
+          { "id": "pc4", "label": "PC4", "icon": "pc", "x": 1020, "y": 160 }
+        ],
+        "links": [
+          { "from": "pc1", "to": "r1", "kind": "ethernet" },
+          { "from": "r1", "to": "r2", "kind": "wan" },
+          { "from": "r2", "to": "r4", "kind": "wan" },
+          { "from": "r4", "to": "pc4", "kind": "ethernet" }
+        ],
+        "steps": [
+          {
+            "narration": "PC1 → R1: source MAC 1111, destination MAC AAAA.",
+            "animate": { "packet_from": "pc1", "packet_to": "r1", "label": "1111 → AAAA" }
+          },
+          {
+            "narration": "R1 → R2: source MAC BBBB, destination MAC CCCC.",
+            "animate": { "packet_from": "r1", "packet_to": "r2", "label": "BBBB → CCCC" }
+          },
+          {
+            "narration": "R2 → R4: source MAC DDDD, destination MAC EEEE.",
+            "animate": { "packet_from": "r2", "packet_to": "r4", "label": "DDDD → EEEE" }
+          },
+          {
+            "narration": "R4 → PC4: source MAC FFFE, destination MAC 4444. The packet arrives.",
+            "animate": { "packet_from": "r4", "packet_to": "pc4", "label": "FFFE → 4444" }
+          },
+          {
+            "narration": "PC4 replies. Now that all devices have learned each other's MACs via ARP, no more ARP is needed — the reply just gets forwarded hop by hop.",
+            "animate": { "packet_from": "pc4", "packet_to": "pc1", "label": "reply", "status": "ok" }
+          }
+        ]
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "What stays the same, what changes",
+      "order": 7,
+      "content": {
+        "body": "- **The packet never changes.** Source IP (192.168.1.1) and destination IP (192.168.4.1) stay the same for the entire journey.\n- **The frame changes at every router.** Each router de-encapsulates the packet and re-encapsulates it with new source and destination MAC addresses.\n- **Switches do not modify frames.** They forward them and learn MAC addresses, but never de-encapsulate or re-encapsulate.\n- **ARP is only needed the first time** — after that, devices cache the neighbor MAC addresses and forward directly."
+      }
+    },
+    {
+      "type": "callout",
+      "title": "Exam tip",
+      "order": 8,
+      "content": {
+        "body": "A very common exam trick: ask for the source/destination MAC or IP at a particular hop. Remember — **IP addresses are end-to-end and never change**; **MAC addresses are hop-by-hop and change at every router**. The destination MAC on a frame a PC sends to a remote host is the **default gateway's** MAC, not the remote host's.",
+        "style": "exam_tip"
+      }
+    }
+  ],
+  "quiz": {
+    "questions": [
+      {
+        "order": 1,
+        "question": "PC4 sends a packet to PC1 (remote network). What is the destination MAC address when the frame is sent from PC4's network interface?",
+        "explanation": "To reach a remote host, PC4 must first send the frame to its default gateway, R4. So the destination MAC is R4's G0/2 MAC address, FFFE.",
+        "options": [
+          { "label": "A", "text": "1111", "is_correct": false },
+          { "label": "B", "text": "FFFF", "is_correct": false },
+          { "label": "C", "text": "FFFE", "is_correct": true },
+          { "label": "D", "text": "4444", "is_correct": false }
+        ]
+      },
+      {
+        "order": 2,
+        "question": "PC4 sends a packet to PC1. What is the source MAC address when it is received on R1's G0/0 interface?",
+        "explanation": "R1's G0/0 connects to R2. R2 re-encapsulated the packet using its own G0/0 MAC (CCCC) as the source, so the source MAC arriving at R1 is CCCC.",
+        "options": [
+          { "label": "A", "text": "AAAA", "is_correct": false },
+          { "label": "B", "text": "BBBB", "is_correct": false },
+          { "label": "C", "text": "CCCC", "is_correct": true },
+          { "label": "D", "text": "DDDD", "is_correct": false }
+        ]
+      },
+      {
+        "order": 3,
+        "question": "PC4 sends a packet to PC1. What is the source MAC address when the frame is sent from SW1's G0/1 interface (toward PC1)?",
+        "explanation": "SW1 does not modify the frame — it simply forwards it. The frame was sent by R1 using its G0/2 MAC (AAAA) as the source, so that stays as AAAA.",
+        "options": [
+          { "label": "A", "text": "AAAA", "is_correct": true },
+          { "label": "B", "text": "BBBB", "is_correct": false },
+          { "label": "C", "text": "1111", "is_correct": false },
+          { "label": "D", "text": "SW1's own MAC", "is_correct": false }
+        ]
+      },
+      {
+        "order": 4,
+        "question": "PC4 sends a packet to PC1. What is the destination IP address when it is sent from R4's G0/1 interface?",
+        "explanation": "Routers change the source and destination MAC addresses at each hop, but they never modify the packet itself. The destination IP stays PC1's address, 192.168.1.1.",
+        "options": [
+          { "label": "A", "text": "192.168.4.1", "is_correct": false },
+          { "label": "B", "text": "192.168.1.1", "is_correct": true },
+          { "label": "C", "text": "192.168.24.4", "is_correct": false },
+          { "label": "D", "text": "192.168.12.1", "is_correct": false }
+        ]
+      },
+      {
+        "order": 5,
+        "question": "PC4 sends a packet to PC1. What is the source IP address when it is received on R1's G0/0 interface?",
+        "explanation": "The packet is not modified along the way, so the source IP address remains PC4's address, 192.168.4.1, for the entire route.",
+        "options": [
+          { "label": "A", "text": "192.168.4.1", "is_correct": true },
+          { "label": "B", "text": "192.168.1.1", "is_correct": false },
+          { "label": "C", "text": "192.168.24.4", "is_correct": false },
+          { "label": "D", "text": "192.168.12.2", "is_correct": false }
+        ]
+      }
+    ]
+  }
+}

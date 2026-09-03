@@ -21,6 +21,16 @@ class LessonSeeder extends Seeder
         'cisco-ios-cli' => 'ios-cli',
         'ethernet-lan-switching-part-1' => 'ethernet-lan-switching',
         'ethernet-lan-switching-part-2' => 'ethernet-lan-switching',
+        'ipv4-addressing-part-1' => 'ip-addressing',
+        'ipv4-addressing-part-2' => 'ip-addressing',
+        'switch-interfaces' => 'switch-interfaces',
+        'ipv4-header' => 'ipv4-header',
+        'routing-fundamentals' => 'routing',
+        'static-routing' => 'routing',
+        'life-of-a-packet' => 'life-of-a-packet',
+        'subnetting-part-1' => 'subnetting',
+        'subnetting-part-2' => 'subnetting',
+        'subnetting-part-3' => 'subnetting',
     ];
 
     public function run(): void
@@ -121,6 +131,12 @@ class LessonSeeder extends Seeder
             'tcp-ip-model' => 'The TCP/IP Model',
             'ios-cli' => 'The Cisco IOS CLI',
             'ethernet-lan-switching' => 'Ethernet LAN Switching',
+            'ip-addressing' => 'IP Addressing',
+            'switch-interfaces' => 'Switch Interfaces',
+            'ipv4-header' => 'The IPv4 Header',
+            'routing' => 'Routing',
+            'life-of-a-packet' => 'Life of a Packet',
+            'subnetting' => 'Subnetting',
             default => ucwords(str_replace('-', ' ', $slug)),
         };
     }
@@ -133,6 +149,12 @@ class LessonSeeder extends Seeder
             'tcp-ip-model' => 3,
             'ios-cli' => 4,
             'ethernet-lan-switching' => 5,
+            'ip-addressing' => 6,
+            'switch-interfaces' => 7,
+            'ipv4-header' => 8,
+            'routing' => 9,
+            'life-of-a-packet' => 10,
+            'subnetting' => 11,
             default => 99,
         };
     }

@@ -1,0 +1,134 @@
+{
+  "slug": "subnetting-part-2",
+  "title": "Subnetting: Class C and B Practice",
+  "summary": "Borrowing bits to create subnets, finding subnet network and broadcast addresses, and subnetting Class B networks.",
+  "source_ref": "transcript_14.txt",
+  "order": 15,
+  "sections": [
+    {
+      "type": "explanation",
+      "title": "Borrowing bits",
+      "order": 1,
+      "content": {
+        "body": "Subnetting works by **borrowing** bits from the host portion and adding them to the network portion.\n\n- **Number of subnets** = **2ˣ**, where x is the number of **borrowed bits**.\n- **Usable hosts per subnet** = **2ⁿ − 2**, where n is the remaining **host bits**.\n\nUnlike the host formula, the subnet count is *not* reduced by 2 — every combination of borrowed bits is a valid subnet.\n\nExample: borrowing 1 bit gives 2 subnets (/25); 2 bits give 4 (/26); 3 bits give 8 (/27). If you need 5 subnets, /26 (4 subnets) isn't enough — you need /27 (8 subnets)."
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "Finding subnet addresses",
+      "order": 2,
+      "content": {
+        "body": "To list the subnets, start with the network address of subnet 1 and add the **block size** each time.\n\nFor `192.168.1.0/24` divided into /26 subnets:\n\n- Subnet 1: `192.168.1.0/26` (broadcast `192.168.1.63`)\n- Subnet 2: `192.168.1.64/26` (broadcast `192.168.1.127`)\n- Subnet 3: `192.168.1.128/26` (broadcast `192.168.1.191`)\n- Subnet 4: `192.168.1.192/26` (broadcast `192.168.1.255`)\n\nThe **block size** is 64 — the value of the **last bit of the network portion**. To find the next subnet, add 64. The network address of the next subnet is always **one above the previous subnet's broadcast address**."
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "Identify the subnet a host belongs to",
+      "order": 3,
+      "content": {
+        "body": "A common question: *\"What subnet does host 192.168.5.57/27 belong to?\"*\n\n1. Write the address in binary.\n2. Keep the network portion (including borrowed bits); **set all host bits to 0**.\n3. Convert back to dotted decimal.\n\n`192.168.5.57` = `11000000.10101000.00000101.00111001`. With /27, the last 5 bits are host bits. Zero them out: `...00100000` = 32. So the host belongs to **192.168.5.32/27**.\n\nFor a broadcast address, set the host bits to **1** instead. Example: the broadcast of `192.168.91.78/26` is `192.168.91.127`."
+      }
+    },
+    {
+      "type": "table",
+      "title": "Class C subnetting reference",
+      "order": 4,
+      "content": {
+        "headers": ["Prefix", "Borrowed bits", "Subnets", "Host bits", "Hosts per subnet"],
+        "rows": [
+          ["/25", "1", "2", "7", "126"],
+          ["/26", "2", "4", "6", "62"],
+          ["/27", "3", "8", "5", "30"],
+          ["/28", "4", "16", "4", "14"],
+          ["/29", "5", "32", "3", "6"],
+          ["/30", "6", "64", "2", "2"],
+          ["/31", "7", "128", "1", "0 (point-to-point)"]
+        ]
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "Subnetting Class B networks",
+      "order": 5,
+      "content": {
+        "body": "The process is **exactly the same** for Class B — there are just more host bits (16) to borrow from.\n\n**Example:** divide `172.16.0.0/16` into 80 subnets. Borrow bits until 2ˣ ≥ 80:\n\n- 1 bit → 2 subnets (/17), 2 bits → 4 (/18), 3 → 8 (/19), 4 → 16 (/20), 5 → 32 (/21), 6 → 64 (/22), **7 → 128 (/23)**.\n\nSo use **/23** (255.255.254.0). The first subnets are 172.16.0.0/23, 172.16.2.0/23, 172.16.4.0/23, …\n\nNote you can borrow bits into the *last* octet too: `172.22.0.0/16` split into 500 subnets needs 9 borrowed bits (2⁹ = 512) → **/25**.\n\nWhen a question specifies **both** subnets and hosts, satisfy both: 250 subnets **and** 250 hosts → borrow 8 bits (256 subnets, /24) leaving 8 host bits (254 hosts)."
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "Identify the subnet a host belongs to (Class B)",
+      "order": 6,
+      "content": {
+        "body": "Same procedure, bigger numbers: *\"What subnet does host 172.25.217.192/21 belong to?\"*\n\n/21 borrows 5 bits from a /16. Write the address in binary, zero the 11 host bits, and convert back: **172.25.216.0/21**.\n\nAnother: host `172.21.111.201/20` → subnet `172.21.96.0/20`."
+      }
+    },
+    {
+      "type": "callout",
+      "title": "Exam tip",
+      "order": 7,
+      "content": {
+        "body": "Master two patterns and you can solve almost any subnetting problem: **(1)** each borrowed bit *doubles* the number of subnets, **(2)** each host bit *doubles* the addresses (minus 2 for network/broadcast). And remember the block-size shortcut — the **value of the last network bit** tells you how much to add to get the next subnet.",
+        "style": "exam_tip"
+      }
+    }
+  ],
+  "quiz": {
+    "questions": [
+      {
+        "order": 1,
+        "question": "You are given the 172.30.0.0/16 network and need 100 subnets with at least 500 hosts each. What prefix length should you use?",
+        "explanation": "7 borrowed bits give 128 subnets (≥100), leaving 9 host bits → 2⁹ − 2 = 510 hosts (≥500). So /23 is correct.",
+        "options": [
+          { "label": "A", "text": "/22", "is_correct": false },
+          { "label": "B", "text": "/23", "is_correct": true },
+          { "label": "C", "text": "/24", "is_correct": false },
+          { "label": "D", "text": "/21", "is_correct": false }
+        ]
+      },
+      {
+        "order": 2,
+        "question": "What subnet does host 172.21.111.201/20 belong to?",
+        "explanation": "Zero the 12 host bits of 172.21.111.201 and convert back to dotted decimal: 172.21.96.0/20.",
+        "options": [
+          { "label": "A", "text": "172.21.96.0/20", "is_correct": true },
+          { "label": "B", "text": "172.21.111.0/20", "is_correct": false },
+          { "label": "C", "text": "172.21.112.0/20", "is_correct": false },
+          { "label": "D", "text": "172.21.0.0/20", "is_correct": false }
+        ]
+      },
+      {
+        "order": 3,
+        "question": "What is the broadcast address of the network that 192.168.91.78/26 belongs to?",
+        "explanation": "Set the 6 host bits of 192.168.91.78 to 1 and convert back: 192.168.91.127.",
+        "options": [
+          { "label": "A", "text": "192.168.91.63", "is_correct": false },
+          { "label": "B", "text": "192.168.91.127", "is_correct": true },
+          { "label": "C", "text": "192.168.91.191", "is_correct": false },
+          { "label": "D", "text": "192.168.91.255", "is_correct": false }
+        ]
+      },
+      {
+        "order": 4,
+        "question": "You divide 172.16.0.0/16 into 4 equal subnets. What are the network and broadcast addresses of the second subnet?",
+        "explanation": "4 subnets need 2 borrowed bits → /18. Subnet 1 is 172.16.0.0/18 (broadcast 172.16.63.255); subnet 2 is 172.16.64.0/18, with broadcast 172.16.127.255.",
+        "options": [
+          { "label": "A", "text": "Network 172.16.64.0, broadcast 172.16.127.255", "is_correct": true },
+          { "label": "B", "text": "Network 172.16.64.0, broadcast 172.16.64.255", "is_correct": false },
+          { "label": "C", "text": "Network 172.16.128.0, broadcast 172.16.191.255", "is_correct": false },
+          { "label": "D", "text": "Network 172.16.32.0, broadcast 172.16.63.255", "is_correct": false }
+        ]
+      },
+      {
+        "order": 5,
+        "question": "You divide the 172.30.0.0/16 network into subnets of 1,000 hosts each. How many subnets can you make?",
+        "explanation": "1,000 hosts need 10 host bits (2¹⁰ − 2 = 1,022). That leaves 6 borrowed bits, so 2⁶ = 64 subnets.",
+        "options": [
+          { "label": "A", "text": "32", "is_correct": false },
+          { "label": "B", "text": "64", "is_correct": true },
+          { "label": "C", "text": "128", "is_correct": false },
+          { "label": "D", "text": "256", "is_correct": false }
+        ]
+      }
+    ]
+  }
+}

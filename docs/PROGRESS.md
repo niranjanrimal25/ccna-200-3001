@@ -12,9 +12,9 @@ A Laravel 12 web application that converts CCNA course transcripts (Jeremy's IT 
 
 ## Completed Work
 
-### 1. Content Pipeline — All 6 Scripts Converted
+### 1. Content Pipeline — All 15 Scripts Converted
 
-Six raw transcript files (`1.txt` – `6 part 2.txt`) converted into structured lesson JSON stored in `storage/content/lessons/`:
+All raw transcript files (`1.txt` – `15.txt`, incl. `11 part 1` / `11 part 2`) converted into structured lesson JSON stored in `storage/content/lessons/`:
 
 | File | Lesson | Sections | Quiz |
 |------|--------|----------|------|
@@ -24,6 +24,16 @@ Six raw transcript files (`1.txt` – `6 part 2.txt`) converted into structured 
 | `cisco-ios-cli.json` | The Cisco IOS CLI | 10 | 5 questions |
 | `ethernet-lan-switching-part-1.json` | Ethernet LAN Switching (Part 1) | 10 | 5 questions |
 | `ethernet-lan-switching-part-2.json` | Ethernet LAN Switching (Part 2) | 8 | 5 questions |
+| `ipv4-addressing-part-1.json` | IPv4 Addressing | 12 | 10 questions |
+| `ipv4-addressing-part-2.json` | IPv4 Addressing: Usable Addresses and Configuration | 9 | 5 questions |
+| `switch-interfaces.json` | Switch Interfaces | 9 | 5 questions |
+| `ipv4-header.json` | The IPv4 Header | 11 | 5 questions |
+| `routing-fundamentals.json` | Routing Fundamentals | 8 | 5 questions |
+| `static-routing.json` | Static Routing | 10 | 5 questions |
+| `life-of-a-packet.json` | Life of a Packet | 8 | 5 questions |
+| `subnetting-part-1.json` | Subnetting: CIDR and the Basics | 7 | 5 questions |
+| `subnetting-part-2.json` | Subnetting: Class C and B Practice | 7 | 5 questions |
+| `subnetting-part-3.json` | Subnetting: Class A and VLSM | 6 | 5 questions |
 
 Each lesson JSON contains: `slug`, `title`, `summary`, `source_ref`, `order`, `sections[]`, `quiz{}`.
 

@@ -1,0 +1,148 @@
+{
+  "slug": "switch-interfaces",
+  "title": "Switch Interfaces",
+  "summary": "Configuring speed, duplex, and descriptions on switch interfaces, understanding autonegotiation, interface status, and error counters.",
+  "source_ref": "transcript_9.txt",
+  "order": 9,
+  "sections": [
+    {
+      "type": "explanation",
+      "title": "Switches vs routers: the port count",
+      "order": 1,
+      "content": {
+        "body": "The obvious difference between a switch and a router is the **number of interfaces**. A router (e.g. a Cisco ASR 1000-X) might have a handful of SFP fiber ports plus a console port. A switch (e.g. a Catalyst 9200) has dozens of RJ45 ports — 48 is common — plus a few SFP uplink ports.\n\nThat's because **switches connect end hosts**. A switch may have 48 PCs attached, then link to a router through an SFP fiber port. This lesson covers configuring the Layer 1 characteristics of switch interfaces: **speed** and **duplex**."
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "Interface status: up/up vs down/down",
+      "order": 2,
+      "content": {
+        "body": "In `show ip interface brief`, switch interfaces behave differently from router interfaces:\n\n- **Router interfaces** have `shutdown` applied by default → **administratively down/down**.\n- **Switch interfaces** do **not** have `shutdown` applied → they are **up/up** when connected to another device, or **down/down** when nothing is plugged in.\n\n`down/down` is *not* the same as `administratively down/down`. `down/down` just means nothing is connected; `administratively down` means the `shutdown` command was used.\n\nA Layer 2 switchport does not need an IP address — that's why its IP-Address column stays `unassigned`."
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "show interfaces status",
+      "order": 3,
+      "content": {
+        "body": "`show interfaces status` gives a compact per-port summary:\n\n- **Port** — the interface name.\n- **Name** — the interface description.\n- **Status** — `connected` (a device is attached) or `notconnect` (nothing attached); `disabled` after `shutdown`.\n- **VLAN** — the access VLAN (default 1; `trunk` for the link to another switch).\n- **Duplex** — `a-full` means full duplex was **auto**-negotiated; `full` means manually configured.\n- **Speed** — `a-100` means 100 Mbps auto-negotiated; `100` means manually set.\n- **Type** — the port type, e.g. `10/100BASE-TX` for RJ45 copper."
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "Full and half duplex",
+      "order": 4,
+      "content": {
+        "body": "- **Half duplex** — a device **cannot** send and receive at the same time; it must wait if it is receiving.\n- **Full duplex** — a device **can** send and receive simultaneously.\n\nFull duplex is preferred; with switches, essentially every modern link runs full duplex. Half duplex mattered in the era of **hubs**, which are simple Layer 1 repeaters: every frame a hub receives is flooded out all other ports.\n\nDevices attached to a hub share one **collision domain** — if two send at once, the frames collide and neither arrives intact. Ethernet's answer is **CSMA/CD** (Carrier Sense Multiple Access with Collision Detection): devices listen before sending, and if a collision still occurs they send a jamming signal, then each waits a random time before retrying.\n\nSwitches separate each port into its own collision domain, so collisions become rare and are usually a sign of misconfiguration (like a duplex mismatch)."
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "Configuring speed and duplex",
+      "order": 5,
+      "content": {
+        "body": "Speed and duplex are `auto` by default, but you can set them manually:\n\n```\nSW1(config)# interface f0/1\nSW1(config-if)# speed 100\nSW1(config-if)# duplex full\nSW1(config-if)# description ## to R1\n```\n\n- `speed` — `10`, `100`, `1000`, or `auto`.\n- `duplex` — `auto`, `full`, or `half`.\n- `description` — an optional label to identify the interface's purpose.\n\nAfter manual configuration, `show interfaces status` shows `full` and `100` (no leading `a-`), because the values are no longer auto-negotiated.\n\nTo configure many ports at once, use **`interface range`**:\n\n```\nSW1(config)# interface range f0/5-12\nSW1(config-if-range)# shutdown\n```\n\nRanges don't have to be consecutive: `interface range f0/5-6, f0/9-12` skips 7 and 8.\n\nA good security practice is to `shutdown` unused interfaces."
+      }
+    },
+    {
+      "type": "table",
+      "title": "Switch interface commands",
+      "order": 6,
+      "content": {
+        "headers": ["Command", "Purpose"],
+        "rows": [
+          ["show ip interface brief", "Layer 1/2 status + IP addresses of interfaces"],
+          ["show interfaces status", "Port, description, status, VLAN, duplex, speed, type"],
+          ["speed {10|100|1000|auto}", "Set the interface data rate"],
+          ["duplex {full|half|auto}", "Set the duplex mode"],
+          ["description <text>", "Label the interface's purpose"],
+          ["interface range f0/5-12", "Configure multiple interfaces at once"]
+        ]
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "Autonegotiation",
+      "order": 7,
+      "content": {
+        "body": "**Autonegotiation** lets two connected devices agree on speed and duplex automatically, using the fastest common settings. Keep it enabled whenever possible.\n\nIf one side has autonegotiation disabled (a manual/fixed setting) while the other has it enabled, the enabled side tries to **sense the speed** the neighbor is using. If it can't sense it, it falls back to the slowest supported speed. For **duplex**, it cannot sense the neighbor's setting, so it uses a rule:\n\n- Speed of **10 or 100 Mbps** → **half duplex**.\n- Speed of **1000 Mbps or more** → **full duplex**.\n\nThis can cause a **duplex mismatch** (one side full, the other half), leading to collisions and poor performance. The fix: use autonegotiation on **all** devices, or configure both sides identically."
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "Interface counters and errors",
+      "order": 8,
+      "content": {
+        "body": "Cisco devices count errors per interface; view them with **`show interfaces`** (the counters are near the bottom of the output). The most important:\n\n- **Runts** — frames smaller than the minimum Ethernet frame size (64 bytes).\n- **Giants** — frames larger than the maximum frame size (1518 bytes).\n- **CRC** — frames that failed the CRC (cyclic redundancy check) performed by the FCS in the frame trailer.\n- **Frame** — frames with an incorrect or illegal format.\n- **Input errors** — a total that includes the counters above.\n- **Output errors** — frames the device tried to send but failed due to an error.\n\nThese counters exist on routers too, not just switches."
+      }
+    },
+    {
+      "type": "callout",
+      "title": "Exam tip",
+      "order": 9,
+      "content": {
+        "body": "Classic exam facts: half-duplex devices use **CSMA/CD**; a duplex mismatch causes **collisions** (not improved performance); **runts** are too-small frames, **giants** are too-large frames, **CRC** counts frames failing the FCS check; and **`show interfaces`** (not `show ip interface brief` or `show interfaces status`) is where you find error counters.",
+        "style": "exam_tip"
+      }
+    }
+  ],
+  "quiz": {
+    "questions": [
+      {
+        "order": 1,
+        "question": "There is a duplex mismatch between SW1's F0/1 and SW2's F0/1, which are connected. Autonegotiation is disabled. What will be the result?",
+        "explanation": "The half-duplex side cannot send and receive at the same time, but the full-duplex side is unaware of this and sends data whenever it wants, causing collisions. Performance worsens, and without autonegotiation neither side can sense the other's duplex setting.",
+        "options": [
+          { "label": "A", "text": "Improved performance", "is_correct": false },
+          { "label": "B", "text": "Collisions will occur", "is_correct": true },
+          { "label": "C", "text": "SW1 will sense SW2's duplex setting and adjust", "is_correct": false }
+        ]
+      },
+      {
+        "order": 2,
+        "question": "What is used on half-duplex interfaces to detect and avoid collisions?",
+        "explanation": "CSMA/CD (Carrier Sense Multiple Access with Collision Detection) describes how half-duplex devices listen before sending and how they react when a collision occurs.",
+        "options": [
+          { "label": "A", "text": "CSMA/CD", "is_correct": true },
+          { "label": "B", "text": "CSMA/CA", "is_correct": false },
+          { "label": "C", "text": "Autonegotiation", "is_correct": false },
+          { "label": "D", "text": "Duplex Auto", "is_correct": false }
+        ]
+      },
+      {
+        "order": 3,
+        "question": "Which command shows the various counters of errors detected on an interface?",
+        "explanation": "`show interfaces` displays error counters (runts, giants, CRC, input/output errors) at the bottom of its output. `show ip interface brief` and `show interfaces status` do not; `show interfaces errors` is not a real command.",
+        "options": [
+          { "label": "A", "text": "show interfaces", "is_correct": true },
+          { "label": "B", "text": "show ip interface brief", "is_correct": false },
+          { "label": "C", "text": "show interfaces status", "is_correct": false },
+          { "label": "D", "text": "show interfaces errors", "is_correct": false }
+        ]
+      },
+      {
+        "order": 4,
+        "question": "Which of the following are examples of errors that might occur on a network interface?",
+        "explanation": "Runts (too-small frames), giants (too-large frames), and CRC (frames failing the FCS check) are all real interface errors. Broadcasts are normal traffic, and 'shorts/longs/oversizes' and 'packets/bytes/inputs/outputs' are not error types.",
+        "options": [
+          { "label": "A", "text": "Runts, giants, broadcasts", "is_correct": false },
+          { "label": "B", "text": "Shorts, longs, oversizes", "is_correct": false },
+          { "label": "C", "text": "Packets, bytes, inputs, outputs", "is_correct": false },
+          { "label": "D", "text": "Runts, giants, CRC", "is_correct": true }
+        ]
+      },
+      {
+        "order": 5,
+        "question": "SW1 is trying to autonegotiate speed with SW2, but autonegotiation is disabled on SW2, which is fixed at 100 Mbps full duplex. What speed and duplex will SW1 use?",
+        "explanation": "SW1 can sense SW2's speed (100 Mbps) and match it. It cannot sense duplex, so it applies the rule: 10/100 Mbps → half duplex. The result is 100 Mbps half duplex, causing a duplex mismatch.",
+        "options": [
+          { "label": "A", "text": "Speed 100 Mbps, duplex full", "is_correct": false },
+          { "label": "B", "text": "Speed 100 Mbps, duplex half", "is_correct": true },
+          { "label": "C", "text": "Speed 10 Mbps, duplex full", "is_correct": false },
+          { "label": "D", "text": "Speed 10 Mbps, duplex half", "is_correct": false }
+        ]
+      }
+    ]
+  }
+}
