@@ -1,0 +1,477 @@
+{
+  "slug": "interfaces-and-cables",
+  "title": "Interfaces and Cables",
+  "summary": "How devices are connected: copper UTP cabling, RJ-45 connectors, pin layouts, straight-through vs crossover, fiber optics, and the Ethernet standards that define them.",
+  "source_ref": "transcript_2.txt",
+  "order": 2,
+  "sections": [
+    {
+      "type": "explanation",
+      "title": "Interfaces, ports, and why standards matter",
+      "order": 1,
+      "content": {
+        "body": "An **interface** (also called a **port**) is where a device connects to the network. Switches typically have many interfaces (24 or more) to connect end hosts.\n\nAn **RJ-45** port (RJ = Registered Jack) is the familiar wired-network socket on PCs and switches, and the RJ-45 connector is the plug at the end of a copper Ethernet cable.\n\n**Why standards exist:** two people who speak different languages can't talk. Network protocols serve that same role for devices — they are an agreed-upon system of communicating. Without industry standards for connector shape, speeds, and protocols (both physical, like cables, and logical, like IP), devices from different vendors couldn't connect."
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "Bits, bytes, and speeds",
+      "order": 2,
+      "content": {
+        "body": "A **bit** is a 0 or a 1 — everything in computing is ultimately a series of bits. On a copper cable, variations in the electrical signal are interpreted by the receiver as 0s and 1s. **8 bits = 1 byte.**\n\n**Network speed is measured in bits per second** (kilobits, megabits, gigabits per second), because data travels along a wire one bit at a time — never one byte at a time.\n\nData stored on a hard drive, however, is measured in **bytes**. A gigabyte is 8 times larger than a gigabit.\n\n1 kilobit = 1,000 bits · 1 megabit = 1 million bits · 1 gigabit = 1 billion bits · 1 terabit = 1 trillion bits."
+      }
+    },
+    {
+      "type": "table",
+      "title": "Copper Ethernet standards (IEEE 802.3)",
+      "order": 3,
+      "content": {
+        "headers": [
+          "Speed",
+          "Common name",
+          "IEEE standard",
+          "Informal name",
+          "Max length",
+          "Pairs used"
+        ],
+        "rows": [
+          [
+            "10 Mbps",
+            "Ethernet",
+            "IEEE 802.3i",
+            "10BASE-T",
+            "100 m",
+            "2 pairs (4 wires)"
+          ],
+          [
+            "100 Mbps",
+            "Fast Ethernet",
+            "IEEE 802.3u",
+            "100BASE-T",
+            "100 m",
+            "2 pairs (4 wires)"
+          ],
+          [
+            "1 Gbps",
+            "Gigabit Ethernet",
+            "IEEE 802.3ab",
+            "1000BASE-T",
+            "100 m",
+            "4 pairs (8 wires)"
+          ],
+          [
+            "10 Gbps",
+            "10 Gigabit Ethernet",
+            "IEEE 802.3an",
+            "10GBASE-T",
+            "100 m",
+            "4 pairs (8 wires)"
+          ]
+        ]
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "UTP cables and pin usage",
+      "order": 4,
+      "content": {
+        "body": "Ethernet copper cables are **UTP** — **Unshielded Twisted Pair**. 'Unshielded' means the wires have no metallic shield (making them vulnerable to electrical interference); the **twisted pairs** help protect against **electromagnetic interference (EMI)**.\n\nA UTP cable has **4 pairs** (8 wires total), and the RJ-45 connector has 8 pins. However, not every standard uses all 8 wires:\n\n- **10BASE-T / 100BASE-T**: use 2 pairs — pins **1-2** and **3-6**\n- **1000BASE-T / 10GBASE-T**: use all 4 pairs — pins **1-2**, **3-6**, **4-5**, **7-8**\n\nA PC or router **transmits on pins 1-2** (Tx) and **receives on pins 3-6** (Rx). A switch is the opposite: it **receives on pins 1-2** and **transmits on pins 3-6**. Because each device uses separate wire pairs to send and receive, **full-duplex** transmission is possible — both devices send data at the same time with no collisions."
+      }
+    },
+    {
+      "type": "table",
+      "title": "Tx/Rx pin usage by device",
+      "order": 5,
+      "content": {
+        "headers": [
+          "Device",
+          "Transmits on",
+          "Receives on"
+        ],
+        "rows": [
+          [
+            "Router",
+            "Pins 1, 2",
+            "Pins 3, 6"
+          ],
+          [
+            "Firewall",
+            "Pins 1, 2",
+            "Pins 3, 6"
+          ],
+          [
+            "PC",
+            "Pins 1, 2",
+            "Pins 3, 6"
+          ],
+          [
+            "Switch",
+            "Pins 3, 6",
+            "Pins 1, 2"
+          ]
+        ]
+      }
+    },
+    {
+      "type": "animation",
+      "title": "Straight-through cables",
+      "order": 6,
+      "content": {
+        "diagram_type": "topology",
+        "nodes": [
+          {
+            "id": "pc1",
+            "label": "PC1 (Tx 1-2 / Rx 3-6)",
+            "icon": "pc",
+            "x": 140,
+            "y": 150
+          },
+          {
+            "id": "sw1",
+            "label": "SW1 (Rx 1-2 / Tx 3-6)",
+            "icon": "switch",
+            "x": 520,
+            "y": 150
+          }
+        ],
+        "links": [
+          {
+            "from": "pc1",
+            "to": "sw1",
+            "kind": "ethernet"
+          }
+        ],
+        "steps": [
+          {
+            "narration": "A straight-through cable connects pin 1 to pin 1, pin 2 to pin 2, pin 3 to pin 3, etc. PC transmits on pins 1-2, and the switch receives on pins 1-2 — they complement each other.",
+            "animate": {
+              "highlight": [
+                "pc1",
+                "sw1"
+              ]
+            }
+          },
+          {
+            "narration": "The switch transmits on pins 3-6, and the PC receives on pins 3-6. Full-duplex communication works with no problem.",
+            "animate": {
+              "packet_from": "pc1",
+              "packet_to": "sw1",
+              "label": "Tx 1-2"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "animation",
+      "title": "Crossover cables",
+      "order": 7,
+      "content": {
+        "diagram_type": "topology",
+        "nodes": [
+          {
+            "id": "r1",
+            "label": "Router 1 (Tx 1-2)",
+            "icon": "router",
+            "x": 140,
+            "y": 150
+          },
+          {
+            "id": "r2",
+            "label": "Router 2 (Tx 1-2)",
+            "icon": "router",
+            "x": 520,
+            "y": 150
+          }
+        ],
+        "links": [
+          {
+            "from": "r1",
+            "to": "r2",
+            "kind": "crossover"
+          }
+        ],
+        "steps": [
+          {
+            "narration": "Two routers both transmit on pins 1-2 and receive on pins 3-6. With a straight-through cable, the left router transmits on pins 1-2, but the right router isn't prepared to receive there — communication fails.",
+            "animate": {
+              "packet_from": "r1",
+              "packet_to": "r2",
+              "label": "Tx 1-2 (fails)",
+              "status": "fail"
+            }
+          },
+          {
+            "narration": "A crossover cable reverses the pairs: pin 1 connects to pin 3, pin 2 to pin 6. Now the transmit pins on one side connect to the receive pins on the other.",
+            "animate": {
+              "highlight": [
+                "r1",
+                "r2"
+              ]
+            }
+          },
+          {
+            "narration": "With the pairs crossed over, both routers can send and receive data normally.",
+            "animate": {
+              "packet_from": "r1",
+              "packet_to": "r2",
+              "label": "Tx 1-2 → Rx 3-6",
+              "status": "ok"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "Auto MDI-X",
+      "order": 8,
+      "content": {
+        "body": "Most modern networking devices include **Auto MDI-X**, which automatically detects which pins the neighbor is transmitting on and adjusts its own Tx/Rx pins to match.\n\nWith Auto MDI-X, connecting two switches (or two routers, or two PCs) with a *straight-through* cable works fine — the devices self-correct. Unless you're working with quite old equipment, you don't need to worry about straight-through vs crossover cables in practice, but the concept is fair game for the exam."
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "Fiber optic cables and SFP transceivers",
+      "order": 9,
+      "content": {
+        "body": "Many switches and routers have **SFP** (**small form-factor pluggable**) ports. You insert an SFP transceiver into the port, and connect a **fiber optic cable** to it. Instead of electrical signals over copper, fiber sends **light over glass fibers**.\n\nA fiber cable has **two connectors on each end** — one to transmit and one to receive — because fiber uses separate physical cables for each direction.\n\n**Fiber cable structure**, from center to outer layer:\n1. **Core** — the glass fiber that light travels down\n2. **Cladding** — reflects light back into the core\n3. **Buffer** — protects the fiber from breaking\n4. **Outer jacket**"
+      }
+    },
+    {
+      "type": "diagram",
+      "title": "Single-mode vs multimode fiber",
+      "order": 10,
+      "content": {
+        "diagram_type": "fiber_comparison",
+        "modes": [
+          {
+            "id": "multimode",
+            "label": "Multimode",
+            "core_width": 48,
+            "description": "Wider core, multiple light modes enter at various angles, LED transmitters. Cheaper; shorter distances than single-mode."
+          },
+          {
+            "id": "singlemode",
+            "label": "Single-mode",
+            "core_width": 14,
+            "description": "Narrower core, light enters at a single angle, laser transmitters. More expensive; longest distances."
+          }
+        ]
+      }
+    },
+    {
+      "type": "table",
+      "title": "Fiber optic standards",
+      "order": 11,
+      "content": {
+        "headers": [
+          "Standard",
+          "IEEE standard",
+          "Speed",
+          "Fiber type",
+          "Max length"
+        ],
+        "rows": [
+          [
+            "1000BASE-LX",
+            "802.3z",
+            "1 Gbps",
+            "Multimode",
+            "550 m"
+          ],
+          [
+            "1000BASE-LX",
+            "802.3z",
+            "1 Gbps",
+            "Single-mode",
+            "5 km"
+          ],
+          [
+            "10GBASE-SR",
+            "802.3ae",
+            "10 Gbps",
+            "Multimode",
+            "400 m"
+          ],
+          [
+            "10GBASE-LR",
+            "802.3ae",
+            "10 Gbps",
+            "Single-mode",
+            "10 km"
+          ],
+          [
+            "10GBASE-ER",
+            "802.3ae",
+            "10 Gbps",
+            "Single-mode",
+            "30 km"
+          ]
+        ]
+      }
+    },
+    {
+      "type": "table",
+      "title": "UTP vs fiber optic cabling",
+      "order": 12,
+      "content": {
+        "headers": [
+          "Criterion",
+          "UTP",
+          "Fiber optic"
+        ],
+        "rows": [
+          [
+            "Cost",
+            "Cheaper",
+            "More expensive"
+          ],
+          [
+            "Max distance",
+            "~100 m",
+            "Much longer (km)"
+          ],
+          [
+            "Ports",
+            "Cheaper RJ-45",
+            "More expensive SFP (single-mode more than multimode)"
+          ],
+          [
+            "EMI",
+            "Vulnerable (twist helps)",
+            "Immune — light, not electricity"
+          ],
+          [
+            "Signal leakage",
+            "Emits a faint signal (security risk)",
+            "No signal outside the cable"
+          ]
+        ]
+      }
+    },
+    {
+      "type": "callout",
+      "title": "Exam tip",
+      "order": 13,
+      "content": {
+        "body": "When picking a cable for a distance question: **under 100 m on the same floor** → UTP. **150 m between buildings** → multimode fiber (supports it, cheaper than single-mode). **3 km between offices** → single-mode fiber (multimode doesn't reach). Remember the cost trade-off: UTP is cheapest but shortest, single-mode is priciest but longest, multimode sits in between.",
+        "style": "exam_tip"
+      }
+    }
+  ],
+  "quiz": {
+    "questions": [
+      {
+        "order": 1,
+        "question": "You connect two old routers together with a UTP cable, however data is not successfully sent and received between them. What could be the problem?",
+        "explanation": "Both routers transmit on pins 1-2, so a crossover cable is needed to connect the transmit pins on one side to the receive pins (3-6) on the other. Modern Auto MDI-X would fix this, but the old routers may not support it. A crossover cable would likely fix the issue.",
+        "options": [
+          {
+            "label": "A",
+            "text": "They are connected with a straight-through cable",
+            "is_correct": true
+          },
+          {
+            "label": "B",
+            "text": "They are connected with a crossover cable",
+            "is_correct": false
+          },
+          {
+            "label": "C",
+            "text": "They are operating in Auto MDI-X mode",
+            "is_correct": false
+          }
+        ]
+      },
+      {
+        "order": 2,
+        "question": "Your company wants to connect switches in two separate buildings that are about 150 meters apart, keeping costs down if possible. What kind of cable should they use?",
+        "explanation": "UTP keeps costs down but doesn't support distances over 100 meters. Single-mode fiber supports much longer distances but is more expensive than multimode. Multimode fiber supports over 150 meters and is cheaper than single-mode — the best answer.",
+        "options": [
+          {
+            "label": "A",
+            "text": "UTP",
+            "is_correct": false
+          },
+          {
+            "label": "B",
+            "text": "Single-mode fiber",
+            "is_correct": false
+          },
+          {
+            "label": "C",
+            "text": "Multimode fiber",
+            "is_correct": true
+          }
+        ]
+      },
+      {
+        "order": 3,
+        "question": "Your company wants to connect two offices that are about 3 kilometers apart, keeping costs down if possible. Which kind of cable should they use?",
+        "explanation": "UTP doesn't support 3 km. Multimode fiber is cheaper than single-mode but also doesn't support 3 km. Many single-mode fiber standards support much longer than 3 km, so although it's more expensive, it is necessary here.",
+        "options": [
+          {
+            "label": "A",
+            "text": "UTP",
+            "is_correct": false
+          },
+          {
+            "label": "B",
+            "text": "Single-mode fiber",
+            "is_correct": true
+          },
+          {
+            "label": "C",
+            "text": "Multimode fiber",
+            "is_correct": false
+          }
+        ]
+      },
+      {
+        "order": 4,
+        "question": "A switch has Auto MDI-X enabled on its network interfaces. What would happen if you connect it to an identical switch with a straight-through cable?",
+        "explanation": "The ports are Auto MDI-X enabled, so they will operate normally regardless of whether a straight-through or crossover cable is used. They would not operate at a reduced speed, and they would not be unable to communicate.",
+        "options": [
+          {
+            "label": "A",
+            "text": "They would operate normally",
+            "is_correct": true
+          },
+          {
+            "label": "B",
+            "text": "They would operate at a reduced speed",
+            "is_correct": false
+          },
+          {
+            "label": "C",
+            "text": "They would be unable to communicate",
+            "is_correct": false
+          }
+        ]
+      },
+      {
+        "order": 5,
+        "question": "Your company needs to connect many end hosts to a switch in a wiring cabinet on the same office floor as the hosts. What kind of cable should they use?",
+        "explanation": "Most hosts can't connect via fiber, and most switches don't have enough SFP interfaces for many hosts. UTP is the standard for wired connections to switches — hosts have an RJ-45 port on their NIC and switches have many RJ-45 ports.",
+        "options": [
+          {
+            "label": "A",
+            "text": "UTP",
+            "is_correct": true
+          },
+          {
+            "label": "B",
+            "text": "Single-mode fiber",
+            "is_correct": false
+          },
+          {
+            "label": "C",
+            "text": "Multimode fiber",
+            "is_correct": false
+          }
+        ]
+      }
+    ]
+  }
+}

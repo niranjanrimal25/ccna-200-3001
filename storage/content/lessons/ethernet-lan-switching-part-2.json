@@ -1,0 +1,311 @@
+{
+  "slug": "ethernet-lan-switching-part-2",
+  "title": "Ethernet LAN Switching (Part 2)",
+  "summary": "Ethernet frame sizing and padding, ARP, ping/ICMP, and managing the switch MAC address table.",
+  "source_ref": "transcript_6.txt",
+  "order": 6,
+  "sections": [
+    {
+      "type": "explanation",
+      "title": "Ethernet frame sizing and padding",
+      "order": 1,
+      "content": {
+        "body": "The **preamble + SFD** is usually not considered part of the Ethernet header (though it's sent with every frame). So the header is just Destination + Source + Type = **18 bytes** (6 + 6 + 2, plus the 4-byte FCS trailer = 18 total header + trailer).\n\nEthernet has a **minimum frame size of 64 bytes** (not including preamble/SFD). With 18 bytes of header + trailer, the **minimum payload is 46 bytes**.\n\nIf the payload is less than 46 bytes, **padding bytes are added** (all zeroes). For example, a 34-byte packet gets 12 bytes of padding; a 36-byte ping gets 10 bytes."
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "ARP — Address Resolution Protocol",
+      "order": 2,
+      "content": {
+        "body": "When you send data to another computer you enter an **IP address**, not a MAC address. But switches are Layer 2 devices and work with MAC addresses. So a host that knows the destination's Layer 3 address must discover its **Layer 2 (MAC) address** first.\n\n**ARP** (Address Resolution Protocol) is used to discover the MAC address of a known IP address. It uses two messages:\n\n- **ARP request** — a **broadcast** Ethernet frame (destination MAC `FFFF.FFFF.FFFF`) asking 'who has this IP address?'. Sent to all hosts on the local network.\n- **ARP reply** — a **unicast** frame sent back to the requesting host with its MAC address.\n\nOnce PC1 receives the reply, it adds an entry to its **ARP table** (IP → MAC mapping). The sender's MAC was already in the request's source field, so the receiver can reply directly without broadcasting."
+      }
+    },
+    {
+      "type": "animation",
+      "title": "The ARP process",
+      "order": 3,
+      "content": {
+        "diagram_type": "topology",
+        "nodes": [
+          {
+            "id": "pc1",
+            "label": "PC1\n192.168.1.1",
+            "icon": "pc",
+            "x": 90,
+            "y": 150
+          },
+          {
+            "id": "sw1",
+            "label": "SW1",
+            "icon": "switch",
+            "x": 260,
+            "y": 150
+          },
+          {
+            "id": "pc2",
+            "label": "PC2\n192.168.1.2",
+            "icon": "pc",
+            "x": 470,
+            "y": 60
+          },
+          {
+            "id": "pc3",
+            "label": "PC3\n192.168.1.3",
+            "icon": "pc",
+            "x": 470,
+            "y": 240
+          }
+        ],
+        "links": [
+          {
+            "from": "pc1",
+            "to": "sw1",
+            "kind": "ethernet"
+          },
+          {
+            "from": "sw1",
+            "to": "pc2",
+            "kind": "ethernet"
+          },
+          {
+            "from": "sw1",
+            "to": "pc3",
+            "kind": "ethernet"
+          }
+        ],
+        "steps": [
+          {
+            "narration": "PC1 wants to send data to 192.168.1.3 (PC3), but doesn't know PC3's MAC address. It sends an ARP request: 'Who has 192.168.1.3? Tell 192.168.1.1.'",
+            "animate": {
+              "packet_from": "pc1",
+              "packet_to": "sw1",
+              "label": "ARP request (broadcast)"
+            }
+          },
+          {
+            "narration": "SW1 learns PC1's MAC on its receiving interface, then broadcasts the ARP request out of all other interfaces because the destination MAC is FFFF.FFFF.FFFF.",
+            "animate": {
+              "packet_from": "sw1",
+              "packet_to": "pc3",
+              "label": "broadcast",
+              "flood": true
+            }
+          },
+          {
+            "narration": "PC2 ignores the request (its IP doesn't match). PC3's IP matches, so it sends an ARP reply directly to PC1 with its MAC address.",
+            "animate": {
+              "packet_from": "pc3",
+              "packet_to": "pc1",
+              "label": "ARP reply (unicast)"
+            }
+          },
+          {
+            "narration": "PC1 adds PC3's IP-to-MAC mapping to its ARP table, then sends the original data frame using PC3's MAC address.",
+            "animate": {
+              "packet_from": "pc1",
+              "packet_to": "pc3",
+              "label": "data"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "The ARP table",
+      "order": 4,
+      "content": {
+        "body": "An **ARP table** stores IP-to-MAC associations. On Windows, macOS, or Linux use `arp -a`; on Cisco IOS, use `show arp` (from privileged EXEC mode).\n\n- Entries typed as **static** are default entries, not learned.\n- Entries typed as **dynamic** were learned by sending an ARP request and receiving an ARP reply."
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "Ping and ICMP",
+      "order": 5,
+      "content": {
+        "body": "**Ping** is a network utility used to **test reachability** between two hosts, measuring round-trip time. Like ARP, it uses two messages: **ICMP echo request** and **ICMP echo reply**. Unlike ARP, the echo request is **unicast** — it's sent to a specific host, so the sending host must already know the destination MAC (hence ARP runs first).\n\nCommand: `ping 192.168.1.3`. In Cisco IOS, ping sends **5 echo requests by default** (100 bytes each). A period `.` means a failed ping; `!` means success. The first ping often fails because ARP must complete first — after that, the pings succeed."
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "The switch MAC address table",
+      "order": 6,
+      "content": {
+        "body": "View a Cisco switch's MAC address table with `show mac address-table`. The columns are **VLAN** (default 1), **MAC address**, **type** (dynamic — learned automatically), and **ports**.\n\nDynamic entries are removed after **5 minutes of inactivity** (aging). You can also clear entries manually:\n\n- `clear mac address-table dynamic` — clear all dynamic entries\n- `clear mac address-table dynamic address <mac>` — clear a specific MAC\n- `clear mac address-table dynamic interface <interface>` — clear all entries for a specific interface"
+      }
+    },
+    {
+      "type": "table",
+      "title": "Frame forwarding summary",
+      "order": 7,
+      "content": {
+        "headers": [
+          "Frame type",
+          "Destination MAC",
+          "Switch action"
+        ],
+        "rows": [
+          [
+            "Broadcast",
+            "FFFF.FFFF.FFFF",
+            "Flood out all interfaces except the one received on"
+          ],
+          [
+            "Unknown unicast",
+            "Specific MAC, not in table",
+            "Flood out all interfaces except the one received on"
+          ],
+          [
+            "Known unicast",
+            "Specific MAC, in table",
+            "Forward only out the interface in the table"
+          ]
+        ]
+      }
+    },
+    {
+      "type": "callout",
+      "title": "Exam tips",
+      "order": 8,
+      "content": {
+        "body": "Remember: minimum Ethernet frame = **64 bytes**, minimum payload = **46 bytes**, padding (all zeroes) fills the gap. ARP request = broadcast, ARP reply = unicast. Ethernet types: IPv4 = **0x0800**, IPv6 = **0x86DD**, ARP = **0x0806**.",
+        "style": "exam_tip"
+      }
+    }
+  ],
+  "quiz": {
+    "questions": [
+      {
+        "order": 1,
+        "question": "You send a 36-byte ping to another computer and perform a packet capture. You notice a long series of bytes of 00000000 at the end of the Ethernet payload. How can you explain these zeroes?",
+        "explanation": "Pings aren't a series of zeroes, and the Ethernet FCS is the frame check sequence, not a run of zeroes. The ping was 36 bytes, but the minimum Ethernet payload is 46 bytes, so padding bytes must be added to meet the minimum.",
+        "options": [
+          {
+            "label": "A",
+            "text": "Pings are a series of zeroes",
+            "is_correct": false
+          },
+          {
+            "label": "B",
+            "text": "They are padding bytes",
+            "is_correct": true
+          },
+          {
+            "label": "C",
+            "text": "They are the Ethernet FCS",
+            "is_correct": false
+          }
+        ]
+      },
+      {
+        "order": 2,
+        "question": "Which of these messages is sent to all hosts on the local network?",
+        "explanation": "The ARP reply is unicast, sent to the host that sent the request. ICMP echo requests/replies (used by ping) are unicast to a specific host. The ARP request must be broadcast because the Layer 2 address of the target isn't yet known.",
+        "options": [
+          {
+            "label": "A",
+            "text": "ARP request",
+            "is_correct": true
+          },
+          {
+            "label": "B",
+            "text": "ARP reply",
+            "is_correct": false
+          },
+          {
+            "label": "C",
+            "text": "ICMP echo request",
+            "is_correct": false
+          },
+          {
+            "label": "D",
+            "text": "ICMP echo reply",
+            "is_correct": false
+          }
+        ]
+      },
+      {
+        "order": 3,
+        "question": "Which fields are present in the output of the show mac address-table command on a Cisco switch?",
+        "explanation": "The output has four fields: VLAN, MAC address, type, and ports. (Internet address, physical address, and type is the output of `arp -a` on a PC — the ARP table, not the switch's MAC address table.)",
+        "options": [
+          {
+            "label": "A",
+            "text": "MAC address and ports",
+            "is_correct": false
+          },
+          {
+            "label": "B",
+            "text": "VLAN, MAC address, and ports",
+            "is_correct": false
+          },
+          {
+            "label": "C",
+            "text": "VLAN, MAC address, type, and ports",
+            "is_correct": true
+          },
+          {
+            "label": "D",
+            "text": "Internet address, physical address, and type",
+            "is_correct": false
+          }
+        ]
+      },
+      {
+        "order": 4,
+        "question": "Which types of frames does a switch send out of all interfaces, except the one the frame was received on?",
+        "explanation": "Known unicast frames go to a single host — since the destination is in the table, there's no need to flood. Broadcast frames (destination FFFF.FFFF.FFFF) go to all hosts, and unknown unicast frames must be flooded because the destination isn't in the table.",
+        "options": [
+          {
+            "label": "A",
+            "text": "Broadcast and unknown unicast",
+            "is_correct": true
+          },
+          {
+            "label": "B",
+            "text": "Broadcast and known unicast",
+            "is_correct": false
+          },
+          {
+            "label": "C",
+            "text": "Known unicast and unknown unicast",
+            "is_correct": false
+          },
+          {
+            "label": "D",
+            "text": "Broadcast, unknown unicast, and known unicast",
+            "is_correct": false
+          }
+        ]
+      },
+      {
+        "order": 5,
+        "question": "Which command is used on a Cisco switch to clear all dynamic MAC addresses on a specific interface from the MAC address table?",
+        "explanation": "The correct command is 'clear mac address-table dynamic interface interface-id'. Practice labs in Packet Tracer are a great way to remember these commands.",
+        "options": [
+          {
+            "label": "A",
+            "text": "clear mac address-table interface interface-id",
+            "is_correct": false
+          },
+          {
+            "label": "B",
+            "text": "clear mac-address-table dynamic interface interface-id",
+            "is_correct": false
+          },
+          {
+            "label": "C",
+            "text": "clear mac-address table dynamic interface interface-id",
+            "is_correct": false
+          },
+          {
+            "label": "D",
+            "text": "clear mac address-table dynamic interface interface-id",
+            "is_correct": true
+          }
+        ]
+      }
+    ]
+  }
+}

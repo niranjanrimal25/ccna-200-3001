@@ -1,0 +1,371 @@
+[0:01]
+Welcome to Jeremy's IT Lab. This is a free complete course for the CCNA 2000-301. If you like these videos, please subscribe to follow along with the series. Also, please like and leave a comment and share the video to help spread this free series of videos.
+
+[0:18]
+Thanks for your help. Also, remember to download and use the Anki flashcards with the link in the description, which will help you very much in remembering what you have learned. Let's get started.
+
+[0:30]
+This is the seventh lecture in the series. In the past couple of videos, we talked about Ethernet LAN switching. For example, within this small network of PCs attached to a switch. In this video, however, we'll start to expand our horizon and take a look at how traffic is forwarded not within a LAN, but between different LANs. Basically, we are going up the OSI model from layer 2, the data link layer, to layer three, the network layer. Let's do a quick review of layer 3.
+
+[1:03]
+This slide is from day 3's video on the OSI model. Let's review some characteristics of layer 3, the network layer. The network layer provides connectivity between end hosts on different networks outside of the local area network.
+
+[1:19]
+Layer 3 provides logical addressing, specifically IP addresses. Where layer 2 uses MAC addresses which are assigned to the device when it is made. IP addresses are logical addresses you assign when you configure the device.
+
+[1:36]
+Layer 3 provides path selection between source and destination. Over larger, more complex networks, for example, the internet, there can be many different possible paths to a destination.
+
+[1:49]
+Selecting the best path to the destination is part of layer 3's functionality. Routers operate at layer 3. So far in this course, we haven't talked much about routers. That's going to change over these next few videos, however, as we talk about layer 3. In this video, our focus will be specifically on the logical layer 3 addresses, IP addresses.
+
+[2:14]
+You may recognize this network from the previous videos on Ethernet LAN switching. These PCs are all connected by switches, so they are part of the same network. These layer 2 devices, switches, do not separate different networks. They connect and expand networks. I could connect two more switches, each with multiple PCs connected to them, to this network, and it would still be one network, one LAN.
+
+[2:42]
+Because of this, the PCs all have IP addresses in the same layer 3 network, 1 192.168.1.0/24. PC1's IP address is 1 192.168.1.1. PC2's IP address is 1 192.168.1.2.
+
+[3:02]
+PC3's IP address is 1 192.168.1.3 and PC4's IP address is 1 192.168.1.4. If PC1 sends a broadcast frame with a destination MAC address of all FS after switch one receives the frame, it will broadcast it out all of its interfaces except the one it was received on.
+
+[3:26]
+So that means G01 and G02. Switch 2 will then do the same with the frame, broadcasting it out of all of its interfaces except the one it was received on. So that means G00 and G01.
+
+[3:42]
+As you can see, all other PCs in the network have received the frame. Now what if I put a router between switch one and switch two? Now I've put R1 in between the two switches. Now instead of one network, the PCs have been split into two networks.
+
+[4:01]
+Let's say switch one, PC1 and PC2 are still on the 1 192.168.1.0/24 network. But now switch 2, PC3 and PC4 are on the 1 192.168.2.0/24 network with PC3 being 1 192.168.2.1 and PC4 being 1 192.168.2.2.
+
+[4:24]
+2. You may have noticed that in these network IP addresses, the first three groups of numbers 192.168.1 and 192.168.2 represent the network itself. And only this last zero changes to represent the end hosts on the network, the PCs.
+
+[4:46]
+You may also have wondered what these /24s mean at the end. Actually, they are used to tell what part of the address represents the network and which part represents the end hosts, the PCs.
+
+[5:00]
+/24 means that the first three groups of numbers represent the network. In this video, I'm going to go in depth about how these IP addresses work. But first, there's one more thing missing in this network diagram.
+
+[5:14]
+The router needs an IP address. Actually, not just one IP address. It needs an IP address for each network it is connected to. So let's give R1's G00 interface an IP address of 192.168.1.254 and its G01 interface an IP address of 1 192.168.2.254.
+
+[5:39]
+This time if R1 sends a frame to the broadcast MAC address of all FS, switch one will receive the frame and it will forward it out of all interfaces except the one the frame was received on. So it sends the frame out of G01 and G02 and PC2 and R1 receive the frame.
+
+[6:00]
+However, that's where it ends. The broadcast is limited to the local network. it doesn't cross the router and go to switch 2, PC3, and PC4. I'll go more into detail about routing and layer 3 forwarding, but as I said, this video will focus on IP addresses themselves. So, let's take a look.
+
+[6:21]
+This is a chart from Wikipedia showing the IP version 4 header. IP or internet protocol is the primary layer 3 protocol in use today and version 4 is the version in use in most networks.
+
+[6:35]
+As you can see, there are a lot of different fields in the IPv4 header, more than in the Ethernet header. We'll talk more about the IPv4 header in another video. So, today, let's look at these two fields, the source IP address and destination IP address.
+
+[6:52]
+These fields are both 32 bits in length. As you can see, they stretch from 0 to 31 in this chart. So IP addresses are 32 bits or four bytes in length.
+
+[7:07]
+Let's take a look at this IPv4 address 192.168.1.254. An IPv4 address is 32 bits long. So each of these four groups of numbers represents 8 bits. 1 192 represents 8 bits.
+
+[7:24]
+168 represents eight bits. 1 represents eight bits. and 254 also represents eight bits. If we write these eight bits out as ones and zeros, 1 192 is 1 1 0 0 0 168 is 1 0 1 0 1 0 0 0 1 is 0 0 0 1 and 254 is 1 1 1 1 0.
+
+[7:58]
+This way of writing numbers using just zeros and ones is called binary. However, binary is difficult to read and understand for us humans. So, IP addresses are written using what's called dotted decimal because there are four decimal numbers 192 168 1 and 254 separated by dots or periods.
+
+[8:21]
+Let's spend some time learning about binary which is important to understand IPv4 addresses. Before looking at binary, let's review decimal and hexadeimal.
+
+[8:32]
+In decimal, also known as base 10, each digit increases by a factor of 10. For example, this number 3,294, consists of one unit of 4, 9 units of 10, two units of 100, and three units of 1,000.
+
+[8:55]
+Notice that they increase by a factor of 10. 1 * 10 is 10. 10 * 10 is 100. 100 * 10 is 1,000. And next would be 1,000 * 10, which is 10,000. Now, let's look at this number in hexadimal.
+
+[9:13]
+Decimal 3,294 is written in hexadeimal as cde. How does that work? Well, the first digit represents ones. So, this is e * 1. And e is equal to 14. So, that equals 14.
+
+[9:31]
+The next digit increases by a factor of 16. And 1 * 16 is 16, of course. So, this is d * 16 and d in hexadimal is equal to 13 making this equal to decimal 208.
+
+[9:48]
+Finally, the next digit increases by a factor of 16. Once again and 16 * 16 is equal to 256. So this is C * 256. In hexadimal C is equal to 12. So this is equal to decimal 372.
+
+[10:09]
+If you add those numbers up, you get 3,294. So that's a quick review of decimal and hexadeimal. Now let's look at binary. So looking back at this IP address 1 192.168.1.254 let's look at how each of these numbers is written in binary starting with 1 192 which is 1 1 0 0 0.
+
+[10:37]
+Binary is base 2 meaning each digit increases by a factor of two. It doubles. So that means that this 1 1 0 0 0 really is 0 1's. Then 1 * 2 is 2. So 0 twos. Then 2 * 2 is four. So 0 fours.
+
+[10:58]
+Then 4 * 2 is 8. So 0 8. Then 8 * 2 is 16. So 0 16s. 16 * 2 is 32. So 0 32s. 32 * 2 is 64. So 164 and 64 * 2 is 128. So 1 128.
+
+[11:23]
+If you add 128 and 64 together, you get 192. Next, let's look at how 168 is converted to binary, which is 1 0 1 0 1 0 0. So 1 0 1 0 1 0 0 0 in binary means 1 unit of 128, one unit of 32 and one unit of 8.
+
+[11:51]
+128 + 32 + 8 is equal to 168. Next up is 1, which is the decimal representation of binary 0000001. This is pretty simple. 1 is equal to one unit of 1.
+
+[12:10]
+Let's go to the last eight bits of the IP address. 254 is equal to 1 1 1 1 1 1 0 in binary. Let's take a look. Binary 1 1 1 1 1 1 0 represents one unit of 128, one unit of 64, one unit of 32, one unit of 16, one unit of 8, 1 unit of 4, and one unit of 2. Add those all together and you get 254.
+
+[12:46]
+So hopefully you have an idea of how binary works. Now, before we do some practice converting between decimal and binary, I want to teach you one more term.
+
+[12:56]
+You'll often hear each of these 8 bit groups referred to as octets. Now, let's get some practice converting binary octets to decimal. Here's an example. We have a binary octet of 1 0 0 1 1.
+
+[13:14]
+How can we go about converting this to decimal? First, I recommend writing the value of each binary digit over the binary numbers. You can start with one on the right and then multiply by two for each digit as you move to the left. Or if you prefer, start by writing 128 over the digit on the left and divide by two as you move to the right.
+
+[13:38]
+Once you have written these values, simply add up the value of each one and you get the answer. 128 + 8 + 4 + 2 + 1 = 143. So binary 1 0 0 1 1 1 is equal to decimal 143.
+
+[13:59]
+Let's do another example. Now we have binary 01 1 1 0 1 1 0. Once again write the value of each binary digit over the octet. So we have one unit of 64, one unit of 32, one unit of 16, one unit of 4, and one unit of two. Add each of those numbers together, and you get the answer, which is 118.
+
+[14:30]
+So binary 0 1 1 0 1 1 0 is equal to decimal 118. What is binary 1 1 1 0 1 1 1 0 0 in decimal? This time I won't display the value of each binary digit above. Write down the number yourself or try to do the calculation in your head.
+
+[14:53]
+Pause the video to figure out the answer. Got it? 128 + 64 + 32 + 8 + 4 = 236. Okay, we'll do some more binary to decimal conversion practice in the quiz for today's video. Let's move on.
+
+[15:17]
+Now, let's try converting in the opposite direction from decimal to binary. We have the decimal number 221. How can we go about converting it to binary?
+
+[15:29]
+I recommend writing out the values of each bit in a binary octet like this. Then starting from 128, try to subtract each number from the decimal number you're trying to convert.
+
+[15:42]
+As you can see, we can subtract 128 from 221. So, write a 1 under 128. Now, we've got 93 left. Can we subtract 64 from 93? Yes, we can. and we're left with 28. So, write a 1 under 64.
+
+[16:02]
+Next, can we subtract 32 from 28? Well, we can, but we'd end up with a negative number. So, for our purposes, no, we can't. So, write a zero under 32.
+
+[16:16]
+Next, 16 is smaller than 28. So, let's subtract 16 from 28. We are left with 12 and also write a 1 under 16. Next is 8 and it's smaller than 12. So let's subtract 8 from 12 and write a 1 under 8.
+
+[16:35]
+Next subtract four from 4 and write a one under four. We're left with zero. So we can't subtract any further. That means we can just write zero under two and one. So there's our answer. Decimal 221 is equivalent to binary 1 1 0 1 1 1 0 0.
+
+[17:01]
+Let's do another example. Let's convert decimal 127 to binary. Try to figure it out yourself first. Pause the video to find the answer. Okay, hopefully you found the answer.
+
+[17:18]
+Let's check. We can't subtract 128 from 127. So, write a zero under 128. We can subtract 64 from 127, which leaves 63. And I'll write a 1 under 64. Then, subtract 32 from 63 and write a 1 under 32. And we're left with 31.
+
+[17:43]
+Next, subtract 16 from 31. 15 remains and write a one under 16. Subtract eight from 15 and write a one under eight. You're left with seven. So subtract four from seven, you get three and write a one under four.
+
+[18:04]
+Subtract two from three and write a one under two. Finally, subtract one from one and you're left with zero. There's our answer. Decimal 127 in binary is 01 1 1.
+
+[18:23]
+Let's do one more example of decimal to binary conversion. Again, try to find the answer yourself. Write down the numbers and convert decimal 207 to binary. Pause the video to think about your answer.
+
+[18:41]
+Okay, hopefully you found the answer. Let's check. First, write out the values for each bit of the binary octed. Subtract 128 from 207 and write a 1 under 128.
+
+[18:56]
+Subtract 64 from 79 and write a 1 under 64. We can't subtract 32 from 15, so write a zero under 32. You can't subtract 16 from 15 either. So, write a zero under 16.
+
+[19:14]
+Subtract eight from 15 and write a one under eight. Subtract four from seven and write a one under four. Subtract two from three and write a one under two.
+
+[19:27]
+And finally, subtract one from one and you get zero. There's the answer. Decimal 207 is equivalent to 1 1 0 0 1 1 1 in binary. Before moving on, you probably figured this out by yourself already, but the range of possible numbers that can be represented with eight binary bits ranges from 0 if all bits are zero to 255 if all bits are 1 because 128 + 64 + 32 + 16 + 8 + 4 + 2 + 1 equals 255.
+
+[20:06]
+So an IPv4 address is really a series of 32 bits. It is split up into four octets and then written in dotted decimal format to make it simpler for us humans to read and understand.
+
+[20:20]
+However, you may remember there was this /24 that I said was used to identify which part of the IP address represents the network and which represents the end host.
+
+[20:32]
+Since an IP address is 32 bits, can you guess what this slash24 means? It means that the first 24 bits of this IP address represent the network portion of the address and the remaining 8 represent the end host.
+
+[20:50]
+So the first 24 bits is equal to the first three octets because 8 + 8 + 8 equals 24. So 1 192.168.1 is the network portion of the address and 254 is the host portion.
+
+[21:09]
+Here's a quick look back at our small network. The IP address of PC1, PC2, and R1's G0 interface are 1 192.168.1.1/24, 1 192.168.1.24 and 1 192.168.1.254.
+
+[21:28]
+254/24. Notice that the network portion of each IP address is the same because they are all part of the same local network. Only the host portion is different.
+
+[21:41]
+Likewise, the IP addresses of PC3, PC4, and R1's G01 interface are 1 192.168.2.1/24, 1 192.168.2.2/24, and 1 192.168.2.25424. 254/24. Only the host portion of the address is different because they are on the same local area network.
+
+[22:05]
+Let's follow the same process as before with another IP address. If you want some extra practice, try to convert these 32 binary bits into an IPv4 address. Pause the video if you want to try and find the answer on your own.
+
+[22:23]
+Okay. So the 32 bits can be split into four octets like this. Then the four octets can be converted into dotted decimal like this. This time /16 is used instead of slash24.
+
+[22:39]
+Which portion is the network portion and which is the host portion? Well 16 means the first 16 bits or the first half are the network portion. So the first two octets are the network portion and the last two octets are the host portion.
+
+[22:58]
+Therefore 154.78 is the network portion and 111.32 is the host portion. Let's do one more example. Here's another IPv4 address. Try to convert these 32 bits into dotted decimal.
+
+[23:17]
+Pause the video now if you want to try. Okay. So you can divide the 32 bits into four octets like this and then convert the octets into dotted decimal like this.
+
+[23:32]
+This time it's slash8. So which part of the address is the network portion and which is the host portion. Since the first eight bits are the network portion that means that the first octet is the network portion and the last three octets are the host portion.
+
+[23:51]
+So 12 is the network portion and 128.251.23 is the host portion. Now IPv4 addresses are split up into five different classes. The class of an IPv4 address is determined by the first octet of the address.
+
+[24:11]
+The first is class A which has a first octet beginning with zero. If the first octet begins with zero, that means that the numeric range of the first octet is from 0 to 127 because 64 + 32 + 16 + 8 + 4 + 2 + 1 gives a maximum of 127.
+
+[24:33]
+The second class is class B which has a first octet beginning with 1 0 and therefore a numeric range of 128 to 191. The third class is class C which has a first octet beginning with 1 1 0 and therefore the numeric range for the first octet is 1 192 to 223.
+
+[24:57]
+Class D has a first octet beginning with 1 1 0 and the numeric range of the first octet is 224 to 239. Finally, class E has a first octet beginning with one one and therefore the numeric range for the first octet is 240 to 255.
+
+[25:20]
+However, the classes of address we'll be focusing on are A, B, and C. Addresses in class D are reserved for multiccast addresses. Multiccast is another type of address separate from the uniccast and broadcast addresses we talked about in previous videos. We will talk about them but that will be later in the course. Class E addresses are reserved for experimental uses and we won't talk about them in this course.
+
+[25:48]
+Now one more thing about the class A range. The end of the class A range is usually considered to be 126 not 127. Why is that? Let's take a look. The 127 range is reserved for loop back addresses.
+
+[26:06]
+The range is anything with a first octed of 127. So 127.0.0.0 to 127.255.255.255. These addresses are used to test the network stack of the local device.
+
+[26:22]
+If a device sends any network traffic to an address in this range, it is simply processed back up the TCP IP stack as if it were traffic received from another device.
+
+[26:34]
+In this image, I pinged 127.0.0.1 on my Windows PC, and you can see the responses. My PC is responding to its own pings. In this image, I sent a ping to a random IP address in the 127 range, 127.23.68.241.
+
+[26:54]
+And again, my PC responds back to its own ping. Notice the roundtrip times, all 0 milliseconds. That's because the traffic isn't going anywhere. My PC is just sending and receiving these pings to and from itself.
+
+[27:11]
+So here's the chart again with just classes A, B, and C. I've also added one more column, the prefix length, which is the /8 /16, and/24, which is used to identify the length of the network portion of the address.
+
+[27:28]
+Class A addresses use a SL8 prefix. Class B addresses use a SL16 prefix and class C addresses use a SL24 prefix. Actually, if you look back at these three addresses we used in our examples, you can see they are class A, class B, and class C addresses, and their prefix lengths match the table. /8 for class A, slash24 for class C.
+
+[28:00]
+In class A, there are fewer possible network addresses. However, because the network portion is very long, there can be many hosts on each network. Class C is the opposite. There are many possible networks, but because the host portion is smaller, there are fewer hosts on each network. Let's take a look at the numbers.
+
+[28:24]
+So, this is another chart I've taken off of Wikipedia. The leading bits column refers to the first bits of the first octed which I displayed in my previous table.
+
+[28:35]
+The size of network number bit field displays the number of bits in the network portion of the IP address which as I mentioned is 8 for class A, 16 for class B and 24 for class C.
+
+[28:49]
+Size of rest bit field indicates the remaining number of bits in the address which is the host portion of the address. 24 bits for class A, 16 for class B, and eight for class C.
+
+[29:03]
+Now, this part here displays the number of possible networks in each class. As I said, class A has fewer potential networks, but more hosts in each network. Class C is the opposite and class B is in between. Class A has 128 possible networks. Class B has about 16,000 networks. And Class C has about 2 million networks.
+
+[29:30]
+Class A allows about 16.7 million hosts in each network. Class B allows about 65,000 hosts in each network. And class C allows 256 hosts in each network.
+
+[29:43]
+However, because the first address in each network is the network address, it can't be assigned to hosts. Also, the last address of the network is the broadcast address, the layer 3 address used when you want to send traffic to all hosts. And it also can't be assigned to hosts. So really, the host count is two less. For example, 254 in class C.
+
+[30:09]
+Now I want to briefly talk about another way of writing these prefix lengths. Using a slash followed by the length of the prefix is a newer and easier way of writing the prefix length. On Juniper network devices, for example, you write prefix lengths using this slash notation.
+
+[30:28]
+However, Cisco devices still use an older slightly more complicated way of writing the prefix length. That is using a dotted decimal net mask. A net mask is written in dotted decimal like an IP address where the network portion is all ones and the host portion is all zeros.
+
+[30:47]
+For example, the network mask of a class A address is 255.0.0. That's the dotted decimal version of 1 1 followed by 24 zeros. So, what do you think the net mask of a class B address is? It's 255.25. 255.0.0 which is two octets of ones followed by two octets of zeros written in dotted decimal.
+
+[31:16]
+Finally, what do you think the net mask of a class C address is? It's 255.255.255.0 which is three octets of ones followed by one octet of zeros again written in dotted decimal notation.
+
+[31:31]
+So these prefix lengths and these net masks are the same things just written in different ways. Before moving on to the quiz for today's video, I want to explain two more types of IP addresses which I briefly mentioned before. The network and broadcast addresses.
+
+[31:49]
+If the host portion of an IP address is all zeros, it means it is the network address, the identifier of the network itself. In our diagram here, you can see 192.168.1.0/24.
+
+[32:04]
+We know that /24 means the first three octets are the network portion and the last octet is the host portion. Since the host portion is zero, it means the last octet, the host portion is all zeros.
+
+[32:19]
+Therefore, this address 192.168.1.0/24 is the network address. Keep in mind the network address cannot be assigned to a host. The network address is the first address of the network. But the first usable address is one above the network address. In this case, it's 1 192.168.1.1 which is assigned to PC1.
+
+[32:45]
+So the network address is the first address with a host portion of all zeros. However, the last address in a network with a host portion of all ones is the broadcast address for the network.
+
+[32:59]
+Like the network address, the broadcast address cannot be assigned to a host. So although it's the last address in the network, the last usable address is actually one under the broadcast address. In this case, that's 192.168.1.254, 254. The address assigned to R1's G0 interface.
+
+[33:22]
+So the broadcast address is the layer 3 address used to send a packet to all hosts on the local network. If a packet is sent with this destination IP address, what do you think will be the destination MAC address of the frame it is encapsulated in? Think about the Ethernet LAN switching videos.
+
+[33:41]
+It will be all fs the broadcast MAC address. If PC1 for example sent a ping to 1 192.168.1.255, it would be received by PC2 and R1's G0 interface. Once again, I think we've covered a lot of ground in this video. Let's list what we covered before moving on to today's quiz.
+
+[34:07]
+First, I talked about dotted decimal and binary. Binary is how computers think, but 32-bit IPv4 addresses are difficult to remember for us humans. So, we convert IPv4 addresses to dotted decimal form to make them easier to read and remember.
+
+[34:24]
+You learned that IPv4 addresses consist of a network portion and a host portion. Hosts on the same network will have the same network portion, but a unique host portion of their IP addresses.
+
+[34:38]
+You learned about the IPv4 address classes. We looked at the different ways of indicating the length of the network prefix by writing the prefix length with a slash or by using a net mask.
+
+[34:51]
+And finally, you learned about the network address which has a host portion of all zeros and is used to identify the network itself, not any particular host on the network. also the broadcast address which has a host portion of all ones which is used to send network traffic to all hosts on the network.
+
+[35:10]
+So before moving on to the quiz, I want to remind you to download and use the flash cards for this lesson to help you remember what you've studied in this lesson. Now for today's quiz, I'm going to focus exclusively on converting IPv4 addresses between binary and dotted decimal. There will be 10 questions instead of the usual five. and hopefully afterward you'll feel confident converting IPv4 addresses between binary and dotted decimal. Let's get started.
+
+[35:39]
+Question one, convert the following IPv4 address to dotted decimal notation. Pause the video to solve the question, then unpause to check the answer.
+
+[35:53]
+The answer is 63.56.231.19. Let's go to question two. Convert the following IPv4 address to dotted decimal notation. Pause the video to solve the question, then unpause to check your answer.
+
+[36:13]
+The answer is 243.127.98.1. Let's go to question three. Convert the following IPv4 address to dotted decimal notation. Pause the video to solve the question and unpause to check your answer.
+
+[36:34]
+The answer is 111.6.89.199. Let's go to question four. Convert the following IPv4 address to dotted decimal notation. Pause the video to solve the question and unpause to check your answer.
+
+[36:55]
+The answer is 207.198.47.76. Let's go to question five. Convert the following IPv4 address to dotted decimal notation. Pause the video to solve the question and unpause to check your answer.
+
+[37:17]
+The answer is 100.201.33.253. 253. Let's go to question six. Convert the following IPv4 address to binary notation. 88.46.90.91. Pause the video to solve the question and unpause to check your answer.
+
+[37:44]
+And here's the answer. Let's go to question seven. Convert the following IPv4 address to binary notation. 221.234.246.163.
+
+[38:02]
+Pause the video to solve the question and unpause to check your answer. And here is the answer. Let's go to question 8. Convert the following IPv4 address to binary notation.
+
+[38:22]
+3.41.143.222. Pause the video to solve the question and unpause to check your answer. And here's the answer. Let's go to question nine.
+
+[38:42]
+Convert the following IPv4 address to binary notation. 10.200 200.231.91. Pause the video to solve the question and unpause to check your answer. And here is the answer.
+
+[39:01]
+Let's go to question 10. Convert the following IPv4 address to binary notation. 248.87.255.152.
+
+[39:14]
+Pause the video to solve the question and unpause to check your answer. And here is the answer. Okay, that's all for the quiz. I hope you feel confident converting IPv4 addresses between binary and dotted decimal notation.
+
+[39:34]
+As usual, there will be supplementary materials to help you review what you've learned. There will be review flashcards using ANI which I highly recommend you download and use to review.
+
+[39:46]
+There will also be a Packet Tracer practice lab. However, it will be after part two's video, so there won't be a lab for today's video specifically. Good luck with your studies.
+
+[39:59]
+Thank you for watching. Please subscribe to the channel, like the video, leave a comment, and share the video with anyone else studying for the CCNA.
+
+[40:07]
+If you want to leave a tip, check the links in the description. I'm also a Brave verified publisher and accept BAT or basic attention token tips via the Brave browser. That's all for now.

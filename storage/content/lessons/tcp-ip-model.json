@@ -1,0 +1,377 @@
+{
+  "slug": "tcp-ip-model",
+  "title": "The TCP/IP Model",
+  "summary": "The five-layer model that maps who does what in a network: application, transport, internet, local network, and physical — plus encapsulation, PDUs, and layer interaction.",
+  "source_ref": "transcript_3.txt",
+  "order": 3,
+  "sections": [
+    {
+      "type": "explanation",
+      "title": "Protocols, standards, and a bit of history",
+      "order": 1,
+      "content": {
+        "body": "A **protocol** is a set of rules defining how data is communicated between devices — the language computers use to talk. Early vendors used proprietary protocols (e.g. IBM's), making cross-vendor communication difficult or impossible. Today, networks use **vendor-neutral standards**: agreed-upon specifications for how a protocol or technology works.\n\n**History in brief:** ARPANET came online in 1969 using the NCP protocol. In 1974, Vint Cerf and Bob Kahn began developing TCP, which was later split into **TCP** (Transmission Control Protocol) and **IP** (Internet Protocol). ARPANET fully switched to TCP/IP on January 1, 1983. TCP/IP won because it was published as open standards and could run over many network types.\n\n**Two standards bodies to know:**\n- **IEEE** (Institute of Electrical and Electronics Engineers) — defines LAN technologies: Ethernet in the 802.3 standards and Wi-Fi in the 802.11 standards.\n- **IETF** (Internet Engineering Task Force) — defines many Internet protocols (TCP, IP, UDP, HTTP, DNS) in freely available documents called **RFCs**."
+      }
+    },
+    {
+      "type": "diagram",
+      "title": "The five-layer TCP/IP model",
+      "order": 2,
+      "content": {
+        "diagram_type": "layer_stack",
+        "layers": [
+          {
+            "id": "application",
+            "label": "Application",
+            "level": 5,
+            "protocols": "HTTP, HTTPS, FTP, TFTP",
+            "role": "Communication between application processes"
+          },
+          {
+            "id": "transport",
+            "label": "Transport",
+            "level": 4,
+            "protocols": "TCP, UDP",
+            "role": "End-to-end communication between processes (ports)"
+          },
+          {
+            "id": "internet",
+            "label": "Internet (Network)",
+            "level": 3,
+            "protocols": "IP (v4, v6), ICMP",
+            "role": "End-to-end communication between hosts (IP addresses, routers)"
+          },
+          {
+            "id": "local-network",
+            "label": "Local Network (Data Link)",
+            "level": 2,
+            "protocols": "Ethernet, Wi-Fi",
+            "role": "Hop-to-hop delivery on a LAN (MAC addresses, switches)"
+          },
+          {
+            "id": "physical",
+            "label": "Physical",
+            "level": 1,
+            "protocols": "Copper, fiber, radio",
+            "role": "Sends bits as electrical, optical, or radio signals"
+          }
+        ]
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "The mail analogy",
+      "order": 3,
+      "content": {
+        "body": "Sending a letter is a helpful analogy. You write a letter to Bob (content), address it to Bob himself (recipient), put it in an envelope addressed to Bob's house (address), drive it to post office A (local delivery), which trucks it through roads to post office B, then to Bob's house.\n\nNotice the three different destinations: the **car** goes to post office A, the **envelope** goes to Bob's house, and the **letter** goes to Bob himself. Each layer cares about its own thing and ignores the others — changing the letter's content doesn't change the delivery steps, and changing the delivery path doesn't affect the letter. This **separation of layers** is the key idea, and it's exactly how networks behave."
+      }
+    },
+    {
+      "type": "animation",
+      "title": "How a message crosses a real network",
+      "order": 4,
+      "content": {
+        "diagram_type": "topology",
+        "nodes": [
+          {
+            "id": "pc1",
+            "label": "PC1 (web client)",
+            "icon": "pc",
+            "x": 90,
+            "y": 150
+          },
+          {
+            "id": "sw1",
+            "label": "SW1",
+            "icon": "switch",
+            "x": 250,
+            "y": 150
+          },
+          {
+            "id": "r1",
+            "label": "R1",
+            "icon": "router",
+            "x": 420,
+            "y": 150
+          },
+          {
+            "id": "r2",
+            "label": "R2",
+            "icon": "router",
+            "x": 590,
+            "y": 150
+          },
+          {
+            "id": "sw2",
+            "label": "SW2",
+            "icon": "switch",
+            "x": 760,
+            "y": 150
+          },
+          {
+            "id": "srv1",
+            "label": "Server 1 (web + file)",
+            "icon": "server",
+            "x": 930,
+            "y": 150
+          }
+        ],
+        "links": [
+          {
+            "from": "pc1",
+            "to": "sw1",
+            "kind": "ethernet"
+          },
+          {
+            "from": "sw1",
+            "to": "r1",
+            "kind": "ethernet"
+          },
+          {
+            "from": "r1",
+            "to": "r2",
+            "kind": "wan"
+          },
+          {
+            "from": "r2",
+            "to": "sw2",
+            "kind": "ethernet"
+          },
+          {
+            "from": "sw2",
+            "to": "srv1",
+            "kind": "ethernet"
+          }
+        ],
+        "steps": [
+          {
+            "narration": "The application layer (Layer 5) creates the request. Chrome on PC1 wants a web page from Server 1, so it uses HTTP.",
+            "animate": {
+              "highlight": "pc1"
+            }
+          },
+          {
+            "narration": "The transport layer (Layer 4) addresses the message to the correct process on Server 1 — port 80 for the web server (a port is just a number identifying a process, not a physical port).",
+            "animate": {
+              "highlight": "pc1"
+            }
+          },
+          {
+            "narration": "The internet layer (Layer 3) addresses the message to Server 1's IP address (10.1.1.1), which tells the routers where the message must ultimately be delivered.",
+            "animate": {
+              "highlight": "pc1"
+            }
+          },
+          {
+            "narration": "The local network layer (Layer 2) delivers the message hop by hop using MAC addresses: PC1 → R1 via SW1. This is the first hop.",
+            "animate": {
+              "packet_from": "pc1",
+              "packet_to": "r1",
+              "label": "hop 1"
+            }
+          },
+          {
+            "narration": "R1 forwards to R2 (hop 2), then R2 delivers to Server 1 via SW2 (hop 3). The routers forward based on the destination IP address; switches just pass frames within each LAN.",
+            "animate": {
+              "packet_from": "r1",
+              "packet_to": "srv1",
+              "label": "hops 2-3"
+            }
+          },
+          {
+            "narration": "The physical layer (Layer 1) transmitted the bits as electrical signals over the cables at every step.",
+            "animate": {
+              "highlight": [
+                "sw1",
+                "sw2"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "Each layer in detail",
+      "order": 5,
+      "content": {
+        "body": "**Layer 1 — Physical:** sends and receives bits as electrical, optical, or radio signals over the medium. Defines cables, connectors, signal levels, and link speeds. Examples: UTP/fiber cables, Wi-Fi radios, and NICs (network interface cards).\n\n**Layer 2 — Local Network (Data Link):** provides hop-to-hop delivery on a LAN. A **hop** is one step from one router/host to the next. From PC1 to Server 1 there are 3 hops (PC1→R1, R1→R2, R2→Server); switches don't count as hops. Uses **MAC addresses** and is home to Ethernet and Wi-Fi.\n\n**Layer 3 — Internet (Network):** provides end-to-end delivery between hosts across networks using **IP addresses**; routers operate mainly at this layer. 'Internet' means *inter-network*. Protocols: IP (v4 and v6), ICMP.\n\n**Layer 4 — Transport:** provides end-to-end communication *between application processes* using **port numbers** (e.g. 80 for web, 21 for FTP). Runs mainly on the communicating hosts. Protocols: TCP and UDP.\n\n**Layer 5 — Application:** defines how application processes format, send, and interpret data. Examples: HTTP/HTTPS, FTP, TFTP, email protocols. (Often called *Layer 7* after the OSI model — see below.)"
+      }
+    },
+    {
+      "type": "animation",
+      "title": "Encapsulation",
+      "order": 6,
+      "content": {
+        "diagram_type": "encapsulation",
+        "steps": [
+          {
+            "narration": "The application layer prepares the data to be sent — an HTTP request.",
+            "state": "app"
+          },
+          {
+            "narration": "Layer 4 wraps the data with a header containing source/destination port numbers. TCP makes a segment; UDP makes a datagram.",
+            "state": "transport"
+          },
+          {
+            "narration": "Layer 3 adds a header with source/destination IP addresses. The result is a packet.",
+            "state": "internet"
+          },
+          {
+            "narration": "Layer 2 adds both a header (MAC addresses, type) and a trailer (FCS for error checking). The result is a frame.",
+            "state": "local-network"
+          },
+          {
+            "narration": "Layer 1 transmits the frame's bits as signals over the cable. The layer 2 header goes first; the layer 2 trailer goes last.",
+            "state": "physical"
+          }
+        ]
+      }
+    },
+    {
+      "type": "animation",
+      "title": "Decapsulation",
+      "order": 7,
+      "content": {
+        "diagram_type": "encapsulation",
+        "steps": [
+          {
+            "narration": "The receiving device gets a stream of bits at Layer 1 and passes them up the stack.",
+            "state": "physical"
+          },
+          {
+            "narration": "Layer 2 examines and removes its header and trailer (using the FCS to check for transmission errors).",
+            "state": "local-network"
+          },
+          {
+            "narration": "Layer 3 examines and removes its header, revealing the segment or datagram.",
+            "state": "internet"
+          },
+          {
+            "narration": "Layer 4 examines and removes its header, delivering the data to the correct application by port number.",
+            "state": "transport"
+          },
+          {
+            "narration": "The application processes the data — and if needed, generates a response that goes back down the stack.",
+            "state": "app"
+          }
+        ]
+      }
+    },
+    {
+      "type": "table",
+      "title": "Protocol Data Units (PDUs)",
+      "order": 8,
+      "content": {
+        "headers": [
+          "PDU",
+          "Layer",
+          "What it is"
+        ],
+        "rows": [
+          [
+            "Segment",
+            "Layer 4 (TCP)",
+            "Data + L4 header"
+          ],
+          [
+            "Datagram",
+            "Layer 4 (UDP)",
+            "Data + L4 header"
+          ],
+          [
+            "Packet",
+            "Layer 3",
+            "Segment/datagram + L3 header"
+          ],
+          [
+            "Frame",
+            "Layer 2",
+            "Packet + L2 header and trailer"
+          ],
+          [
+            "Payload",
+            "Any layer",
+            "The contents inside a PDU, excluding that layer's header/trailer"
+          ]
+        ]
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "Layer interaction",
+      "order": 9,
+      "content": {
+        "body": "**Adjacent-layer interaction:** each layer provides a service to the layer above it and is serviced by the layer below. L4 delivers data to the right process (ports); L3 delivers to the right host (IP addresses); L2 delivers to the next hop (MAC addresses); L1 moves the bits over the medium.\n\n**Same-layer interaction:** each layer communicates with its counterpart on the other device — the application layer on PC1 talks to the application layer on Server 1; a frame is addressed to the destination's MAC address; a packet to its IP address; a segment to its port number.\n\nBecause the layers are modular, protocols can be swapped without redesigning everything: HTTP over TCP, or TFTP over UDP; Ethernet or Wi-Fi at the bottom two layers. This flexibility is the main benefit of a layered model."
+      }
+    },
+    {
+      "type": "callout",
+      "title": "OSI model and naming confusion",
+      "order": 10,
+      "content": {
+        "body": "The **OSI model** (ISO, late 1970s-80s) has 7 layers: Application, Presentation, Session, Transport, Network, Data Link, Physical. OSI's protocols lost to TCP/IP (too late, too complex, too top-down), but the model survives as a reference.\n\nMost resources use a 5-layer model borrowing OSI names: Layer 3 is the **network layer** and Layer 2 is the **data link layer**. That's why the application layer is often called *Layer 7*. In practice, engineers just say 'layer 2' and 'layer 3' — and the CCNA doesn't quiz layer names.",
+        "style": "note"
+      }
+    }
+  ],
+  "quiz": {
+    "questions": [
+      {
+        "order": 1,
+        "question": "A frame is the PDU at which layer of the TCP/IP model?",
+        "explanation": "A frame is the Layer 2 (Local Network / Data Link) PDU. It consists of the packet plus a Layer 2 header (containing MAC addresses and EtherType) and a Layer 2 trailer (containing the FCS for error detection). Layer 3 produces a packet, Layer 4 produces a segment (TCP) or datagram (UDP), and Layer 1 transmits raw bits.",
+        "options": [
+          { "label": "A", "text": "Layer 1 — Physical", "is_correct": false },
+          { "label": "B", "text": "Layer 2 — Local Network (Data Link)", "is_correct": true },
+          { "label": "C", "text": "Layer 3 — Internet (Network)", "is_correct": false },
+          { "label": "D", "text": "Layer 4 — Transport", "is_correct": false }
+        ]
+      },
+      {
+        "order": 2,
+        "question": "Which protocol addresses a message to a specific application process running on the destination host?",
+        "explanation": "Port numbers are a Layer 4 concept handled by TCP and UDP. Port numbers identify which process on the destination host should receive the data (e.g., port 80 for HTTP, port 21 for FTP). IP addresses (Layer 3) identify the destination host; MAC addresses (Layer 2) identify the next hop on a LAN.",
+        "options": [
+          { "label": "A", "text": "IP — using IP addresses", "is_correct": false },
+          { "label": "B", "text": "TCP/UDP — using port numbers", "is_correct": true },
+          { "label": "C", "text": "Ethernet — using MAC addresses", "is_correct": false },
+          { "label": "D", "text": "HTTP — using URLs", "is_correct": false }
+        ]
+      },
+      {
+        "order": 3,
+        "question": "PC1 sends data to SRV1 via two routers (R1 and R2). How many Layer 2 hops does the transmission cross?",
+        "explanation": "There are three Layer 2 hops: PC1 → R1, R1 → R2, and R2 → SRV1. Each router strips and rebuilds the Layer 2 frame for the next segment of the path. Switches within a LAN segment are transparent at Layer 3 and don't count as separate hops for this purpose.",
+        "options": [
+          { "label": "A", "text": "1", "is_correct": false },
+          { "label": "B", "text": "2", "is_correct": false },
+          { "label": "C", "text": "3", "is_correct": true },
+          { "label": "D", "text": "4", "is_correct": false }
+        ]
+      },
+      {
+        "order": 4,
+        "question": "Which standards body defines the Ethernet (802.3) and Wi-Fi (802.11) standards?",
+        "explanation": "IEEE (Institute of Electrical and Electronics Engineers) defines LAN and wireless standards, including Ethernet (802.3) and Wi-Fi (802.11). IETF (Internet Engineering Task Force) defines Internet protocols like TCP, IP, UDP, HTTP, and DNS, publishing them as RFCs.",
+        "options": [
+          { "label": "A", "text": "IETF", "is_correct": false },
+          { "label": "B", "text": "ISO", "is_correct": false },
+          { "label": "C", "text": "IEEE", "is_correct": true },
+          { "label": "D", "text": "ANSI", "is_correct": false }
+        ]
+      },
+      {
+        "order": 5,
+        "question": "When a router forwards a packet from one network to another, which layer header does it examine to make that forwarding decision?",
+        "explanation": "Routers forward packets based on the Layer 3 (Internet / Network) header, specifically the destination IP address. The router strips and rewrites the Layer 2 frame for each hop but leaves the Layer 3 packet (and its destination IP address) unchanged end-to-end.",
+        "options": [
+          { "label": "A", "text": "Layer 1 — Physical", "is_correct": false },
+          { "label": "B", "text": "Layer 2 — Local Network (MAC addresses)", "is_correct": false },
+          { "label": "C", "text": "Layer 3 — Internet (IP addresses)", "is_correct": true },
+          { "label": "D", "text": "Layer 4 — Transport (port numbers)", "is_correct": false }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,275 @@
+[0:01]
+Welcome to Jeremy's IT Lab. This is a free complete course for the CCNA. If you like these videos, please subscribe to follow along with the series. Also, please like and leave a comment and share the video to help spread this free series of videos. Thanks for your help.
+
+[0:18]
+This video will be the last of the subnetting series. Subnetting is very important to understand, so I wanted to take it slowly to make sure you don't get confused.
+
+[0:28]
+In this video, we'll cover the last few important things you should know. So, what exactly will we cover in this video? First of all, I'll go over the answers to last video's quiz questions.
+
+[0:42]
+Then, we'll do a few practice questions using class A addresses. Then, we'll look at another topic in subnetting called VLSM, which stands for variable length subnet masks.
+
+[0:54]
+I'll explain exactly what that is when we get to it. Finally, I'll give you some other resources where you can get more practice subnetting. Okay, here's question one from the last video.
+
+[1:06]
+You have been given the 172.30.0.0/16 network. Your company requires 100 subnets with at least 500 hosts per subnet. What prefix length should you use?
+
+[1:20]
+This is a simple one. How many bits do we have to borrow to make 100 subnets? You can just count on your fingers. Borrowing one bit allows for two subnets. Borrowing two bits allows four subnets.
+
+[1:33]
+Three borrowed bits allows for eight subnets. Four borrowed bits allows for 16 subnets. Five borrowed bits allows for 32 subnets. Six borrowed bits allows for 64 subnets.
+
+[1:45]
+And seven borrowed bits allows for 128 subnets. So, we need to borrow seven bits to create enough subnets. Does that leave enough host bits for at least 500 hosts. Let's check.
+
+[1:58]
+So, borrowing seven bits means we will use a /23 prefix length, which leaves nine host bits. Once more, the red bits are the host bits. Nine host bits allows 510 usable addresses, which is enough for the 500 we need.
+
+[2:16]
+So, that's the answer to question one. The prefix length will be /23. /23 is written as 255.255.254.0 decimal, by the way. As I mentioned before, make sure you know how to write different prefix lengths in dotted decimal, too.
+
+[2:36]
+Let's go on to question two. What subnet does host 172.21.111.201/20 belong to? These questions are easy if you remember the steps I taught you. First, write out the address in binary like this.
+
+[2:54]
+Then, change all of the host bits to zero. Convert the address back to dotted decimal, and that's the answer. So, host 172.21.111.201/20 belongs to the subnet 172.21.96.0/20.
+
+[3:13]
+Let's check the answer for question three next. What is the broadcast address of the network 192.168.91.78/26 belongs to? So, to solve this problem, you follow the same steps as for the previous question, except instead of changing all host bits to zero, you change them to one. Let's try it out.
+
+[3:36]
+Write out the address in binary. Then, since we're looking for the broadcast address, not the network address, change all of the host bits to one. Convert the address back to dotted decimal, and that's the broadcast address for the subnet.
+
+[3:52]
+So, the answer for question three is 192.168.91.127. That's the broadcast address for this network. Let's check the answer for question four. You divide the network 172.16.0.0/16 into four subnets of equal size.
+
+[4:13]
+Identify the network and broadcast addresses of the second subnet. So, the first step to solving this question is to determine the prefix length we must use.
+
+[4:23]
+To divide the network into four subnets of equal size, we have to borrow two bits because 2 to the power of 2 is 4. So, when we borrow two bits, that makes a /18 prefix length.
+
+[4:37]
+Change this last bit to one and write it in dotted decimal again. 172.16.64.0. This is the network address of the second subnet. Now, to find the broadcast address, simply change all of the host bits to one.
+
+[4:54]
+So, the broadcast address is 172.16.127.255. So, these are the answers to question four. Finally, question five. You divide the 172.30.0.0/16 network into subnets of 1,000 hosts each.
+
+[5:13]
+How many subnets are you able to make? Well, to know how many subnets we are able to make, we have to know how many bits we can borrow. But, to know how many bits we can borrow, we need to find how many host bits we need for 1,000 hosts.
+
+[5:29]
+We will need 10 host bits for 1,000 hosts because 2 to the power of 10 minus 2 allows for 1,022 hosts. That will leave us with six borrowed bits. Six borrowed bits means we can make 64 subnets. So, that's the answer to question five.
+
+[5:48]
+Okay, let's get to subnetting class A networks. Look at the size of rest bit field. That is the host portion. There are 24 host bits that we can borrow from, meaning lots of room to make subnets.
+
+[6:03]
+However, let me remind you that the process of subnetting class A, class B, and class C networks is exactly the same. So, let's just do two practice questions subnetting class A networks, and then let's move on to VLSM.
+
+[6:19]
+You have been given the 10.0.0.0/8 network. You must create 2,000 subnets, which will be distributed to various enterprises. What prefix length must you use?
+
+[6:31]
+How many host addresses, or usable addresses, will be in each subnet? Let's solve this question just like the other ones. Here is 10.0.0.0/8 in binary and dotted decimal.
+
+[6:44]
+It's /8, so only the first octet is the network portion, and we have three whole octets to borrow from and make subnets. Notice that I wrote the /8 subnet mask down here, 255.0.0.0.
+
+[6:59]
+Currently, we are borrowing zero bits, so we can't make any subnets. Instead of going through the whole process of borrowing one bit, two bits, three bits, etc., let's see if you can do it in your head.
+
+[7:11]
+So, two to the power of what equals at least 2,000? Remember, each bit you borrow doubles the number of subnets you can make. Two, four, eight, 16, 32, 64, 128, 256, 512, 1,024, 2,048.
+
+[7:35]
+That's 11 borrowed bits. So, the answer is two to the power of 11. So, borrowing 11 bits allows us to create the required 2,000 subnets. This means we will use a /19 prefix length.
+
+[7:52]
+Now, how many hosts will be in each subnet? Well, there are 13 host bits remaining. So, that means 8,190 hosts per subnet. So, those are the answers. We will use a /19 prefix length, and there will be 8,190 host addresses, aka usable addresses, in each subnet.
+
+[8:14]
+This is the same process we used for class B and class C networks. The numbers are just larger. Let's do one more practice question for a class A network.
+
+[8:25]
+PC1 has an IP address of 10.217.182.223/11. Identify the following for a PC1 subnet. One, network address. Two, broadcast address. Three, first usable address. Four, last usable address.
+
+[8:44]
+And five, the number of host, or usable addresses. So, feel free to pause this video and figure out the answer for yourself. But, let's walk through the answers together now.
+
+[8:57]
+Here's the address written out as a normal /8. So, eight network bits and 24 host bits. But, it's not /8, it's /11. So, there are three borrowed bits.
+
+[9:10]
+To find the network address, change all of the host bits to zero. Then, change it back to dotted decimal. So, there's the network address, 10.192.0.0.
+
+[9:22]
+Add one to the network address, and you get the first usable address, which is 10.192.0.1. Change all of the host bits to one, and you get the broadcast address, 10.223.255.255.
+
+[9:38]
+Subtract one from the broadcast address and you get the last usable address. Finally, to determine the number of host addresses, count the number of host bits.
+
+[9:50]
+There are 21, so that means 2,097,150 hosts per subnet. So, here are the answers to each part of the question. As I said before, the process for subnetting class A networks is the same as for class B and class C networks. You just have to get used to the larger numbers.
+
+[10:12]
+Also, I hope you're getting used to converting between binary and dotted decimal by now. As you have probably noticed, it's absolutely essential for subnetting.
+
+[10:22]
+So, let's move on to a very important topic, VLSM, which stands for variable length subnet masks. Until now, we have practiced subnetting using FLSM, fixed length subnet masks.
+
+[10:36]
+This means that all of the subnets use the same prefix length. For example, subnetting a class C network into four subnets using {slash} 26. However, VLSM, variable length subnet masks, is the process of creating subnets of different sizes to make your use of network addresses more efficient.
+
+[10:56]
+Now, VLSM is more complicated than FLSM, but it's easy if you follow the steps correctly. So, that's what I want to teach you now, the steps to subnet a network using VLSM.
+
+[11:09]
+So, here's an example small enterprise network. There are two LANs in Tokyo and two LANs in Toronto. Tokyo LAN A has 110 hosts and Tokyo LAN B has eight hosts.
+
+[11:23]
+Toronto LAN A has 29 hosts and Toronto LAN B has 45 hosts. Also, there is a point-to-point connection between the two routers that we must assign IP addresses for.
+
+[11:37]
+We are assigned the 192.168.1.0/24 network and must divide it into five subnets to provide IP addresses for all hosts in the enterprise network. If we were to try this with fixed-length subnet masks, we would need to borrow three bits to make enough subnets.
+
+[11:55]
+That would leave five host bits left. Five host bits only allows 30 host addresses. So, that's not enough addresses for Tokyo LAN A or Toronto LAN B.
+
+[12:06]
+However, if we use VLSM, we can assign different subnet sizes to each LAN, which will allow us to make sure each LAN has enough addresses available. So, what are the steps to subnet using VLSM?
+
+[12:21]
+First, assign the largest subnet at the start of the address space. Then, assign the second largest after it. And then repeat the process until all subnets have been assigned from largest to smallest.
+
+[12:35]
+If you look at our network here, that means we will assign subnets in this order. First, Tokyo LAN A, which requires 110 hosts. Then, Toronto LAN B, then Toronto LAN A, Tokyo LAN B, and finally the point-to-point connection between the two routers.
+
+[12:56]
+So, let's do Tokyo LAN A. I want you to pause the video and figure out these five values by yourself. Network address, broadcast address, first usable, last usable address, and total number of usable host addresses.
+
+[13:12]
+We've done lots of practice for this, so I know you can do it by yourself. Pause the video now to find the answers. Okay, let's check out the answers.
+
+[13:24]
+So, I decided to use a /25 prefix length. Why is that? Well, a /25 prefix length leaves seven host bits, which means a total of 128 addresses, so 126 usable host addresses.
+
+[13:39]
+We need 110. So, /25 is the correct prefix length. That means the network address is 192.168.1.0/25. Convert all of the host bits to one, and this is the broadcast address, 192.168.1.127.
+
+[13:59]
+So, now we have our answers for Tokyo LAN A. The first usable address is the network address plus one, and the last usable address is the broadcast address minus one.
+
+[14:11]
+And as I just mentioned, seven host bits allows for 126 usable host addresses, which is two to the power of seven minus two. So, we now have our first subnet, 192.168.1.0/25 for Tokyo LAN A.
+
+[14:29]
+That /25 subnet uses up half of the address space of the 192.168.1.0/24 network, but that's no problem. Using VLSM, we can assign smaller subnets to these other LANs, and you'll see that there is enough address space left.
+
+[14:47]
+So, next we should assign Toronto LAN B. So, 192.168.1.127 is the broadcast address of Tokyo LAN A. If we add one to that, we will get the network address of the next subnet, which will be used for Toronto LAN B.
+
+[15:05]
+Therefore, 192.168.1.128 is the network address of Toronto LAN B. But, we're missing one important point. What prefix length should we use for Toronto LAN B?
+
+[15:19]
+So, with this information, I want you to do the same thing for Toronto LAN B. Pause the video and find the prefix length we must use, then the broadcast address, first and last usable addresses, and total number of usable host addresses for this subnet.
+
+[15:35]
+Pause the video now. Okay, let's check the answer. So, to accommodate the 45 hosts, we will use a /26 prefix length. That leaves six host bits, which allows for 62 host addresses.
+
+[15:53]
+That's more than we need. But, if we make a smaller subnet with a /27 prefix length, we can only have 30 hosts, which is not enough. So, the complete network address is 192.168.1.128/26.
+
+[16:09]
+Change all of the host bits to one, and you get the broadcast address, 192.168.1.191. So, here are the answers for Toronto LAN B. For Tokyo LAN A and Toronto LAN B, we've used address space from 192.168.1.0 through 191.
+
+[16:31]
+These two subnets take up three quarters of the address space. But, that's no problem. There is still room for more smaller subnets. 192.168.1.191 is the broadcast address of Toronto LAN B.
+
+[16:46]
+So, 192.168.1.192 is the network address of Toronto LAN A. Once again, though, we have to figure out what prefix length to use for Toronto LAN A. Let's do the same process as with the other LANs.
+
+[17:03]
+Please pause the video now to find the remaining information. Okay, hopefully you found the answers. Let's check. Toronto LAN A requires 29 hosts. So, we should use a /27 prefix length, which leaves five host bits and therefore 30 host addresses.
+
+[17:25]
+So, 192.168.1.192/27 is the network address. And 192.168.1.223 is the broadcast address. With this information, we can determine the first and last usable addresses.
+
+[17:43]
+So, here are the answers for Toronto LAN A. Let's check out Tokyo LAN B next. So, we've used all the way to 192.168.1.223, which is the broadcast address for Toronto LAN A.
+
+[18:00]
+There's not a lot of address space left, but with VLSM, we can fit the last two subnets into the address space. The next address after Toronto LAN A's broadcast address is Tokyo LAN B's network address.
+
+[18:15]
+Once again, we need to find the prefix length to use for this subnet. So, please pause the video here to find these different addresses for Tokyo LAN B.
+
+[18:29]
+Okay, let's check the answers. So, because Tokyo LAN B requires eight hosts, we must use a /28 prefix length. One possible mistake here is using a /29 prefix length.
+
+[18:44]
+Although /29 allows eight addresses, remember we must subtract two for the network and broadcast addresses. So, really /29 only allows six usable addresses.
+
+[18:56]
+Therefore, we must use /26, which allows 14 host addresses. So, the network address for Tokyo LAN B is 192.168.1.224/28. Change the host bits to one, and the broadcast address is 192.168.1.239.
+
+[19:17]
+So, here are the answers for Tokyo LAN B. Now, there is only one subnet left that we must assign, and that is the point-to-point connection between these two routers.
+
+[19:30]
+So, we've used address space all the way up to 192.168.1.239. There's not a lot of space left, but that's no problem. Point-to-point connections only require two addresses.
+
+[19:43]
+192.168.1.239 is the network address of Tokyo LAN B. Therefore, 192.168.1.240 is the network address of the point-to-point connection. Now, what prefix length should we use?
+
+[20:00]
+So, as I mentioned in the first subnetting video, it is possible to use a /31 prefix length for a subnet requiring only two hosts. However, for the CCNA test, if you are asked what prefix length to use for a subnet that requires two hosts, I recommend not using a /31.
+
+[20:20]
+Instead, what other prefix length allows for two hosts? Pause the video here and find your answers. Okay, let's check. So, a /30 prefix length allows for two hosts.
+
+[20:35]
+192.168.1.240 is the network address, and 192.168.1.243 is the broadcast address. So, here are the answers for the point-to-point connections. There are only two usable host addresses, one for the Tokyo router, and one for the Toronto router.
+
+[20:57]
+Okay, so we successfully subnetted this network using VLSM, and there is still a little bit of address space left. Notice that each subnet uses a different prefix length.
+
+[21:09]
+If we tried to use the same prefix length for each subnet, there wouldn't be enough address space. But with VLSM, we were able to do it and leave some extra address space at the end.
+
+[21:20]
+So, here's a reminder of the steps of VLSM. Start with the largest subnet and assign it at the beginning of the address space. And then proceed to the second largest subnet, etc. And repeat until you have assigned all necessary subnets.
+
+[21:36]
+VLSM is a great way to use network address space more efficiently. So, over these three videos, we have done lots of subnetting practice questions. However, I recommend that you continue practicing subnetting using other resources.
+
+[21:52]
+Here are three websites that provide excellent practice. subnettingquestions.com, subnetting.org, and subnettingpractice.com. Check them out and try out questions from each site.
+
+[22:08]
+Here's an example question from subnettingquestions.com. It's similar to the ones we have been doing in these videos. And here's an example from subnetting.org.
+
+[22:19]
+Once again, the same kind of question as we have done in these videos. Those other two websites are good. However, my personal favorite is this last one, subnettingpractice.com.
+
+[22:32]
+It has lots of challenging subnet questions like this, which go beyond the sort of questions we have been doing in these videos. As for today's quiz, there is no quiz for this video.
+
+[22:45]
+Instead, here is some homework. Do at least one practice question from each of those practice websites every day for at least one week. There is also no flashcard deck for this video.
+
+[22:58]
+Those three subnetting practice websites should give you all of the subnetting practice you need. However, there will be a Packet Tracer practice lab where you will practice subnetting a network and assigning the appropriate IP addresses to different devices.
+
+[23:15]
+Before I wrap up this video, I want to give a shout out to my JCNP level channel members. Vance, Mike, Jonathan, and Leto. Thank you again for your support.
+
+[23:26]
+Thank you to my JCNA level channel members, too. Thank you for watching. Please subscribe to the channel, like the video, leave a comment, and share the video with anyone else studying for the CCNA.
+
+[23:40]
+If you want to leave a tip, check the links in the description. I'm also a Brave Verified Publisher and accept BAT or Basic Attention Token tips via the Brave browser. That's all for now.

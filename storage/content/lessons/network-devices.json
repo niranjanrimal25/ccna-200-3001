@@ -1,0 +1,462 @@
+{
+  "slug": "network-devices",
+  "title": "Network Devices",
+  "summary": "The fundamental building blocks of a network: routers, switches, firewalls, servers, and clients, and how they work together.",
+  "source_ref": "transcript_1.txt",
+  "order": 1,
+  "sections": [
+    {
+      "type": "explanation",
+      "title": "What is a network?",
+      "order": 1,
+      "content": {
+        "body": "A **computer network** is a digital communications network which allows nodes to share resources. A node is any device connected to the network. The simplest possible network is two PCs connected with a cable — once connected, they can exchange data.\n\nThis lesson introduces the five core device types you'll see everywhere in networking, and how they fit together."
+      }
+    },
+    {
+      "type": "diagram",
+      "title": "The five core network devices",
+      "order": 2,
+      "content": {
+        "diagram_type": "device_gallery",
+        "nodes": [
+          {
+            "id": "router",
+            "label": "Router",
+            "icon": "router",
+            "description": "Forwards traffic between different networks and over the Internet."
+          },
+          {
+            "id": "switch",
+            "label": "Switch",
+            "icon": "switch",
+            "description": "Connects many end hosts within the same LAN."
+          },
+          {
+            "id": "firewall",
+            "label": "Firewall",
+            "icon": "firewall",
+            "description": "Controls traffic entering and exiting the network based on security rules."
+          },
+          {
+            "id": "server",
+            "label": "Server",
+            "icon": "server",
+            "description": "A device that provides functions or services for clients."
+          },
+          {
+            "id": "client",
+            "label": "Client",
+            "icon": "pc",
+            "description": "A device that accesses a service made available by a server."
+          }
+        ]
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "Clients and servers",
+      "order": 3,
+      "content": {
+        "body": "Clients and servers are also called **end hosts** or **endpoints**.\n\n- A **client** is a device that *accesses* a service made available by a server.\n- A **server** is a device that *provides functions or services* for clients.\n\nThe two definitions are mirrors of each other. A laptop, desktop, or smartphone can be a client; a data-center machine running a web service can be a server.\n\n**The same device can be a client in some situations and a server in others.** It is the *role* that matters, not the hardware."
+      }
+    },
+    {
+      "type": "animation",
+      "title": "Client and server roles in action",
+      "order": 4,
+      "content": {
+        "diagram_type": "topology",
+        "nodes": [
+          {
+            "id": "pc1",
+            "label": "PC1",
+            "icon": "pc",
+            "x": 120,
+            "y": 150
+          },
+          {
+            "id": "pc2",
+            "label": "PC2",
+            "icon": "pc",
+            "x": 520,
+            "y": 150
+          }
+        ],
+        "links": [
+          {
+            "from": "pc1",
+            "to": "pc2",
+            "kind": "ethernet"
+          }
+        ],
+        "steps": [
+          {
+            "narration": "PC1 requests the file image.jpg from PC2. PC1 is the device asking for a service.",
+            "animate": {
+              "packet_from": "pc1",
+              "packet_to": "pc2",
+              "label": "request: image.jpg"
+            }
+          },
+          {
+            "narration": "PC2 responds and sends the file. PC2 is providing the service, so it is acting as the server.",
+            "animate": {
+              "packet_from": "pc2",
+              "packet_to": "pc1",
+              "label": "image.jpg",
+              "highlight": "pc2"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "The cloud symbol",
+      "order": 5,
+      "content": {
+        "body": "In network diagrams, a **cloud** is often used to represent the Internet, or any part of the network whose internal details aren't important to the current topic.\n\nWhen your computer watches a video on YouTube, it sends a request that passes *through the Internet* to YouTube's servers. The reply comes back the same way — as a continuous stream of data until the video is done."
+      }
+    },
+    {
+      "type": "animation",
+      "title": "LANs and routers between them",
+      "order": 6,
+      "content": {
+        "diagram_type": "topology",
+        "nodes": [
+          {
+            "id": "pc1",
+            "label": "PC1",
+            "icon": "pc",
+            "x": 90,
+            "y": 120
+          },
+          {
+            "id": "pc2",
+            "label": "PC2",
+            "icon": "pc",
+            "x": 90,
+            "y": 240
+          },
+          {
+            "id": "sw1",
+            "label": "SW1",
+            "icon": "switch",
+            "x": 250,
+            "y": 180
+          },
+          {
+            "id": "r1",
+            "label": "R1",
+            "icon": "router",
+            "x": 410,
+            "y": 180
+          },
+          {
+            "id": "internet",
+            "label": "Internet",
+            "icon": "cloud",
+            "x": 560,
+            "y": 180
+          },
+          {
+            "id": "r2",
+            "label": "R2",
+            "icon": "router",
+            "x": 710,
+            "y": 180
+          },
+          {
+            "id": "sw2",
+            "label": "SW2",
+            "icon": "switch",
+            "x": 870,
+            "y": 180
+          },
+          {
+            "id": "srv1",
+            "label": "SRV1",
+            "icon": "server",
+            "x": 1020,
+            "y": 180
+          }
+        ],
+        "links": [
+          {
+            "from": "pc1",
+            "to": "sw1",
+            "kind": "ethernet"
+          },
+          {
+            "from": "pc2",
+            "to": "sw1",
+            "kind": "ethernet"
+          },
+          {
+            "from": "sw1",
+            "to": "r1",
+            "kind": "ethernet"
+          },
+          {
+            "from": "r1",
+            "to": "internet",
+            "kind": "wan"
+          },
+          {
+            "from": "internet",
+            "to": "r2",
+            "kind": "wan"
+          },
+          {
+            "from": "r2",
+            "to": "sw2",
+            "kind": "ethernet"
+          },
+          {
+            "from": "sw2",
+            "to": "srv1",
+            "kind": "ethernet"
+          }
+        ],
+        "steps": [
+          {
+            "narration": "PC1 is in the New York branch LAN and SRV1 is in the Tokyo branch LAN. PC1 wants a file on SRV1.",
+            "animate": {
+              "highlight": [
+                "pc1",
+                "srv1"
+              ]
+            }
+          },
+          {
+            "narration": "PC1 sends the request to its switch SW1, which forwards it to R1.",
+            "animate": {
+              "packet_from": "pc1",
+              "packet_to": "r1",
+              "label": "request"
+            }
+          },
+          {
+            "narration": "R1 forwards the request over the Internet to R2.",
+            "animate": {
+              "packet_from": "r1",
+              "packet_to": "r2",
+              "label": "request"
+            }
+          },
+          {
+            "narration": "R2 sends it via SW2 to SRV1. Switches carry traffic within a LAN; routers carry traffic between LANs.",
+            "animate": {
+              "packet_from": "r2",
+              "packet_to": "srv1",
+              "label": "request"
+            }
+          },
+          {
+            "narration": "The reply follows the reverse path back to PC1.",
+            "animate": {
+              "packet_from": "srv1",
+              "packet_to": "pc1",
+              "label": "reply"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "Switches vs routers",
+      "order": 7,
+      "content": {
+        "body": "**Switches**\n- Provide connectivity to hosts *within the same LAN* (e.g. all the PCs on one office floor, or your home network).\n- Have many interfaces (often 24 or more) to connect end hosts.\n- Do *not* provide connectivity between LANs or over the Internet.\n\n**Routers**\n- Provide connectivity *between* LANs.\n- Have relatively few network interfaces compared to switches.\n- Send data over the Internet.\n\nCisco Catalyst switches (e.g. Catalyst 9200, 3650) are Cisco's enterprise-grade switches. Cisco ISR 1000/4000/900 series are common enterprise routers."
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "Firewalls",
+      "order": 8,
+      "content": {
+        "body": "A **firewall** is a specialty security device that controls traffic entering and exiting the network, based on **configured rules** that define which traffic is allowed and which is denied.\n\n- Firewalls can be placed **outside** the router (filtering traffic before it reaches the router) or **inside** the network (after the router), or both.\n- A **network firewall** is a hardware appliance that filters traffic *between networks* — this is the type the CCNA focuses on.\n- A **host-based firewall** is software on a single machine (like the firewall on your PC). Even with a hardware firewall, each PC should run one as an extra line of defense.\n- A **next-generation firewall** adds more advanced filtering capabilities (e.g. intrusion prevention) on top of traditional firewall features. Cisco examples: ASA 5500-X and Firepower 2100 series."
+      }
+    },
+    {
+      "type": "table",
+      "title": "Device summary",
+      "order": 9,
+      "content": {
+        "headers": [
+          "Device",
+          "Primary job",
+          "Key characteristic"
+        ],
+        "rows": [
+          [
+            "Switch",
+            "Forward traffic within a LAN",
+            "Many interfaces (24+) for end hosts"
+          ],
+          [
+            "Router",
+            "Forward traffic between LANs / over the Internet",
+            "Few interfaces; connects separate networks"
+          ],
+          [
+            "Firewall",
+            "Filter traffic in/out of the network",
+            "Configured security rules; inside or outside placement"
+          ],
+          [
+            "Server",
+            "Provide services to clients",
+            "An end host; same hardware can be a client or server"
+          ],
+          [
+            "Client",
+            "Access services from servers",
+            "An end host; PC, laptop, smartphone"
+          ]
+        ]
+      }
+    },
+    {
+      "type": "callout",
+      "title": "Exam tip",
+      "order": 10,
+      "content": {
+        "body": "When a question describes connecting *many end hosts in the same location*, the answer is a **switch**. When it describes connecting *separate networks together*, the answer is a **router**. When it asks about *monitoring and controlling traffic in and out*, the answer is a **firewall**.",
+        "style": "exam_tip"
+      }
+    }
+  ],
+  "quiz": {
+    "questions": [
+      {
+        "order": 1,
+        "question": "Your company wants to purchase network hardware to which they can connect the 30 PCs in your department. Which type of network device is appropriate?",
+        "explanation": "A router is designed for forwarding traffic between networks, not for connecting many end hosts, and typically won't have 30 interfaces. A firewall filters traffic entering/exiting the local network and isn't designed to connect directly to end hosts. A server is an end host itself. A switch is designed to connect many end hosts within the same LAN and has many network interfaces.",
+        "options": [
+          {
+            "label": "A",
+            "text": "A router",
+            "is_correct": false
+          },
+          {
+            "label": "B",
+            "text": "A firewall",
+            "is_correct": false
+          },
+          {
+            "label": "C",
+            "text": "A switch",
+            "is_correct": true
+          },
+          {
+            "label": "D",
+            "text": "A server",
+            "is_correct": false
+          }
+        ]
+      },
+      {
+        "order": 2,
+        "question": "You received a video file from your friend's Apple iPhone using AirDrop. What was his iPhone functioning as in that transaction?",
+        "explanation": "A client accesses a service, it does not provide a service. An end host like an iPhone doesn't function as a LAN by itself, though it can be part of one. A server is a device that provides functions or services for clients — your friend's phone provided the file, so it functioned as a server.",
+        "options": [
+          {
+            "label": "A",
+            "text": "A server",
+            "is_correct": true
+          },
+          {
+            "label": "B",
+            "text": "A client",
+            "is_correct": false
+          },
+          {
+            "label": "C",
+            "text": "A local area network",
+            "is_correct": false
+          }
+        ]
+      },
+      {
+        "order": 3,
+        "question": "What is your computer or smartphone functioning as while you watch this video?",
+        "explanation": "Your device is receiving a service, not providing one, so it is not a server. Although it is an end host, that doesn't describe its function — both servers and clients are end hosts. Since it is receiving a service from YouTube's servers, it is functioning as a client.",
+        "options": [
+          {
+            "label": "A",
+            "text": "A server",
+            "is_correct": false
+          },
+          {
+            "label": "B",
+            "text": "An end host",
+            "is_correct": false
+          },
+          {
+            "label": "C",
+            "text": "A client",
+            "is_correct": true
+          }
+        ]
+      },
+      {
+        "order": 4,
+        "question": "Your company wants to purchase network hardware to connect its separate networks together. What kind of network device is appropriate?",
+        "explanation": "Although a firewall can connect multiple networks, its real purpose is to monitor and control traffic entering and exiting. 'Host' can refer to any network node, and a LAN is not a device at all. A router is designed to connect and forward traffic between multiple networks.",
+        "options": [
+          {
+            "label": "A",
+            "text": "A firewall",
+            "is_correct": false
+          },
+          {
+            "label": "B",
+            "text": "A host",
+            "is_correct": false
+          },
+          {
+            "label": "C",
+            "text": "A LAN",
+            "is_correct": false
+          },
+          {
+            "label": "D",
+            "text": "A router",
+            "is_correct": true
+          }
+        ]
+      },
+      {
+        "order": 5,
+        "question": "Your company wants to upgrade its old network firewall to one that provides more advanced functions. What kind of firewall should they purchase?",
+        "explanation": "A host-based firewall runs on an end host and is not a network firewall. 'Next-level' and 'top-layer' are not actual firewall types. A next-generation firewall combines traditional firewall features with more advanced filtering capabilities.",
+        "options": [
+          {
+            "label": "A",
+            "text": "A host-based firewall",
+            "is_correct": false
+          },
+          {
+            "label": "B",
+            "text": "A next-level firewall",
+            "is_correct": false
+          },
+          {
+            "label": "C",
+            "text": "A next-generation firewall",
+            "is_correct": true
+          },
+          {
+            "label": "D",
+            "text": "A top-layer firewall",
+            "is_correct": false
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,561 @@
+{
+  "slug": "ethernet-lan-switching-part-1",
+  "title": "Ethernet LAN Switching (Part 1)",
+  "summary": "The Ethernet frame, MAC addresses, and how switches learn MAC addresses and decide whether to forward or flood frames.",
+  "source_ref": "transcript_5.txt",
+  "order": 5,
+  "sections": [
+    {
+      "type": "explanation",
+      "title": "Ethernet and LANs",
+      "order": 1,
+      "content": {
+        "body": "A **LAN** (Local Area Network) is a network contained within a relatively small area — one office floor or your home network. **Routers connect separate LANs; switches expand an existing LAN** (they don't separate them).\n\nEthernet is the Layer 2 protocol used in virtually every LAN. It covers Layer 1 (cabling — already covered) and Layer 2 (framing and addressing, this lesson). This lesson is about how **switches receive and forward Ethernet frames**.\n\nRecall the PDU names: data → segment (L4 header) → packet (L3 header) → frame (L2 header + trailer)."
+      }
+    },
+    {
+      "type": "diagram",
+      "title": "The Ethernet frame",
+      "order": 2,
+      "content": {
+        "diagram_type": "frame_fields",
+        "fields": [
+          {
+            "name": "Preamble",
+            "length": "7 bytes",
+            "purpose": "Receiver clock synchronization"
+          },
+          {
+            "name": "SFD",
+            "length": "1 byte",
+            "purpose": "Signals the end of the preamble / start of the frame"
+          },
+          {
+            "name": "Destination",
+            "length": "6 bytes",
+            "purpose": "Destination MAC address"
+          },
+          {
+            "name": "Source",
+            "length": "6 bytes",
+            "purpose": "Source MAC address"
+          },
+          {
+            "name": "Type / Length",
+            "length": "2 bytes",
+            "purpose": "Type or length of the encapsulated packet"
+          },
+          {
+            "name": "FCS",
+            "length": "4 bytes",
+            "purpose": "Frame Check Sequence — CRC error detection (trailer)"
+          }
+        ],
+        "note": "Total header + trailer is 26 bytes including the preamble and SFD."
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "The Type/Length field and the FCS",
+      "order": 3,
+      "content": {
+        "body": "The 2-byte **Type/Length** field can mean two things:\n\n- A value of **1500 or less** indicates the **length** of the encapsulated packet in bytes.\n- A value of **1536 or greater** indicates the **type** of the encapsulated packet: **0x0800** = IPv4, **0x86DD** = IPv6 (0x is the hex prefix).\n\nThe **FCS** (Frame Check Sequence) is the single field of the trailer, 4 bytes long. The receiver runs a **CRC** (Cyclic Redundancy Check) algorithm over the data to detect corrupted data. The four 'redundant' check bytes add no new information — they exist purely to check for errors."
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "MAC addresses",
+      "order": 4,
+      "content": {
+        "body": "A **MAC address** (Media Access Control) is a **6-byte (48-bit)** physical address burned into the device when it's made — you might also hear **BIA**, burned-in address. It's globally unique (except rare locally-unique addresses) and separate from a logical IP address, which you assign in the CLI.\n\nWritten as **12 hexadecimal characters**, often grouped `AAAA.AA00.0001`. The **first 3 bytes are the OUI** (Organizationally Unique Identifier), assigned to the maker of the device (e.g. Cisco). The **last 3 bytes** uniquely identify the device itself.\n\n**Hexadecimal** uses 16 digits: 0-9 and A-F (A=10, B=11, C=12, D=13, E=14, F=15). The second hex column represents 16, so hex `10` = decimal 16, hex `11` = decimal 17, etc."
+      }
+    },
+    {
+      "type": "animation",
+      "title": "MAC address learning and flooding",
+      "order": 5,
+      "content": {
+        "diagram_type": "switch_learning",
+        "nodes": [
+          {
+            "id": "pc1",
+            "label": "PC1\nAAAA.AA00.0001",
+            "icon": "pc",
+            "x": 120,
+            "y": 160,
+            "port": "F0/1"
+          },
+          {
+            "id": "pc2",
+            "label": "PC2\nAAAA.AA00.0002",
+            "icon": "pc",
+            "x": 430,
+            "y": 60,
+            "port": "F0/2"
+          },
+          {
+            "id": "pc3",
+            "label": "PC3\nAAAA.AA00.0003",
+            "icon": "pc",
+            "x": 430,
+            "y": 260,
+            "port": "F0/3"
+          },
+          {
+            "id": "sw1",
+            "label": "SW1",
+            "icon": "switch",
+            "x": 275,
+            "y": 160
+          }
+        ],
+        "links": [
+          {
+            "from": "pc1",
+            "to": "sw1",
+            "kind": "ethernet"
+          },
+          {
+            "from": "pc2",
+            "to": "sw1",
+            "kind": "ethernet"
+          },
+          {
+            "from": "pc3",
+            "to": "sw1",
+            "kind": "ethernet"
+          }
+        ],
+        "steps": [
+          {
+            "narration": "PC1 wants to send data to PC2. It sends a unicast frame: destination AAAA.AA00.0002, source AAAA.AA00.0001.",
+            "animate": {
+              "packet_from": "pc1",
+              "packet_to": "sw1",
+              "label": "unicast"
+            }
+          },
+          {
+            "narration": "SW1 reads the SOURCE MAC address and learns that PC1 is reachable via F0/1, adding a dynamic entry to its MAC address table.",
+            "animate": {
+              "mac_table_add": {
+                "mac": "AAAA.AA00.0001",
+                "port": "F0/1",
+                "type": "dynamic"
+              }
+            }
+          },
+          {
+            "narration": "But SW1 doesn't know where AAAA.AA00.0002 is. This is an UNKNOWN UNICAST frame. The switch floods it out every interface except F0/1.",
+            "animate": {
+              "packet_from": "sw1",
+              "packet_to": "pc2",
+              "label": "flood",
+              "flood": true
+            }
+          },
+          {
+            "narration": "PC3 drops the frame (its MAC doesn't match). PC2 processes it normally up the OSI stack.",
+            "animate": {
+              "packet_from": "sw1",
+              "packet_to": "pc3",
+              "label": "drops",
+              "status": "fail"
+            }
+          },
+          {
+            "narration": "Unless PC2 replies, SW1 never learns its MAC address. PC1 sends another frame — and SW1 floods again, because it still only knows PC1.",
+            "animate": {
+              "packet_from": "pc1",
+              "packet_to": "sw1",
+              "label": "unicast again"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "animation",
+      "title": "Known unicast forwarding",
+      "order": 6,
+      "content": {
+        "diagram_type": "switch_learning",
+        "nodes": [
+          {
+            "id": "pc1",
+            "label": "PC1\nAAAA.AA00.0001",
+            "icon": "pc",
+            "x": 120,
+            "y": 160,
+            "port": "F0/1"
+          },
+          {
+            "id": "pc2",
+            "label": "PC2\nAAAA.AA00.0002",
+            "icon": "pc",
+            "x": 430,
+            "y": 60,
+            "port": "F0/2"
+          },
+          {
+            "id": "pc3",
+            "label": "PC3\nAAAA.AA00.0003",
+            "icon": "pc",
+            "x": 430,
+            "y": 260,
+            "port": "F0/3"
+          },
+          {
+            "id": "sw1",
+            "label": "SW1",
+            "icon": "switch",
+            "x": 275,
+            "y": 160
+          }
+        ],
+        "links": [
+          {
+            "from": "pc1",
+            "to": "sw1",
+            "kind": "ethernet"
+          },
+          {
+            "from": "pc2",
+            "to": "sw1",
+            "kind": "ethernet"
+          },
+          {
+            "from": "pc3",
+            "to": "sw1",
+            "kind": "ethernet"
+          }
+        ],
+        "steps": [
+          {
+            "narration": "Now PC2 replies to PC1, reversing the destination and source MAC addresses.",
+            "animate": {
+              "packet_from": "pc2",
+              "packet_to": "sw1",
+              "label": "reply"
+            }
+          },
+          {
+            "narration": "SW1 learns PC2's MAC address on F0/2. It now has entries for both hosts.",
+            "animate": {
+              "mac_table_add": {
+                "mac": "AAAA.AA00.0002",
+                "port": "F0/2",
+                "type": "dynamic"
+              }
+            }
+          },
+          {
+            "narration": "The destination AAAA.AA00.0001 IS in the table — this is a KNOWN UNICAST frame, so it's forwarded only out F0/1, not flooded.",
+            "animate": {
+              "packet_from": "sw1",
+              "packet_to": "pc1",
+              "label": "forward"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "Dynamic MAC addresses and aging",
+      "order": 7,
+      "content": {
+        "body": "MAC addresses learned by the switch are **dynamic MAC addresses** — not manually configured; the switch learns them by looking at the **source MAC address** of incoming frames. The interface in the table is the interface the switch will *use to reach* that address (it doesn't necessarily mean the device is directly connected there).\n\nOn Cisco switches, dynamic entries **age out after 5 minutes of inactivity** and are removed to keep the table clean. If the device sends traffic again, the address is learned anew."
+      }
+    },
+    {
+      "type": "animation",
+      "title": "Two switches: learn and flood across the LAN",
+      "order": 8,
+      "content": {
+        "diagram_type": "topology",
+        "nodes": [
+          {
+            "id": "pc1",
+            "label": "PC1",
+            "icon": "pc",
+            "x": 80,
+            "y": 150,
+            "port": "F0/1"
+          },
+          {
+            "id": "pc2",
+            "label": "PC2",
+            "icon": "pc",
+            "x": 80,
+            "y": 300,
+            "port": "F0/3"
+          },
+          {
+            "id": "sw1",
+            "label": "SW1",
+            "icon": "switch",
+            "x": 250,
+            "y": 225
+          },
+          {
+            "id": "sw2",
+            "label": "SW2",
+            "icon": "switch",
+            "x": 460,
+            "y": 225
+          },
+          {
+            "id": "pc3",
+            "label": "PC3",
+            "icon": "pc",
+            "x": 650,
+            "y": 150,
+            "port": "F0/1"
+          },
+          {
+            "id": "pc4",
+            "label": "PC4",
+            "icon": "pc",
+            "x": 650,
+            "y": 300,
+            "port": "F0/2"
+          }
+        ],
+        "links": [
+          {
+            "from": "pc1",
+            "to": "sw1",
+            "kind": "ethernet"
+          },
+          {
+            "from": "pc2",
+            "to": "sw1",
+            "kind": "ethernet"
+          },
+          {
+            "from": "sw1",
+            "to": "sw2",
+            "kind": "ethernet"
+          },
+          {
+            "from": "sw2",
+            "to": "pc3",
+            "kind": "ethernet"
+          },
+          {
+            "from": "sw2",
+            "to": "pc4",
+            "kind": "ethernet"
+          }
+        ],
+        "steps": [
+          {
+            "narration": "PC1 sends a frame to PC3 (destination aaaa.aa00.0003). SW1 learns PC1's MAC on F0/1, but doesn't know PC3 — so it floods out F0/2 and F0/3.",
+            "animate": {
+              "packet_from": "pc1",
+              "packet_to": "sw2",
+              "label": "flood"
+            }
+          },
+          {
+            "narration": "SW2 also learns PC1's MAC from the source field (associating it with the interface toward SW1), then floods to PC3 and PC4 because it doesn't know PC3 either.",
+            "animate": {
+              "packet_from": "sw2",
+              "packet_to": "pc3",
+              "label": "flood"
+            }
+          },
+          {
+            "narration": "PC4 drops it; PC3's MAC matches, so PC3 processes the frame and sends a reply back to PC1.",
+            "animate": {
+              "packet_from": "pc3",
+              "packet_to": "sw2",
+              "label": "reply"
+            }
+          },
+          {
+            "narration": "SW2 learns PC3's MAC on F0/1 and forwards the reply (known unicast) toward SW1. SW1 learns PC3's MAC on F0/3 and forwards it to PC1. Both switches now know both hosts.",
+            "animate": {
+              "packet_from": "sw2",
+              "packet_to": "pc1",
+              "label": "forward"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "table",
+      "title": "Frame types",
+      "order": 9,
+      "content": {
+        "headers": [
+          "Frame type",
+          "Definition",
+          "Switch action"
+        ],
+        "rows": [
+          [
+            "Unicast",
+            "Destined for a single target host",
+            "Forward or flood, depending on the table"
+          ],
+          [
+            "Unknown unicast",
+            "Unicast, but the destination isn't in the MAC address table",
+            "Flood out all interfaces except the one it was received on"
+          ],
+          [
+            "Known unicast",
+            "Unicast, and the destination is in the MAC address table",
+            "Forward only out the interface in the table"
+          ]
+        ]
+      }
+    },
+    {
+      "type": "callout",
+      "title": "Key rule to remember",
+      "order": 10,
+      "content": {
+        "body": "Switches build their MAC address table from the **SOURCE** MAC address field — because if a frame arrives from that source on an interface, the switch knows it can reach that MAC via that interface. The **destination** MAC address decides whether the frame is forwarded or flooded.",
+        "style": "note"
+      }
+    }
+  ],
+  "quiz": {
+    "questions": [
+      {
+        "order": 1,
+        "question": "Which field of an Ethernet frame provides receiver clock synchronization?",
+        "explanation": "The SFD signifies the end of the preamble rather than providing synchronization. The Type field indicates the type of encapsulated packet. The FCS detects transmission errors. The preamble is 7 bytes of alternating 1s and 0s that allows the receiving device to synchronize its receive clock.",
+        "options": [
+          {
+            "label": "A",
+            "text": "Preamble",
+            "is_correct": true
+          },
+          {
+            "label": "B",
+            "text": "SFD",
+            "is_correct": false
+          },
+          {
+            "label": "C",
+            "text": "Type",
+            "is_correct": false
+          },
+          {
+            "label": "D",
+            "text": "FCS",
+            "is_correct": false
+          }
+        ]
+      },
+      {
+        "order": 2,
+        "question": "How long is the physical address of a network device?",
+        "explanation": "A byte is 8 bits, so 48 bytes would be 384 bits. The MAC address, assigned to the physical device, is 48 bits long. (An IP address, which you'll learn about soon, is 32 bits.)",
+        "options": [
+          {
+            "label": "A",
+            "text": "32 bytes",
+            "is_correct": false
+          },
+          {
+            "label": "B",
+            "text": "32 bits",
+            "is_correct": false
+          },
+          {
+            "label": "C",
+            "text": "48 bytes",
+            "is_correct": false
+          },
+          {
+            "label": "D",
+            "text": "48 bits",
+            "is_correct": true
+          }
+        ]
+      },
+      {
+        "order": 3,
+        "question": "What is the OUI of the MAC address E8BA.7011.2874?",
+        "explanation": "The OUI (Organizationally Unique Identifier) is the first half (24 bits) of a MAC address — a unique value assigned to the maker of the device. The first half of E8BA.7011.2874 is E8BA.70.",
+        "options": [
+          {
+            "label": "A",
+            "text": "E8BA",
+            "is_correct": false
+          },
+          {
+            "label": "B",
+            "text": "E8BA.70",
+            "is_correct": true
+          },
+          {
+            "label": "C",
+            "text": "7011",
+            "is_correct": false
+          },
+          {
+            "label": "D",
+            "text": "E8BA.7011",
+            "is_correct": false
+          }
+        ]
+      },
+      {
+        "order": 4,
+        "question": "Which field of an Ethernet frame does a switch use to populate its MAC address table?",
+        "explanation": "The preamble synchronizes clocks, and the length field indicates the size of the encapsulated packet — neither populates the table. Although the destination field specifies a MAC address, it doesn't help the switch learn. A switch uses the SOURCE MAC address, associating it with the interface the frame was received on.",
+        "options": [
+          {
+            "label": "A",
+            "text": "Preamble",
+            "is_correct": false
+          },
+          {
+            "label": "B",
+            "text": "Length",
+            "is_correct": false
+          },
+          {
+            "label": "C",
+            "text": "Source MAC address",
+            "is_correct": true
+          },
+          {
+            "label": "D",
+            "text": "Destination MAC address",
+            "is_correct": false
+          }
+        ]
+      },
+      {
+        "order": 5,
+        "question": "What kind of frame does a switch flood out of all interfaces except the one it was received on?",
+        "explanation": "A known unicast frame's destination is already in the MAC address table, so it's forwarded normally, not flooded. 'Allcast' is not a type of Ethernet frame. An unknown unicast frame is destined for a single host, but since the switch doesn't know how to reach the destination, it floods the frame out of all interfaces except the one it was received on.",
+        "options": [
+          {
+            "label": "A",
+            "text": "Unknown unicast",
+            "is_correct": true
+          },
+          {
+            "label": "B",
+            "text": "Known unicast",
+            "is_correct": false
+          },
+          {
+            "label": "C",
+            "text": "Allcast",
+            "is_correct": false
+          }
+        ]
+      }
+    ]
+  }
+}

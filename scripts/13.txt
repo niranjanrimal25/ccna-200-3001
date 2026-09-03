@@ -1,0 +1,338 @@
+[0:01]
+Welcome to Jeremy's IT Lab. This is a free complete course for the CCNA. If you like these videos, please subscribe to follow along with the series. Also, please like and leave a comment, and share the video to help spread this free series of videos. Thanks for your help.
+
+[0:18]
+In this video, we will be talking about subnetting. This is a very big topic for the CCNA, but not just for the test. It's an essential skill for a network engineer.
+
+[0:29]
+Many people have trouble understanding subnetting, but let me assure you it is not difficult. Subnetting is very simple if you take it step by step. So, I'm going to split subnetting into two, or maybe even three videos, so we can take our time to really understand subnetting without getting lost.
+
+[0:48]
+Now, because subnetting is such an important topic, and many people have trouble with it, there are already plenty of subnetting videos on YouTube. Of course, feel free to check out those videos, too.
+
+[1:00]
+There are some different tricks and techniques people teach that can speed up the subnetting process. I, however, will simply outline the basic steps involved in subnetting.
+
+[1:10]
+I will avoid overcomplicating the topic. My end goal for these videos is that you understand and can do subnetting. So, let's get started. So, what will we cover in this video?
+
+[1:23]
+Just a couple things. First is CIDR, pronounced cider, which stands for classless inter-domain routing. What exactly is that? Well, remember I introduced the IPv4 address classes, such as class A, B, and C.
+
+[1:41]
+Well, cider throws all that away and lets us be more flexible with our IPv4 networks. Then, of course, we'll cover the process of subnetting, taking it step by step so you don't get lost.
+
+[1:54]
+Now, before I get into cider, let's review these IPv4 address classes so we can then understand the need for classless IPv4 addressing. There are five classes of IPv4 addresses: A, B, C, D, and E.
+
+[2:10]
+Class A addresses have a first octet beginning with zero and the rest of the bits can either be zero or one. This leads to a decimal range for the first octet of zero to 127.
+
+[2:23]
+Remember, an IPv4 address is 32 bits, so there are four octets, four groups of eight bits in an IPv4 address. This makes the class A address range from 0.0.0.0 through 127.255.255.255.
+
+[2:42]
+Now, remember there are some special and reserved addresses in these ranges that can't be used for normal IP addresses on a device. But for this video, we'll just include all of them in class A.
+
+[2:54]
+Class B addresses have a first octet beginning with 1 0 and the other six bits can be either zero or one. This gives a range for the first octet of 128 through 191.
+
+[3:08]
+The address range for class B is 128.0.0.0 through 191.255.255.255. Class C addresses have the first three bits set to 110 and the others can be either zero or one.
+
+[3:24]
+If you write that range in decimal, that is 192 through 223. The address range is therefore 192.0.0.0 through 223.255.255.255. Class D addresses begin with 1110 in binary, which gives a range of 224 through 239 for the first octet of the address.
+
+[3:48]
+This means that the address range for class D is 224.0.0.0 through 239.255.255.255. Finally, class E addresses begin with 1111 in binary. So, the first octet range is 240 through 255 and therefore the address range is 240.0.0.0 through 255.255.255.
+
+[4:15]
+However, only the class A, B, and C addresses can be assigned to a device as an IP address as classes D and E have special purposes I mentioned in the IPv4 addressing videos.
+
+[4:28]
+Class A addresses have a /8 prefix length, meaning the first octet identifies the network and the other three octets are used for individual hosts within the network.
+
+[4:39]
+Class B addresses have a /16 prefix length, so the first two octets identify the network and the last two octets identify individual hosts within that network.
+
+[4:50]
+Class C addresses have a prefix length of /24, so the first three octets are used to identify the network and only the last octet is used to identify individual hosts within that network.
+
+[5:03]
+The different prefix lengths give different characteristics to these classes. As you can see, there are few class A networks available, only 128. Actually, less than that because some are reserved like the 127.0.0.0/8 range, which you may remember is used for loopback addresses.
+
+[5:22]
+Because only the first octet of a class A address is used for the network ID, there are three whole octets available for addresses within each class A network. So, there are 16 million 777,216 addresses in each class A network.
+
+[5:39]
+That is 2 to the power of 24 because there are three octets, 3 * 8 = 24 bits. Class B addresses are different. There are more class B networks, 16,384, but fewer addresses per network, 65,536, which is still very many addresses, of course.
+
+[6:01]
+Finally, there are very many class C networks, 2,097,152 networks, but only 256 addresses per network. So, how does a company get their own network address range to use?
+
+[6:17]
+Well, IP addresses are assigned to companies or organizations by a non-profit American corporation called the IANA, the Internet Assigned Numbers Authority.
+
+[6:28]
+The IANA assigns IPv4 addresses and networks to companies based on their size. For example, a very large company might receive a class A or class B network.
+
+[6:40]
+Remember, there are lots of available addresses to use for hosts in each class A and class B network. While a small company might receive a class C network, because there are fewer addresses in each class C network, only 256.
+
+[6:54]
+However, this system led to many wasted IP addresses. So, multiple methods of improving this system have been created. Let me give you an example of how this strict system of addresses can waste IP addresses.
+
+[7:08]
+So, here are two routers. As you can see, R1 has three networks connected to it here. Remember that routers are used to connect different networks. So, each of these links are separate layer three networks, different IP networks.
+
+[7:24]
+R2 also has three networks connected here. Perhaps each of these networks will have a few switches with many end hosts, such as PCs and servers connected to these switches.
+
+[7:35]
+However, there is one more network here. That's this network connecting these two routers. This is known as a point-to-point network, meaning that it's a network connecting two points. In this case, R1 and R2.
+
+[7:50]
+For example, this might be a connection between offices in different cities. Let's say San Francisco and New York. So, because this is a point-to-point network, we don't need a large address block.
+
+[8:04]
+So, let's use a class C network, 203.0.113.0/24. Because this is a class C network, there are 256 addresses in the network. Minus one for the network address, 203.0.113.0.
+
+[8:22]
+Minus one for the broadcast address, 203.0.113.255. Minus one for R1's address, which I'll assign as 203.0.113.1. And minus one for R2's address, which I'll assign as 203.0.113.2.
+
+[8:40]
+That's a total of four addresses used, and 252 addresses wasted. Clearly, this is not an ideal system. Before introducing CIDR, here's another quick example of address waste.
+
+[8:55]
+A company, company X, needs IP addressing for 5,000 end hosts. This is a problem. Why? A class C network does not provide enough addresses, so a class B network must be assigned.
+
+[9:10]
+Because a class B network allows for about 65,000 addresses, this results in about 60,000 addresses being wasted. When the internet was first created, the creators did not predict that the internet would become as large as it is today.
+
+[9:26]
+This resulted in wasted address space, like the examples I showed you. And there are many more examples that I could show you. The total IPv4 address space includes over 4 billion addresses.
+
+[9:38]
+And that seemed like a huge number of addresses when IPv4 was created. But now, address space exhaustion is a big problem. There's not enough addresses.
+
+[9:49]
+One way to solve or remedy this problem is CIDR. The IETF, Internet Engineering Task Force, introduced CIDR in 1993 to replace the classful addressing system.
+
+[10:03]
+With CIDR, the requirements of class A addresses must use a /8 network mask, class B must use /16, and class C must use /24, were removed. This allowed larger networks to be split into smaller networks, allowing greater efficiency.
+
+[10:23]
+These smaller networks are called subnetworks or subnets. Let's look at an example of splitting a larger network into a smaller network, so you can see how it works.
+
+[10:35]
+Here's the same point-to-point network we looked at before. Previously, it was assigned the 203.0.113.0/24 network space. But that resulted in lots of wasted addresses.
+
+[10:48]
+Let's write this out in binary. Here's the binary with the dotted decimal underneath. Now, the prefix length is /24. So, here's the network mask, also known as the subnet mask, 255.255.255.0.
+
+[11:05]
+Remember, all ones in the subnet mask indicate that the same bit in the address is the network portion. In this case, I made the network portion blue, and the host portion is red.
+
+[11:18]
+Well, how many host bits are there? Eight, because it's one octet. So, how many potential hosts or how many usable addresses are there? Well, the formula is this, 2 to the power of 8 minus 2 equals 254 usable addresses.
+
+[11:38]
+What is the 8? Well, it's the number of host bits, which is 8 in this case. And why minus 2? Those are the network address and broadcast address. We can't assign them to a device, so we have to remove them from the number of usable addresses.
+
+[11:54]
+So, we have 254 usable addresses, but we only need two, one for R1 and one for R2. However, CIDR allows us to use different prefix lengths, so it doesn't have to be /24.
+
+[12:09]
+Let's get some practice calculating the number of hosts within different prefix lengths. 203.0.113.0/25 203.0.113.0/26 203.0.113.0/27 /28 /29 /30 /31 and finally /32.
+
+[12:34]
+I've put /31 and /32 in red because they're a little bit special. You'll see when you try to calculate it. So, pause the video here and try to calculate how many usable addresses are in each network.
+
+[12:51]
+Okay, let's check out the answers. So, here is 203.0.113.0, but this time with a /25 mask. Notice that the network portion of the address has extended into the first bit of the last octet.
+
+[13:05]
+And the mask in dotted decimal is now written as 255.255.255.128. I changed the color of the extra bit to purple, but it is part of the network portion, the blue part.
+
+[13:19]
+If you don't remember how to convert from binary to dotted decimal, make sure you review that. It's very important for subnetting. Now, there are seven bits in the host portion of the address. So, the number of usable addresses is 2 to the power of 7 - 2, which equals 126.
+
+[13:37]
+Once again, we only need two addresses, one for R1 and one for R2. So, we will be wasting 124 addresses. That's better than wasting 252 addresses with a /24 prefix length, but it's still wasteful.
+
+[13:53]
+How about a /26 prefix length? Notice that it's now written 255.255.255.192 in dotted decimal because two bits of the last octet are now part of the network portion.
+
+[14:08]
+Since there are six host bits, there are now 62 usable addresses in this network. If we were to use a /26 network mask for the 203.0.113.0 network, we would be wasting 60 addresses.
+
+[14:23]
+Getting better, but we can make this network even smaller. Now that you get the idea, let's speed it up. For a /27 prefix length, the mask is written as 255.255.255.224 in dotted decimal.
+
+[14:39]
+There are now five host bits. So, that means there are 30 usable addresses. As you can see, the address space is getting smaller and smaller as we extend the network mask.
+
+[14:51]
+For a /28 prefix length, the mask is written as 255.255.255.240 in dotted decimal. There are now only four host bits. So, that means there are 14 usable addresses.
+
+[15:07]
+After assigning addresses to R1 and R2, this would mean only 12 wasted addresses. But, we can make this address space even smaller to make our addressing even more efficient.
+
+[15:19]
+If we use a a prefix length, the mask is written as 255.255.255.248 in dotted decimal. Now, we have only three host bits. So, that means there are just six usable addresses.
+
+[15:33]
+Again, after we give R1 and R2 addresses, there would be only four wasted addresses. If we use a /30 prefix length, the mask is written as 255.255.255.252 in dotted decimal.
+
+[15:50]
+There are now only two host bits. So, that means two usable addresses. So, this is perfect. There are four total addresses. That's the network address, the broadcast address, R1's address, and R2's address. That means zero wasted addresses.
+
+[16:07]
+Before moving on to look at the /31 and /32 prefix lengths, let me clarify a little bit. So, instead of 203.0.113.0/24, we will use 203.0.113.0/30, which is a subnet of that larger class C network.
+
+[16:26]
+203.0.113.0/30 includes the address range of 203.0.113.0 through 203.0.113.3. Let me show you that in binary. Here is 203.0.113.0 in binary, the host portion all zeros.
+
+[16:46]
+Here is 203.0.113.1, 203.0.113.2, and 203.0.113.3. These are the four addresses in the network. These two being the two usable addresses, which are assigned to R1 and R2.
+
+[17:05]
+So, we took up four addresses with this subnet. What about the other addresses in the 203.0.113.0/24 range? The remaining addresses in the address block, which are 203.0.113.4 through 203.0.113.255, are now available to be used in other subnets.
+
+[17:27]
+That's the magic of subnetting. Instead of using 203.0.113.0/24 and wasting 252 addresses, we can use /30 and waste no addresses. Or, perhaps there is another way to make this even more efficient.
+
+[17:45]
+Let's look into it. If we use a /31 prefix length, the mask is written as 255.255.255.254 in dotted decimal. There is now only one host bit, so that means zero usable addresses.
+
+[18:03]
+2 to the power of 1 is 2 minus 2 for the network and broadcast addresses means zero addresses that we can assign to devices. So, you used to not be able to use /31 network prefixes because of this.
+
+[18:18]
+However, for a point-to-point connection like this, it actually is possible to use a /31 mask. Let's check it out. So, here's the 203.0.113.0/31 network.
+
+[18:32]
+R1 is 203.0.113.0 and R2 is 203.0.113.1. The 203.0.113.0/31 network consists of addresses from 203.0.113.0 through 203.0.113.1, which is actually only two addresses.
+
+[18:53]
+Here they are in binary. There's 203.0.113.0 and there's 203.0.113.1. Normally, this would be a problem because it leaves no usable addresses after subtracting the network and broadcast addresses.
+
+[19:08]
+But, for point-to-point networks like this, a dedicated connection like this between two routers, there's actually no need for a network address or a broadcast address.
+
+[19:19]
+So, we can break the rules in this case and assign the only two addresses in this network to our routers. Note that if you try this configuration on a Cisco router, you'll get a warning like this, reminding you to make sure that this is a point-to-point link.
+
+[19:34]
+But, it is a totally valid configuration. So, once again, the remaining addresses in the 203.0.113.0/24 address block, which are 203.0.113.2 through 255, are now available to be used in other networks.
+
+[19:53]
+But, this time we've saved even more addresses using only two addresses instead of four for this point-to-point connection. People still do use /30 for point-to-point connections at times, but /31 masks are totally valid and more efficient than /30. So, I recommend this method.
+
+[20:13]
+But, we still haven't looked at the /32 mask. A /32 mask is written as 255.255.255.255 in dotted decimal, making the entire address the network portion. There are no host bits.
+
+[20:29]
+If you calculate this using our formula, you will get -1 usable addresses. Clearly, the formula doesn't work in this case. You won't be able to use a /32 mask in this case, and you will probably never use a /32 mask to configure an actual interface.
+
+[20:46]
+However, there are some uses for a /32 mask. For example, when you want to create a static route not to a network, but to just one specific host, you can use a /32 mask to specify that exact host.
+
+[21:01]
+Anyway, I'll talk about that later in the course. Just know that /32 masks are used at some points, but you don't have to worry about them for now. Here's a simple chart showing the dotted decimal subnet masks and their equivalent in CIDR notation.
+
+[21:17]
+That's right. The way of writing a prefix with a slash followed by the prefix length, like /25, /26, et cetera, is called CIDR notation because it was introduced with the CIDR system.
+
+[21:32]
+Previously, only the dotted decimal method was used. Note that I've showed you only how to subnet a class C network so far. But, we will look at class B and class A networks as well with prefix length like /17, /11, /9, et cetera.
+
+[21:50]
+I spent a lot of time on just that one example. But, I hope you can see the use of subnetting, dividing a larger network into smaller networks called subnets.
+
+[22:00]
+Instead of using the whole 203.0.113.0/24 network for the point-to-point connection, we can use a /30 subnet and use only four addresses. Or even better, use a /31 subnet and use only two addresses.
+
+[22:16]
+I'll give one more example of subnetting before finishing up this video. In the next video, I'll give you some practice problems and walk you through them so you can get some hands-on practice with subnetting.
+
+[22:27]
+So, here's a scenario. There are four networks connected to R1 with many hosts connected to each switch. There are 45 hosts per network. R1 needs an IP address in each network, so its address is included in that 45 host number.
+
+[22:45]
+You have received the 192.168.1.0/24 network. And you must divide the network into four subnets that can accommodate the number of hosts required. First off, are there enough addresses in the 192.168.1.0/24 network in the first place.
+
+[23:04]
+So, we need 45 hosts per network including R1. But, also remember that each network has a network and broadcast address. So, that's plus two. So, we need 47 addresses per subnet.
+
+[23:16]
+47 * 4 = 188. So, there's no problem in terms of the number of hosts. 192.168.1.0/24 is a class C network. So, there are 256 addresses. So, we will be able to assign four subnets to accommodate all hosts, no problem.
+
+[23:37]
+Okay, let's see how we can calculate the subnets we need to make. We need four equal size subnets with enough room for at least 45 hosts. Here, I've written out 192.168.1.0 with a /30 mask 255.255.255.252.
+
+[23:55]
+I skipped /32 and /31 since these aren't point-to-point links. We can't use /31 and definitely can't use /32. Since there are two host bits, the formula to determine the number of usable addresses is 2 to the power of 2 minus 2.
+
+[24:14]
+2 to the power of 2 is 2 * 2, which is 4. So, that means there are two usable addresses in a /30 network. Clearly, not enough room to accommodate the 45 hosts we have.
+
+[24:28]
+How about if we use a /29 mask to make these subnets? Can we fit the 45 hosts we need? There are three host bits. So, the formula is 2 to the power of 3 minus 2.
+
+[24:40]
+2 to the power of 3 is 2 * 2 * 2, which is 8. Therefore, there are six usable addresses. Not enough for 45 hosts. How about if we use /28? There are four host bits. So, the formula is 2 to the power of four minus two.
+
+[25:00]
+2 to the power of four is 2 * 2 * 2 * 2, which is 16. So, that means there are 14 usable addresses. Once again, not enough for 45 hosts. How about /27?
+
+[25:15]
+There are five host bits. So, the formula is 2 to the power of five minus two. And 2 to the power of five is 2 * 2 * 2 * 2 * 2, which equals 32. So, that means 30 usable addresses.
+
+[25:31]
+Again, not enough for 45 hosts. How about a /26 subnet mask? There are now six host bits. So, the formula is 2 to the power of six minus two. 2 to the power of six is 2 * 2 * 2 * 2 * 2 * 2, which equals 64.
+
+[25:52]
+That means there are 62 usable addresses. So, it looks like we found our number. /27 doesn't provide enough address space. /26 provides more than we need, but we have to go with 26.
+
+[26:06]
+Unfortunately, you can't always make subnets have exactly the number of addresses you want. There might be some unused address space. That's actually fine, since it's good to have some room for growth anyway.
+
+[26:20]
+So, I think this video has gone on long enough. Instead of finishing this task in this video, I'll make it this week's quiz. The first subnet, subnet one, is 192.168.1.0/26.
+
+[26:35]
+What are the remaining subnets? To help you out, here's a hint. Find the broadcast address of subnet one. The next address after that is the network address of subnet two.
+
+[26:48]
+And then just repeat the process for subnets three and four. Post your answers in the comment section, and I'll also go over the answer in the next video.
+
+[26:58]
+So, what did we cover in this video? We covered CIDR, Classless Inter-Domain Routing, which removes the rules of class A, B, and C networks, and lets us be more flexible with network addressing according to the size of the network.
+
+[27:14]
+We also covered the process of subnetting, but mostly just the basics. Hopefully, you understand the purpose of subnetting and know a little bit about how to do it.
+
+[27:24]
+I'll clarify and expand upon many things in the next video, but also, feel free to ask any questions you have in the comment section. For today's video, there won't be a practice lab. That will be after I finish explaining everything about subnetting.
+
+[27:40]
+There will be flash cards, however, to help you review some of the things learned in this video. You can download them from the link in the description.
+
+[27:48]
+I've also recently enabled the membership feature for my channel. If you want to leave a monthly tip to support me, this is another great way to do so.
+
+[27:57]
+Click join here under the video to check it out. For those who become a JCNP, aka Jeremy Certified Network Professional, level supporter, I'll give you a shout-out at the end of my videos.
+
+[28:10]
+So, first of all, thank you so much to Vance Simmons. I just enabled the membership feature and haven't said anything about it yet, and he became my first JCNP level supporter.
+
+[28:21]
+Thank you so much for supporting the channel. I hope the videos are helping you out. And for my JCNA level supporters, thanks to you, too. Thank you for watching.
+
+[28:34]
+Please subscribe to the channel, like the video, leave a comment, and share the video with anyone else studying for the CCNA. If you want to leave a tip, check the links in the description.
+
+[28:45]
+I'm also a Brave Verified Publisher and accept BAT or basic attention token tips via the Brave browser. That's all for now.

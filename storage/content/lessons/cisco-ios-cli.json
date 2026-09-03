@@ -1,0 +1,318 @@
+{
+  "slug": "cisco-ios-cli",
+  "title": "The Cisco IOS CLI",
+  "summary": "Connecting to a Cisco device via console, navigating EXEC modes, configuring a password, and understanding running vs startup configuration.",
+  "source_ref": "transcript_4.txt",
+  "order": 4,
+  "sections": [
+    {
+      "type": "explanation",
+      "title": "IOS, CLI, and connecting via console",
+      "order": 1,
+      "content": {
+        "body": "**Cisco IOS** is the operating system on Cisco devices (like Windows on a PC) — unrelated to Apple's iOS for iPhones. The **CLI** (command-line interface) is how you configure Cisco routers, switches, and firewalls. Most network engineers prefer the CLI over a **GUI** (graphical user interface).\n\nTo configure a device for the first time, you connect to its **console port**. A Cisco Catalyst switch typically has two: an **RJ-45** console port and a **USB mini-B** connector. You connect from a laptop via the RJ-45 port using a **rollover cable** (RJ-45 on one end, DB-9 on the other), usually through a USB-to-serial adapter since most laptops no longer have serial ports.\n\nA **rollover cable** is different from an Ethernet crossover cable: it connects pin 1→8, 2→7, 3→6, 4→5, 5→4, 6→3, 7→2, 8→1."
+      }
+    },
+    {
+      "type": "table",
+      "title": "Terminal emulator defaults for console",
+      "order": 2,
+      "content": {
+        "headers": [
+          "Setting",
+          "Value"
+        ],
+        "rows": [
+          [
+            "Speed (baud rate)",
+            "9600 bits per second"
+          ],
+          [
+            "Data bits",
+            "8"
+          ],
+          [
+            "Stop bits",
+            "1"
+          ],
+          [
+            "Parity",
+            "None"
+          ],
+          [
+            "Flow control",
+            "None"
+          ]
+        ]
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "CLI modes",
+      "order": 3,
+      "content": {
+        "body": "The prompt always shows the device hostname. The default hostname for a router is `Router`.\n\n- **User EXEC mode** — indicated by `>`. Very limited: you can look at some things but make no changes. Usually you don't do anything here.\n- **Privileged EXEC mode** — indicated by `#`. Enter with `enable`. Complete access to view configuration, restart the device, change the time, and save the configuration — but this is not where you change the configuration.\n- **Global configuration mode** — indicated by `(config)#`. Enter with `configure terminal` (shortest form: `conf t`). This is where you make configuration changes."
+      }
+    },
+    {
+      "type": "diagram",
+      "title": "Navigating CLI modes",
+      "order": 4,
+      "content": {
+        "diagram_type": "mode_transition",
+        "modes": [
+          {
+            "id": "user",
+            "label": "User EXEC",
+            "prompt": "Router>",
+            "command": null
+          },
+          {
+            "id": "privileged",
+            "label": "Privileged EXEC",
+            "prompt": "Router#",
+            "command": "enable"
+          },
+          {
+            "id": "global",
+            "label": "Global Configuration",
+            "prompt": "Router(config)#",
+            "command": "configure terminal"
+          }
+        ],
+        "note": "`exit` takes you back down one level; from privileged EXEC mode, a second `exit` logs you out."
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "CLI conveniences",
+      "order": 5,
+      "content": {
+        "body": "- **`?`** shows available commands. With no space after a word, it shows completions of that word; with a space, it shows the next options. `<cr>` means the only option is to press Enter.\n- **Tab** auto-completes a command.\n- **Abbreviations**: you can type the shortest unambiguous form of a command — e.g. `en` for `enable`, `conf t` for `configure terminal`, `sh run` for `show running-config`. If the command is ambiguous (like `e`, which matches both `enable` and `exit`), the router reports an ambiguous command.\n- **`do`** lets you run privileged EXEC commands (like `show running-config`) from within configuration modes.\n- **`no`** in front of a command removes it."
+      }
+    },
+    {
+      "type": "animation",
+      "title": "Setting an enable password",
+      "order": 6,
+      "content": {
+        "diagram_type": "cli_walkthrough",
+        "steps": [
+          {
+            "narration": "Start in user EXEC mode: `Router>`",
+            "command": "Router>",
+            "input": null
+          },
+          {
+            "narration": "Enter `enable` to reach privileged EXEC mode: `Router#`",
+            "command": "Router>",
+            "input": "enable"
+          },
+          {
+            "narration": "Enter `configure terminal` (or `conf t`) to reach global configuration mode.",
+            "command": "Router#",
+            "input": "configure terminal"
+          },
+          {
+            "narration": "Use `enable password CCNA` to protect privileged EXEC mode. Passwords are case-sensitive — CCNA ≠ ccna.",
+            "command": "Router(config)#",
+            "input": "enable password CCNA"
+          },
+          {
+            "narration": "Exit back to privileged EXEC mode. The next time you enter `enable`, you'll be asked for the password (it isn't shown as you type). Entering the wrong password 3 times results in 'bad secrets' and denial of access.",
+            "command": "Router(config)#",
+            "input": "exit"
+          }
+        ]
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "Running-config vs startup-config",
+      "order": 7,
+      "content": {
+        "body": "The device keeps **two configuration files**:\n\n- **Running-config** — the current, active configuration, edited live as you type commands.\n- **Startup-config** — loaded on restart. Until you save, restarting loads a default configuration, and `show startup-config` reports 'startup-config is not present'.\n\nThree equivalent commands (run from privileged EXEC mode) save running-config as startup-config:\n\n- `write`\n- `write memory`\n- `copy running-config startup-config`"
+      }
+    },
+    {
+      "type": "table",
+      "title": "Command reference",
+      "order": 8,
+      "content": {
+        "headers": [
+          "Command",
+          "Purpose"
+        ],
+        "rows": [
+          [
+            "enable",
+            "Enter privileged EXEC mode"
+          ],
+          [
+            "configure terminal",
+            "Enter global configuration mode"
+          ],
+          [
+            "enable password <pw>",
+            "Set a password for privileged EXEC (weak, plain-text in config)"
+          ],
+          [
+            "enable secret <pw>",
+            "Set a more secure enable password (always encrypted, MD5)"
+          ],
+          [
+            "service password-encryption",
+            "Encrypt the enable password and other passwords (weak type-7 encryption)"
+          ],
+          [
+            "no <command>",
+            "Remove a previously configured command"
+          ],
+          [
+            "show running-config",
+            "Display the active configuration file"
+          ],
+          [
+            "show startup-config",
+            "Display the saved configuration file"
+          ],
+          [
+            "write / write memory / copy running-config startup-config",
+            "Save the running config as the startup config"
+          ]
+        ]
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "Password security",
+      "order": 9,
+      "content": {
+        "body": "`enable password CCNA` stores the password in **plain text** in the running-config — anyone glancing at the config knows it.\n\n`service password-encryption` encrypts all configured passwords (displayed with a `7`, indicating Cisco's proprietary weak encryption). It's better than plain text, but trivially crackable.\n\n`enable secret` is the **more secure** method: always encrypted with **MD5** (displayed with a `5`), regardless of `service password-encryption`. If both are configured, the **enable secret takes precedence** and the enable password is ignored."
+      }
+    },
+    {
+      "type": "callout",
+      "title": "Exam tip",
+      "order": 10,
+      "content": {
+        "body": "Always use `enable secret` rather than `enable password`. `service password-encryption` has **no effect** on `enable secret`. And remember the console defaults: **9600 baud, 8 data bits, 1 stop bit, no parity, no flow control**.",
+        "style": "exam_tip"
+      }
+    }
+  ],
+  "quiz": {
+    "questions": [
+      {
+        "order": 1,
+        "question": "What kind of cable is used to connect to a Cisco device via the RJ-45 console port?",
+        "explanation": "A crossover cable connects two devices (switch-switch, router-router, router-PC) via Ethernet — it isn't used for the console port. USB cables can connect to a USB console port, but that's separate from the RJ-45 console port. A rollover cable connects to the RJ-45 console port, wiring pin 1 to pin 8, pin 2 to pin 7, pin 3 to pin 6, etc.",
+        "options": [
+          {
+            "label": "A",
+            "text": "Rollover cable",
+            "is_correct": true
+          },
+          {
+            "label": "B",
+            "text": "Crossover cable",
+            "is_correct": false
+          },
+          {
+            "label": "C",
+            "text": "USB cable",
+            "is_correct": false
+          }
+        ]
+      },
+      {
+        "order": 2,
+        "question": "You type enable to enter privileged EXEC mode on your Cisco router, however the password you enter is not accepted. What could be the problem?",
+        "explanation": "Service password-encryption is irrelevant — it doesn't change the password itself, only how it's displayed in the configuration. Passwords are case-sensitive, so if Caps Lock is on you could enter an incorrect password even while thinking it's correct.",
+        "options": [
+          {
+            "label": "A",
+            "text": "Service password-encryption is enabled",
+            "is_correct": false
+          },
+          {
+            "label": "B",
+            "text": "Service password-encryption is disabled",
+            "is_correct": false
+          },
+          {
+            "label": "C",
+            "text": "Caps Lock is on",
+            "is_correct": true
+          }
+        ]
+      },
+      {
+        "order": 3,
+        "question": "What is the most secure method to protect access to privileged EXEC mode?",
+        "explanation": "The enable password command configures a plain-text password that can be easily read. Service password-encryption encrypts it, but with a weak form of encryption. The enable secret command configures a password that is automatically encrypted using MD5 — a more secure form of encryption.",
+        "options": [
+          {
+            "label": "A",
+            "text": "The enable secret command",
+            "is_correct": true
+          },
+          {
+            "label": "B",
+            "text": "The enable password command",
+            "is_correct": false
+          },
+          {
+            "label": "C",
+            "text": "The enable password command with service password-encryption",
+            "is_correct": false
+          }
+        ]
+      },
+      {
+        "order": 4,
+        "question": "If both the enable password and the enable secret commands are configured, what will happen when you use enable to enter privileged EXEC mode?",
+        "explanation": "The enable secret always takes precedence over the enable password, and you'll never be asked to enter both. You must enter the enable secret only.",
+        "options": [
+          {
+            "label": "A",
+            "text": "You must enter the enable password followed by the enable secret",
+            "is_correct": false
+          },
+          {
+            "label": "B",
+            "text": "You must enter the enable password only",
+            "is_correct": false
+          },
+          {
+            "label": "C",
+            "text": "You must enter the enable secret only",
+            "is_correct": true
+          }
+        ]
+      },
+      {
+        "order": 5,
+        "question": "You enter the conf t command to enter global configuration mode. What is the full-length version of the command?",
+        "explanation": "The full-length version is 'configure terminal'. Shortcuts reduce typing, but you should still know the full-length versions of the commands.",
+        "options": [
+          {
+            "label": "A",
+            "text": "Configuration time",
+            "is_correct": false
+          },
+          {
+            "label": "B",
+            "text": "Configure terminal",
+            "is_correct": true
+          },
+          {
+            "label": "C",
+            "text": "Configuration terminal",
+            "is_correct": false
+          }
+        ]
+      }
+    ]
+  }
+}
