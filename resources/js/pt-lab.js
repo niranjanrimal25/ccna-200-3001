@@ -189,6 +189,7 @@ export default function practiceLabData() {
         _lastTime: 0,
         _elapsed: 0,
         _raf: 0,
+        _resizeObserver: null,
         _dirtyCables: true,
         _pointer: { downX: 0, downY: 0, dragging: false, moved: false, dragDevId: null },
         _raycaster: new THREE.Raycaster(),
@@ -201,13 +202,26 @@ export default function practiceLabData() {
 
         init() {
             this._state = E.makeState();
-            this._buildScene();
             this._lastTime = performance.now();
-            this._loadSample();
+            // IMPORTANT: defer scene construction. Alpine runs this init()
+            // synchronously during the tree walk, before child `x-ref`
+            // elements (like x-ref="canvas") are registered. Accessing
+            // $refs.canvas here would throw and break the whole component.
+            this.$nextTick(() => {
+                try {
+                    this._buildScene();
+                    this._loadSample();
+                } catch (err) {
+                    console.error('[practice-lab] init failed:', err);
+                    this.statusHint = '⚠️ Could not start the 3D view (WebGL unavailable?). ' + (err && err.message ? err.message : '');
+                    this.logEvent('❌ 3D init failed: ' + (err && err.message ? err.message : err));
+                }
+            });
         },
 
         _buildScene() {
             const host = this.$refs.canvas;
+            if (!host) throw new Error('canvas host not found');
             const w = host.clientWidth || 800;
             const h = host.clientHeight || 560;
 
@@ -274,8 +288,16 @@ export default function practiceLabData() {
             dom.addEventListener('pointerdown', (e) => this._onPointerDown(e));
             dom.addEventListener('pointermove', (e) => this._onPointerMove(e));
             dom.addEventListener('pointerup', (e) => this._onPointerUp(e));
+            dom.addEventListener('pointercancel', (e) => this._onPointerUp(e));
             dom.addEventListener('dblclick', (e) => this._onDblClick(e));
             window.addEventListener('resize', () => this._onResize());
+
+            // keep the renderer sized to its container (e.g. when the CLI
+            // console opens/closes and resizes the canvas area)
+            if (window.ResizeObserver) {
+                this._resizeObserver = new ResizeObserver(() => this._onResize());
+                this._resizeObserver.observe(host);
+            }
 
             const loop = () => {
                 this._raf = requestAnimationFrame(loop);
@@ -286,6 +308,7 @@ export default function practiceLabData() {
 
         _onResize() {
             const host = this.$refs.canvas;
+            if (!host || !this._renderer || !this._camera) return;
             const w = host.clientWidth || 800;
             const h = host.clientHeight || 560;
             this._camera.aspect = w / h;
@@ -921,6 +944,7 @@ export default function practiceLabData() {
 
         destroy() {
             cancelAnimationFrame(this._raf);
+            if (this._resizeObserver) this._resizeObserver.disconnect();
             if (this._renderer) this._renderer.dispose();
         },
     };
