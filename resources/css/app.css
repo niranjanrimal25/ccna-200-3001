@@ -11,6 +11,11 @@
         'Segoe UI Symbol', 'Noto Color Emoji';
 }
 
+/* Hide Alpine-bound elements until their first evaluation (prevents flash). */
+[x-cloak] {
+    display: none !important;
+}
+
 /* ---------------------------------------------------------------------------
  * Notebook-style PDF notes (handwritten, ruled paper look)
  * ------------------------------------------------------------------------- */
