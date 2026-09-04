@@ -27,7 +27,7 @@ function raw(value) {
 function box(w, h, d, color, opts = {}) {
     const m = new THREE.Mesh(
         new THREE.BoxGeometry(w, h, d),
-        new THREE.MeshStandardMaterial({ color, roughness: 0.55, metalness: 0.35, ...opts }),
+        new THREE.MeshStandardMaterial({ color, roughness: 0.7, metalness: 0.0, ...opts }),
     );
     m.castShadow = true;
     m.receiveShadow = true;
@@ -89,7 +89,7 @@ function portLocalPos(dev, portName) {
 
 function rounded(w, h, d, color, radius, opts = {}) {
     const geo = new RoundedBoxGeometry(w, h, d, 4, radius);
-    const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color, roughness: 0.5, metalness: 0.45, ...opts }));
+    const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color, roughness: 0.7, metalness: 0.0, ...opts }));
     m.castShadow = true;
     m.receiveShadow = true;
     return m;
@@ -97,7 +97,7 @@ function rounded(w, h, d, color, radius, opts = {}) {
 
 // Thin flat panel used for face plates and bezels.
 function plate(w, h, color, opts = {}) {
-    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshStandardMaterial({ color, roughness: 0.6, metalness: 0.3, ...opts }));
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshStandardMaterial({ color, roughness: 0.7, metalness: 0.0, ...opts }));
     m.receiveShadow = true;
     return m;
 }
@@ -147,7 +147,7 @@ function brandPlate(w, h, title, subtitle, opts = {}) {
 }
 
 // Rack-mount flange with two screw holes (side: -1 left, +1 right).
-function rackEar(side, w, h, d, y = 0, color = 0x23272a) {
+function rackEar(side, w, h, d, y = 0, color = 0x7b858c) {
     const g = new THREE.Group();
     const flange = box(0.06, h, d, color);
     flange.position.set(side * (w / 2 + 0.05), y, 0);
@@ -182,7 +182,7 @@ function buildRouterMesh() {
     const portLeds = [];
 
     // 1U chassis (ISR 2911-style) + rack ears
-    const chassis = rounded(2.5, 0.5, 1.6, 0x2a2e31, 0.05);
+    const chassis = rounded(2.5, 0.5, 1.6, 0x8f9aa1, 0.05);
     chassis.position.y = 0.28;
     g.add(chassis);
     g.add(rackEar(-1, 2.5, 0.5, 1.6, 0.28));
@@ -192,7 +192,7 @@ function buildRouterMesh() {
     ventRow(g, -0.95, 0.535, 0, 12, 0.10, 0.05, 1.2);
 
     // front bezel
-    const bezel = plate(2.42, 0.42, 0x1a1e21);
+    const bezel = plate(2.42, 0.42, 0x8b959b);
     bezel.position.set(0, 0.28, 0.805);
     g.add(bezel);
 
@@ -226,14 +226,14 @@ function buildRouterMesh() {
     power.position.set(-1.0, 0.22, -0.805);
     g.add(power);
     for (let i = 0; i < 6; i++) {
-        const slot = box(0.02, 0.16, 0.02, 0x101417);
+        const slot = box(0.02, 0.16, 0.02, 0x5c666c);
         slot.position.set(0.4 + i * 0.16, 0.28, -0.805);
         g.add(slot);
     }
 
     // feet
     for (const fx of [-0.9, 0.9]) {
-        const foot = box(0.16, 0.03, 0.5, 0x0d1012);
+        const foot = box(0.16, 0.03, 0.5, 0x23282b);
         foot.position.set(fx, 0.015, 0);
         g.add(foot);
     }
@@ -247,14 +247,14 @@ function buildSwitchMesh() {
     const portLeds = [];
 
     // 1U chassis (Catalyst 2960-style) + rack ears
-    const chassis = rounded(2.5, 0.44, 1.7, 0x272b2e, 0.04);
+    const chassis = rounded(2.5, 0.44, 1.7, 0x8f9aa1, 0.04);
     chassis.position.y = 0.25;
     g.add(chassis);
     g.add(rackEar(-1, 2.5, 0.44, 1.7, 0.25));
     g.add(rackEar(1, 2.5, 0.44, 1.7, 0.25));
 
     // front bezel
-    const bezel = plate(2.42, 0.38, 0x1a1e21);
+    const bezel = plate(2.42, 0.38, 0x8b959b);
     bezel.position.set(0, 0.26, 0.855);
     g.add(bezel);
 
@@ -303,7 +303,7 @@ function buildSwitchMesh() {
 
     // feet
     for (const fx of [-0.9, 0.9]) {
-        const foot = box(0.16, 0.03, 0.6, 0x0d1012);
+        const foot = box(0.16, 0.03, 0.6, 0x23282b);
         foot.position.set(fx, 0.015, 0);
         g.add(foot);
     }
@@ -317,7 +317,7 @@ function buildPcMesh() {
     const portLeds = [];
 
     // tower case
-    const tower = rounded(0.46, 0.82, 0.5, 0x272b2e, 0.03);
+    const tower = rounded(0.46, 0.82, 0.5, 0x8f9aa1, 0.03);
     tower.position.set(-0.18, 0.43, 0);
     g.add(tower);
 
@@ -328,7 +328,7 @@ function buildPcMesh() {
     const usb = jack(0.10, 0.05, 0.01, 0x05090a, 0x2f353a);
     usb.position.set(-0.18, 0.56, 0.26);
     g.add(usb);
-    const dvd = plate(0.30, 0.03, 0x14171a);
+    const dvd = plate(0.30, 0.03, 0x3d4347);
     dvd.position.set(-0.18, 0.62, 0.26);
     g.add(dvd);
 
@@ -340,7 +340,7 @@ function buildPcMesh() {
     g.add(pl); portLeds.push(pl);
 
     // monitor: bezel + glowing terminal screen
-    const bezel = rounded(1.06, 0.66, 0.06, 0x14171a, 0.02);
+    const bezel = rounded(1.06, 0.66, 0.06, 0x3a4044, 0.02);
     bezel.position.set(0.30, 1.46, -0.10);
     g.add(bezel);
     const screenTex = canvasTexture(256, 160, (ctx) => {
@@ -362,15 +362,15 @@ function buildPcMesh() {
     g.add(screen);
 
     // stand + base
-    const neck = box(0.06, 0.16, 0.06, 0x1c2023);
+    const neck = box(0.06, 0.16, 0.06, 0x5c666c);
     neck.position.set(0.30, 1.08, -0.10);
     g.add(neck);
-    const base = rounded(0.40, 0.04, 0.22, 0x1c2023, 0.02);
+    const base = rounded(0.40, 0.04, 0.22, 0x5c666c, 0.02);
     base.position.set(0.30, 0.02, -0.10);
     g.add(base);
 
     // keyboard
-    const kb = rounded(0.68, 0.035, 0.24, 0x1b1f22, 0.015);
+    const kb = rounded(0.68, 0.035, 0.24, 0x8b959b, 0.015);
     kb.position.set(0.30, 0.025, 0.18);
     g.add(kb);
 
@@ -383,20 +383,20 @@ function buildServerMesh() {
     const portLeds = [];
 
     // 1U chassis + rack ears
-    const chassis = rounded(2.0, 0.40, 1.3, 0x2b2f33, 0.04);
+    const chassis = rounded(2.0, 0.40, 1.3, 0x8f9aa1, 0.04);
     chassis.position.y = 0.21;
     g.add(chassis);
     g.add(rackEar(-1, 2.0, 0.40, 1.3, 0.21));
     g.add(rackEar(1, 2.0, 0.40, 1.3, 0.21));
 
     // front: 8 drive bays (2 x 4) + activity/power LEDs
-    const bezel = plate(1.92, 0.32, 0x1a1e21);
+    const bezel = plate(1.92, 0.32, 0x8b959b);
     bezel.position.set(0, 0.21, 0.655);
     g.add(bezel);
     for (let i = 0; i < 8; i++) {
         const col = i % 4;
         const row = Math.floor(i / 4);
-        const bay = jack(0.14, 0.10, 0.02, 0x05090a, 0x32393e);
+        const bay = jack(0.14, 0.10, 0.02, 0x05090a, 0x7b858c);
         bay.position.set(-0.62 + col * 0.20, row === 0 ? 0.14 : 0.28, 0.66);
         g.add(bay);
     }
@@ -526,26 +526,25 @@ export default function practiceLabData() {
             this._controls.update();
 
             // lights
-            const hemi = new THREE.HemisphereLight(0xe9f3f4, 0x1a2226, 0.95);
+            const hemi = new THREE.HemisphereLight(0xffffff, 0x3a4449, 3.0);
             this._scene.add(hemi);
-            const dir = new THREE.DirectionalLight(0xffffff, 1.6);
+            const dir = new THREE.DirectionalLight(0xffffff, 4.0);
             dir.position.set(24, 36, 18);
-            dir.castShadow = true;
+            dir.castShadow = false;
             dir.shadow.mapSize.set(1024, 1024);
             dir.shadow.camera.left = -40;
             dir.shadow.camera.right = 40;
             dir.shadow.camera.top = 40;
             dir.shadow.camera.bottom = -40;
             this._scene.add(dir);
-            this._scene.add(new THREE.AmbientLight(0x1a2226, 0.5));
+            this._scene.add(new THREE.AmbientLight(0xe8eef1, 1.0));
 
             // floor
             const floor = new THREE.Mesh(
                 new THREE.PlaneGeometry(240, 240),
-                new THREE.MeshStandardMaterial({ color: 0x0e1113, roughness: 0.95, metalness: 0.05 }),
+                new THREE.MeshBasicMaterial({ color: 0x14181b }),
             );
             floor.rotation.x = -Math.PI / 2;
-            floor.receiveShadow = true;
             this._scene.add(floor);
 
             const grid = new THREE.GridHelper(60, 60, 0x2a3436, 0x171c1e);
