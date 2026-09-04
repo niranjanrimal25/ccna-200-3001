@@ -38,6 +38,7 @@
             <span x-show="busy">Preparing notes…</span>
         </button>
         <p class="mt-2 text-xs text-slate-600">Handwritten notebook-style notes with diagrams, tables, and quiz review.</p>
+        <p x-show="error" x-cloak class="mt-2 rounded-md border border-red-900/60 bg-red-900/20 px-3 py-2 text-xs text-red-200" x-text="error"></p>
     </div>
 
     <div class="mt-8 space-y-8">

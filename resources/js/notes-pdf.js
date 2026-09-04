@@ -1,17 +1,20 @@
 export default function notesPdfData() {
     return {
         busy: false,
+        error: '',
 
         async download() {
             if (this.busy) return;
 
             const el = document.getElementById('notes-print');
             if (! el) {
+                this.error = 'Notes content not found on this page.';
                 console.error('Notes export container not found.');
                 return;
             }
 
             this.busy = true;
+            this.error = '';
 
             // Lazy-load the (heavy) PDF libraries only when the user
             // actually wants a PDF.
@@ -42,8 +45,11 @@ export default function notesPdfData() {
                 }
                 await new Promise((r) => setTimeout(r, 120));
 
+                // Clamp the raster scale so very tall lessons don't produce a
+                // canvas that exceeds browser size limits / runs out of memory.
+                const scale = Math.min(2, 4096 / Math.max(1, el.scrollWidth), 14000 / Math.max(1, el.scrollHeight));
                 const canvas = await html2canvas(el, {
-                    scale: 2,
+                    scale: Math.max(1, scale),
                     useCORS: true,
                     backgroundColor: '#ffffff',
                     logging: false,
@@ -76,6 +82,7 @@ export default function notesPdfData() {
                 pdf.save(el.dataset.filename || 'ccna-notes.pdf');
             } catch (error) {
                 console.error('PDF export failed:', error);
+                this.error = 'PDF export failed: ' + (error && error.message ? error.message : error);
             } finally {
                 el.style.position = prev.position;
                 el.style.left = prev.left;

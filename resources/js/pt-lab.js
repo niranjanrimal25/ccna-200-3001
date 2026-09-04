@@ -173,7 +173,7 @@ export default function practiceLabData() {
         cli: null, // { devId, mode, output: [{text,cls}], input, history, hi }
         logLines: [],
         cableSrc: null, // { devId, port }
-        statusHint: 'Select a device to open its console, or use the palette to build a network.',
+        statusHint: 'Starting the 3D workspace…',
 
         // ---- non-reactive three/engine state (kept off Alpine) ----
         _state: null,
@@ -190,6 +190,7 @@ export default function practiceLabData() {
         _elapsed: 0,
         _raf: 0,
         _resizeObserver: null,
+        _tickErrorReported: false,
         _dirtyCables: true,
         _pointer: { downX: 0, downY: 0, dragging: false, moved: false, dragDevId: null },
         _raycaster: new THREE.Raycaster(),
@@ -211,6 +212,8 @@ export default function practiceLabData() {
                 try {
                     this._buildScene();
                     this._loadSample();
+                    this.statusHint = 'Ready — drag empty space to orbit · scroll to zoom · right-drag to pan · double-click a device for its console.';
+                    this.logEvent('✅ 3D workspace ready');
                 } catch (err) {
                     console.error('[practice-lab] init failed:', err);
                     this.statusHint = '⚠️ Could not start the 3D view (WebGL unavailable?). ' + (err && err.message ? err.message : '');
@@ -301,7 +304,17 @@ export default function practiceLabData() {
 
             const loop = () => {
                 this._raf = requestAnimationFrame(loop);
-                this._tick();
+                try {
+                    this._tick();
+                } catch (err) {
+                    // Report a render-loop crash once instead of throwing every frame.
+                    if (!this._tickErrorReported) {
+                        this._tickErrorReported = true;
+                        console.error('[practice-lab] render error:', err);
+                        this.logEvent('❌ render error: ' + (err && err.message ? err.message : err));
+                        this.statusHint = '⚠️ Render error: ' + (err && err.message ? err.message : err);
+                    }
+                }
             };
             loop();
         },
@@ -347,7 +360,9 @@ export default function practiceLabData() {
                 const dy = e.clientY - p.downY;
                 if (!p.moved && Math.hypot(dx, dy) > 4) p.moved = true;
 
-                if (this.tool === 'select') {
+                // Moving a device requires Shift+drag, so plain left-drag is
+                // always free for the OrbitControls camera rotation.
+                if (this.tool === 'select' && e.shiftKey) {
                     if (!p.dragging) {
                         const hit = this._raycast(this._deviceGroups(), true, e);
                         const id = hit.length ? this._deviceIdFromHit(hit[0].object) : null;
@@ -846,7 +861,7 @@ export default function practiceLabData() {
             this.cableSrc = null;
             this._refreshMarkers();
             this.statusHint = {
-                select: 'Click a device to select it · double-click to open its console · drag to move.',
+                select: 'Drag empty space to orbit · scroll to zoom · right-drag to pan · Shift+drag a device to move it · double-click to open console.',
                 cable: 'Click a port on the first device, then a port on the second device to connect them.',
                 delete: 'Click a device to delete it (its cables are removed too).',
             }[tool];
