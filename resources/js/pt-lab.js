@@ -7,6 +7,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import * as E from './pt-engine.js';
 import * as C from './pt-cli.js';
+import { SCENARIOS, PLANNED, scenarioById } from './pt-scenarios.js';
 
 // Alpine wraps component data in a reactive Proxy (Vue-style). Three.js and
 // the simulation engine store objects with read-only getters
@@ -451,8 +452,28 @@ export default function practiceLabData() {
         statusHint: 'Starting the 3D workspace…',
         selectedDetail: null, // reactive inspector snapshot for the selected device
 
+        // ---- practice scenarios (reusable step-by-step exercises) ----
+        scenarioList: SCENARIOS.map((s) => ({ id: s.id, icon: s.icon, title: s.title, tag: s.tag, summary: s.summary })),
+        plannedList: PLANNED,
+        practice: {
+            picking: false,
+            scenarioId: null,
+            icon: '',
+            title: '',
+            tag: '',
+            summary: '',
+            objective: '',
+            doneText: '',
+            steps: [], // [{ title, desc }]
+            stepIndex: 0,
+            done: false,
+            narration: [], // log lines produced by the last step
+            tables: [], // [{ id, title, columns: [{key,label}], rows: [{...}] }]
+        },
+
         // ---- non-reactive three/engine state (kept off Alpine) ----
         _state: null,
+        _scenario: null, // the active scenario object (has functions)
         _renderer: null,
         _scene: null,
         _camera: null,
@@ -928,25 +949,38 @@ export default function practiceLabData() {
         // -------------------------------------------------------------------
 
         spawnPackets(result) {
-            const pushPath = (path, color) => {
-                for (let i = 0; i < path.length - 1; i++) {
-                    const link = E.findLink(this._state, path[i], path[i + 1]);
-                    if (!link) continue;
-                    const curve = this._linkCurve(link);
-                    if (!curve) continue;
-                    const mesh = new THREE.Mesh(
-                        new THREE.SphereGeometry(0.16, 16, 12),
-                        new THREE.MeshBasicMaterial({ color }),
-                    );
-                    this._scene.add(mesh);
-                    this._packets.push({
-                        curve, mesh, color, t: 0,
-                        dur: 0.34, start: this._elapsed + this._packets.length * 0.16,
-                    });
-                }
-            };
-            pushPath(result.trace.request, 0xffd166);
-            pushPath(result.trace.reply, 0x5eead4);
+            this._animatePath(result.trace.request, 0xffd166);
+            this._animatePath(result.trace.reply, 0x5eead4);
+        },
+
+        // Spawn one packet mesh along the cable between two devices. The
+        // packet travels fromId → toId (the link curve is stored a→b, so
+        // reverse the sampling when the frame moves b→a).
+        _animateFrame(fromId, toId, color) {
+            const link = E.findLink(this._state, fromId, toId);
+            if (!link) return;
+            const curve = this._linkCurve(link);
+            if (!curve) return;
+            const reverse = link.a.devId !== fromId;
+            const mesh = new THREE.Mesh(
+                new THREE.SphereGeometry(0.16, 16, 12),
+                new THREE.MeshBasicMaterial({ color }),
+            );
+            this._scene.add(mesh);
+            this._packets.push({
+                curve, mesh, color, reverse, t: 0,
+                dur: 0.34, start: this._elapsed + this._packets.length * 0.16,
+            });
+        },
+
+        // A path is a list of device ids; one packet per consecutive hop.
+        _animatePath(path, color) {
+            for (let i = 0; i < path.length - 1; i++) this._animateFrame(path[i], path[i + 1], color);
+        },
+
+        // Frames are [fromId, toId, color] triples (used by practice scenarios).
+        _animateFrames(frames) {
+            for (const [a, b, color] of frames) this._animateFrame(a, b, color);
         },
 
         _tickPackets(dt) {
@@ -961,7 +995,8 @@ export default function practiceLabData() {
                     p.mesh.material.dispose();
                     continue;
                 }
-                const pt = p.curve.getPoint(Math.min(1, p.t));
+                const k = p.reverse ? Math.max(0, 1 - p.t) : Math.min(1, p.t);
+                const pt = p.curve.getPoint(k);
                 p.mesh.position.copy(pt);
                 keep.push(p);
             }
@@ -1324,6 +1359,104 @@ export default function practiceLabData() {
             this.logLines = [];
             this.logEvent('🧹 Workspace cleared.');
             this.statusHint = 'Add devices from the palette to start building.';
+        },
+
+        // -------------------------------------------------------------------
+        // Practice scenarios (step-by-step exercises with animation + tables)
+        // -------------------------------------------------------------------
+
+        openPractice(id) {
+            const sc = scenarioById(id);
+            if (!sc) return;
+            this.selectedId = null;
+            this.selectedDetail = null;
+            this.cli = null;
+            this.cableSrc = null;
+            this.tool = 'select';
+            this._scenario = raw(sc);
+            this._state = raw(E.makeState());
+            sc.build(this._state, E);
+            this._rebuildScene();
+            this._syncAfterStateChange();
+            this._refreshMarkers();
+            this.logLines = [];
+            this.practice = {
+                picking: false,
+                scenarioId: sc.id,
+                icon: sc.icon,
+                title: sc.title,
+                tag: sc.tag,
+                summary: sc.summary,
+                objective: sc.objective || '',
+                doneText: sc.doneText || '',
+                steps: sc.steps.map((s) => ({ title: s.title, desc: s.desc })),
+                stepIndex: 0,
+                done: false,
+                narration: [],
+                tables: [],
+            };
+            this._focusTopology();
+            this._refreshPracticeTables();
+            this.logEvent(`${sc.icon} Practice scenario: ${sc.title}`);
+            this.statusHint = `Step 1/${sc.steps.length}: ${sc.steps[0].title}`;
+        },
+
+        practiceStep() {
+            const sc = this._scenario;
+            if (!sc || this.practice.done) return;
+            const step = sc.steps[this.practice.stepIndex];
+            if (!step) { this.practice.done = true; return; }
+            const res = step.run(this._state, E) || {};
+            if (res.log) {
+                this.practice.narration = res.log.slice();
+                for (const line of res.log) this.logEvent(line);
+            }
+            if (res.frames) this._animateFrames(res.frames);
+            if (res.hint) this.statusHint = res.hint;
+            this._refreshPracticeTables();
+            this.practice.stepIndex += 1;
+            if (this.practice.stepIndex >= sc.steps.length) {
+                this.practice.done = true;
+                this.statusHint = sc.doneText || 'Scenario complete.';
+            } else {
+                this.statusHint = `Step ${this.practice.stepIndex + 1}/${sc.steps.length}: ${sc.steps[this.practice.stepIndex].title}`;
+            }
+        },
+
+        practiceReset() {
+            if (this.practice.scenarioId) this.openPractice(this.practice.scenarioId);
+        },
+
+        exitPractice() {
+            this.practice = {
+                picking: false, scenarioId: null, icon: '', title: '', tag: '', summary: '',
+                objective: '', doneText: '', steps: [], stepIndex: 0, done: false,
+                narration: [], tables: [],
+            };
+            this._scenario = null;
+            this._loadSample();
+        },
+
+        _refreshPracticeTables() {
+            const sc = this._scenario;
+            if (!sc || typeof sc.table !== 'function') { this.practice.tables = []; return; }
+            this.practice.tables = sc.table(this._state, E);
+        },
+
+        // Frame the camera on the whole current topology.
+        _focusTopology() {
+            const devs = this._state.devices;
+            if (!devs.length || !this._controls || !this._camera) return;
+            let cx = 0;
+            let cz = 0;
+            for (const d of devs) { cx += d.x; cz += d.z; }
+            cx /= devs.length;
+            cz /= devs.length;
+            let r = 2;
+            for (const d of devs) r = Math.max(r, Math.hypot(d.x - cx, d.z - cz));
+            this._controls.target.set(cx, 0.4, cz);
+            this._camera.position.set(cx, Math.max(7, r * 1.5), cz + Math.max(8, r * 1.9));
+            this._controls.update();
         },
 
         // Update per-port link LEDs: green when the port's line protocol is up.
