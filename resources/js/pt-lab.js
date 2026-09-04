@@ -468,7 +468,7 @@ export default function practiceLabData() {
         _resizeObserver: null,
         _tickErrorReported: false,
         _dirtyCables: true,
-        _pointer: { downX: 0, downY: 0, dragging: false, moved: false, dragDevId: null },
+        _pointer: { downX: 0, downY: 0, dragging: false, moved: false, dragDevId: null, grabDevId: null },
         _raycaster: raw(new THREE.Raycaster()),
         _ndc: raw(new THREE.Vector2()),
         _ground: raw(new THREE.Plane(new THREE.Vector3(0, 1, 0), 0)),
@@ -488,7 +488,7 @@ export default function practiceLabData() {
                 try {
                     this._buildScene();
                     this._loadSample();
-                    this.statusHint = 'Ready — drag empty space to orbit · scroll to zoom · right-drag to pan · double-click a device for its console.';
+                    this.statusHint = 'Ready — drag a device to move it · drag empty space to orbit · scroll to zoom · right-drag to pan · double-click for its console.';
                     this.logEvent('✅ 3D workspace ready');
                 } catch (err) {
                     console.error('[practice-lab] init failed:', err);
@@ -622,11 +622,25 @@ export default function practiceLabData() {
         // -------------------------------------------------------------------
 
         _onPointerDown(e) {
-            this._pointer.downX = e.clientX;
-            this._pointer.downY = e.clientY;
-            this._pointer.moved = false;
-            this._pointer.dragging = false;
-            this._pointer.dragDevId = null;
+            const p = this._pointer;
+            p.downX = e.clientX;
+            p.downY = e.clientY;
+            p.moved = false;
+            p.dragging = false;
+            p.dragDevId = null;
+            p.grabDevId = null;
+
+            // In select mode, if the press starts on a device, remember it so
+            // a drag moves the device instead of orbiting the camera.
+            if (this.tool === 'select' && e.button === 0) {
+                const hit = this._raycast(this._deviceGroups(), true, e);
+                const id = hit.length ? this._deviceIdFromHit(hit[0].object) : null;
+                if (id) {
+                    p.grabDevId = id;
+                    // Take the pointer over from OrbitControls for this drag.
+                    if (this._controls) this._controls.enabled = false;
+                }
+            }
         },
 
         _onPointerMove(e) {
@@ -636,16 +650,13 @@ export default function practiceLabData() {
                 const dy = e.clientY - p.downY;
                 if (!p.moved && Math.hypot(dx, dy) > 4) p.moved = true;
 
-                // Moving a device requires Shift+drag, so plain left-drag is
-                // always free for the OrbitControls camera rotation.
-                if (this.tool === 'select' && e.shiftKey) {
-                    if (!p.dragging) {
-                        const hit = this._raycast(this._deviceGroups(), true, e);
-                        const id = hit.length ? this._deviceIdFromHit(hit[0].object) : null;
-                        if (id) {
-                            p.dragging = true;
-                            p.dragDevId = id;
-                        }
+                // Dragging a device (grab started on it) moves it; dragging
+                // empty space is left to OrbitControls for camera rotation.
+                if (p.grabDevId) {
+                    if (!p.dragging && p.moved) {
+                        p.dragging = true;
+                        p.dragDevId = p.grabDevId;
+                        this.selectDevice(p.dragDevId);
                     }
                     if (p.dragging && p.dragDevId) {
                         this._dragDevice(p.dragDevId, e);
@@ -658,9 +669,13 @@ export default function practiceLabData() {
             const p = this._pointer;
             const wasDrag = p.moved && p.dragging;
 
+            // Give the camera back to OrbitControls.
+            if (this._controls) this._controls.enabled = true;
+
             if (wasDrag) {
                 p.dragging = false;
                 p.dragDevId = null;
+                p.grabDevId = null;
                 return;
             }
 
@@ -676,6 +691,7 @@ export default function practiceLabData() {
                 const id = hit.length ? this._deviceIdFromHit(hit[0].object) : null;
                 if (id) this.selectDevice(id);
             }
+            p.grabDevId = null;
         },
 
         _onDblClick(e) {
@@ -1207,7 +1223,7 @@ export default function practiceLabData() {
             this.cableSrc = null;
             this._refreshMarkers();
             this.statusHint = {
-                select: 'Drag empty space to orbit · scroll to zoom · right-drag to pan · Shift+drag a device to move it · double-click to open console.',
+                select: 'Drag a device to move it · drag empty space to orbit · scroll to zoom · right-drag to pan · double-click to open console.',
                 cable: 'Click a port on the first device, then a port on the second device to connect them.',
                 delete: 'Click a device to delete it (its cables are removed too).',
             }[tool];
