@@ -6,7 +6,6 @@
 
 @section('content')
 <div x-data="practiceLab"
-     x-init="init()"
      class="flex h-[calc(100vh-1.5rem)] flex-col gap-3 px-4 py-3">
 
     {{-- Header bar --}}
@@ -128,39 +127,40 @@
             </div>
 
             {{-- CLI console --}}
-            <div x-show="cli" x-cloak
-                 class="flex h-56 flex-col overflow-hidden rounded-xl border border-slate-800 bg-[#0a0a0a]">
-                <div class="flex items-center justify-between border-b border-slate-800 px-3 py-1.5">
-                    <span class="font-mono text-xs text-slate-400"
-                          x-text="'Console — ' + (deviceList.find(d => d.id === cli.devId)?.name || '')"></span>
-                    <div class="flex items-center gap-2">
-                        <span class="rounded bg-slate-800 px-1.5 py-0.5 font-mono text-[10px] text-slate-500" x-text="cli.mode"></span>
-                        <button @click="closeConsole()" class="rounded px-2 py-0.5 text-xs text-slate-400 hover:bg-slate-800 hover:text-slate-200">✕</button>
+            <template x-if="cli">
+                <div x-cloak
+                     class="flex h-56 flex-col overflow-hidden rounded-xl border border-slate-800 bg-[#0a0a0a]">
+                    <div class="flex items-center justify-between border-b border-slate-800 px-3 py-1.5">
+                        <span class="font-mono text-xs text-slate-400" x-text="cliTitle"></span>
+                        <div class="flex items-center gap-2">
+                            <span class="rounded bg-slate-800 px-1.5 py-0.5 font-mono text-[10px] text-slate-500" x-text="cli.mode"></span>
+                            <button @click="closeConsole()" class="rounded px-2 py-0.5 text-xs text-slate-400 hover:bg-slate-800 hover:text-slate-200">✕</button>
+                        </div>
+                    </div>
+
+                    <div x-ref="cliScroll" class="flex-1 overflow-y-auto p-3 font-mono text-[12.5px] leading-relaxed">
+                        <template x-for="(line, idx) in cli.output" :key="idx">
+                            <div :class="line.cls" x-text="line.text" style="white-space:pre-wrap; min-height:1.1em;"></div>
+                        </template>
+                        <div class="flex items-baseline" style="white-space:pre;">
+                            <span class="text-green-400" x-text="cliPrompt"></span>
+                            <span class="text-green-400" x-text="cli.input"></span>
+                            <span class="ml-0.5 inline-block h-[14px] w-[7px] align-middle bg-green-400" style="animation:termBlink 1.1s step-end infinite;"></span>
+                        </div>
+                    </div>
+
+                    <input x-ref="cliInput"
+                           type="text"
+                           x-model="cli.input"
+                           @keydown="cliKeydown($event)"
+                           class="sr-only"
+                           autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+                    <div @click="$refs.cliInput.focus()"
+                         class="border-t border-slate-800 px-3 py-1.5 text-[10px] text-slate-600">
+                        Type <kbd class="rounded bg-slate-800 px-1 text-slate-400">?</kbd> for help · routers/switches use Cisco IOS, PCs use Windows commands
                     </div>
                 </div>
-
-                <div x-ref="cliScroll" class="flex-1 overflow-y-auto p-3 font-mono text-[12.5px] leading-relaxed">
-                    <template x-for="(line, idx) in cli.output" :key="idx">
-                        <div :class="line.cls" x-text="line.text" style="white-space:pre-wrap; min-height:1.1em;"></div>
-                    </template>
-                    <div class="flex items-baseline" style="white-space:pre;">
-                        <span class="text-green-400" x-text="cliPrompt"></span>
-                        <span class="text-green-400" x-text="cli.input"></span>
-                        <span class="ml-0.5 inline-block h-[14px] w-[7px] align-middle bg-green-400" style="animation:termBlink 1.1s step-end infinite;"></span>
-                    </div>
-                </div>
-
-                <input x-ref="cliInput"
-                       type="text"
-                       x-model="cli.input"
-                       @keydown="cliKeydown($event)"
-                       class="sr-only"
-                       autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
-                <div @click="$refs.cliInput.focus()"
-                     class="border-t border-slate-800 px-3 py-1.5 text-[10px] text-slate-600">
-                    Type <kbd class="rounded bg-slate-800 px-1 text-slate-400">?</kbd> for help · routers/switches use Cisco IOS, PCs use Windows commands
-                </div>
-            </div>
+            </template>
         </div>
     </div>
 </div>

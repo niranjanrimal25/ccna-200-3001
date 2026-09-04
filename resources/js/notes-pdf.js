@@ -54,6 +54,28 @@ export default function notesPdfData() {
                     backgroundColor: '#ffffff',
                     logging: false,
                     windowWidth: el.scrollWidth,
+                    // Tailwind CSS v4 emits colors in `oklch()`, which
+                    // html2canvas cannot parse. Override the color-typed
+                    // properties in the cloned document so rasterization
+                    // never touches an oklch() value. The notebook itself is
+                    // styled with plain hex/rgba colors, so nothing visible
+                    // changes.
+                    onclone: (clonedDoc) => {
+                        const style = clonedDoc.createElement('style');
+                        style.textContent = [
+                            'html, body { color: #1b2a52 !important; background-color: #ffffff !important; }',
+                            '#notes-print, #notes-print * {',
+                            '  border-color: transparent !important;',
+                            '  outline-color: transparent !important;',
+                            '  text-decoration-color: currentColor !important;',
+                            '  caret-color: transparent !important;',
+                            '  column-rule-color: transparent !important;',
+                            '  box-shadow: none !important;',
+                            '  text-shadow: none !important;',
+                            '}',
+                        ].join('\n');
+                        clonedDoc.head.appendChild(style);
+                    },
                 });
 
                 const imgData = canvas.toDataURL('image/png');

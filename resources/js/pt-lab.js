@@ -7,6 +7,18 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import * as E from './pt-engine.js';
 import * as C from './pt-cli.js';
 
+// Alpine wraps component data in a reactive Proxy (Vue-style). Three.js and
+// the simulation engine store objects with read-only getters
+// (matrixWorld, modelViewMatrix, …) and live internal state that break under
+// a Proxy. Mark them with __v_skip so Alpine's reactivity leaves them
+// untouched and they stay plain objects.
+function raw(value) {
+    if (value && (typeof value === 'object' || typeof value === 'function')) {
+        try { Object.defineProperty(value, '__v_skip', { value: true }); } catch (e) { /* frozen */ }
+    }
+    return value;
+}
+
 // ---------------------------------------------------------------------------
 // Small 3D helpers
 // ---------------------------------------------------------------------------
@@ -181,11 +193,11 @@ export default function practiceLabData() {
         _scene: null,
         _camera: null,
         _controls: null,
-        _groups: new Map(), // devId -> THREE.Group
-        _markers: [], // port marker meshes { devId, port, mesh }
-        _cables: [], // { link, mesh, curve }
+        _groups: raw(new Map()), // devId -> THREE.Group
+        _markers: raw([]), // port marker meshes { devId, port, mesh }
+        _cables: raw([]), // { link, mesh, curve }
         _selRing: null,
-        _packets: [], // { curve, t, dur, start, color, mesh }
+        _packets: raw([]), // { curve, t, dur, start, color, mesh }
         _lastTime: 0,
         _elapsed: 0,
         _raf: 0,
@@ -193,16 +205,16 @@ export default function practiceLabData() {
         _tickErrorReported: false,
         _dirtyCables: true,
         _pointer: { downX: 0, downY: 0, dragging: false, moved: false, dragDevId: null },
-        _raycaster: new THREE.Raycaster(),
-        _ndc: new THREE.Vector2(),
-        _ground: new THREE.Plane(new THREE.Vector3(0, 1, 0), 0),
+        _raycaster: raw(new THREE.Raycaster()),
+        _ndc: raw(new THREE.Vector2()),
+        _ground: raw(new THREE.Plane(new THREE.Vector3(0, 1, 0), 0)),
 
         // -------------------------------------------------------------------
         // Lifecycle
         // -------------------------------------------------------------------
 
         init() {
-            this._state = E.makeState();
+            this._state = raw(E.makeState());
             this._lastTime = performance.now();
             // IMPORTANT: defer scene construction. Alpine runs this init()
             // synchronously during the tree walk, before child `x-ref`
@@ -228,19 +240,19 @@ export default function practiceLabData() {
             const w = host.clientWidth || 800;
             const h = host.clientHeight || 560;
 
-            this._renderer = new THREE.WebGLRenderer({ antialias: true });
+            this._renderer = raw(new THREE.WebGLRenderer({ antialias: true }));
             this._renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             this._renderer.setSize(w, h);
             this._renderer.outputColorSpace = THREE.SRGBColorSpace;
             host.appendChild(this._renderer.domElement);
 
-            this._scene = new THREE.Scene();
+            this._scene = raw(new THREE.Scene());
             this._scene.background = new THREE.Color(0x0b1220);
 
-            this._camera = new THREE.PerspectiveCamera(50, w / h, 0.1, 400);
+            this._camera = raw(new THREE.PerspectiveCamera(50, w / h, 0.1, 400));
             this._camera.position.set(14, 14, 20);
 
-            this._controls = new OrbitControls(this._camera, this._renderer.domElement);
+            this._controls = raw(new OrbitControls(this._camera, this._renderer.domElement));
             this._controls.target.set(0, 0.5, 0);
             this._controls.enableDamping = true;
             this._controls.dampingFactor = 0.08;
@@ -277,10 +289,10 @@ export default function practiceLabData() {
             this._scene.add(grid);
 
             // selection ring (flat halo under the selected device)
-            this._selRing = new THREE.Mesh(
+            this._selRing = raw(new THREE.Mesh(
                 new THREE.RingGeometry(1.5, 2.0, 48),
                 new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.6, side: THREE.DoubleSide }),
-            );
+            ));
             this._selRing.rotation.x = -Math.PI / 2;
             this._selRing.position.y = 0.03;
             this._selRing.visible = false;
@@ -298,7 +310,7 @@ export default function practiceLabData() {
             // keep the renderer sized to its container (e.g. when the CLI
             // console opens/closes and resizes the canvas area)
             if (window.ResizeObserver) {
-                this._resizeObserver = new ResizeObserver(() => this._onResize());
+                this._resizeObserver = raw(new ResizeObserver(() => this._onResize()));
                 this._resizeObserver.observe(host);
             }
 
@@ -507,7 +519,7 @@ export default function practiceLabData() {
                 this._disposeGroup(g);
                 this._groups.delete(devId);
             }
-            this._markers = this._markers.filter((m) => m.devId !== devId);
+            this._markers = raw(this._markers.filter((m) => m.devId !== devId));
             if (this.selectedId === devId) this.selectedId = null;
             this.logEvent(`🗑 deleted ${dev.name} (${devId.toUpperCase()})`);
             this._syncAfterStateChange();
@@ -568,7 +580,7 @@ export default function practiceLabData() {
                 this._disposeGroup(g);
             }
             this._groups.clear();
-            this._markers = [];
+            this._markers = raw([]);
             for (const dev of this._state.devices) this._addDeviceMesh(dev);
             this._dirtyCables = true;
         },
@@ -607,7 +619,7 @@ export default function practiceLabData() {
                 c.mesh.geometry.dispose();
                 c.mesh.material.dispose();
             }
-            this._cables = [];
+            this._cables = raw([]);
             for (const link of this._state.links) {
                 const curve = this._linkCurve(link);
                 if (!curve) continue;
@@ -671,7 +683,7 @@ export default function practiceLabData() {
                 p.mesh.position.copy(pt);
                 keep.push(p);
             }
-            this._packets = keep;
+            this._packets = raw(keep);
         },
 
         // -------------------------------------------------------------------
@@ -727,6 +739,12 @@ export default function practiceLabData() {
                 case 'iface': return `${name}(config-if)#`;
                 default: return `${name}>`;
             }
+        },
+
+        get cliTitle() {
+            if (!this.cli) return 'Console';
+            const d = this.deviceList.find((x) => x.id === this.cli.devId);
+            return 'Console — ' + (d ? d.name : this.cli.devId);
         },
 
         cliSubmit() {
@@ -872,7 +890,7 @@ export default function practiceLabData() {
         },
 
         _loadSample() {
-            this._state = E.makeState();
+            this._state = raw(E.makeState());
             this._rebuildScene();
             this.logLines = [];
             this.selectedId = null;
@@ -923,7 +941,7 @@ export default function practiceLabData() {
         },
 
         clearAll() {
-            this._state = E.makeState();
+            this._state = raw(E.makeState());
             this._rebuildScene();
             this._syncAfterStateChange();
             this.selectedId = null;
