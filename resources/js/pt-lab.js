@@ -451,6 +451,7 @@ export default function practiceLabData() {
         cableSrc: null, // { devId, port }
         statusHint: 'Starting the 3D workspace…',
         selectedDetail: null, // reactive inspector snapshot for the selected device
+        subnettingOpen: false, // subnetting practice trainer overlay
 
         // ---- practice scenarios (reusable step-by-step exercises) ----
         scenarioList: SCENARIOS.map((s) => ({ id: s.id, icon: s.icon, title: s.title, tag: s.tag, summary: s.summary })),

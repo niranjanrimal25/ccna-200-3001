@@ -3,6 +3,7 @@ import Alpine from 'alpinejs';
 import routerLabData from './router-sim.js';
 import notesPdfData from './notes-pdf.js';
 import practiceLabData from './pt-lab.js';
+import subnettingData from './subnetting.js';
 
 window.Alpine = Alpine;
 
@@ -197,5 +198,6 @@ Alpine.data('quizApp', (questions) => ({
 Alpine.data('routerLab', routerLabData);
 Alpine.data('notesPdf', notesPdfData);
 Alpine.data('practiceLab', practiceLabData);
+Alpine.data('subnetting', subnettingData);
 
 Alpine.start();

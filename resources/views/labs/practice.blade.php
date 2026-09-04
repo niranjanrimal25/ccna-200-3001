@@ -42,6 +42,8 @@
 
         <button @click="practice.picking = true"
                 class="rounded-lg border border-teal-700/60 bg-teal-500/10 px-3 py-1.5 text-sm text-teal-200 hover:bg-teal-500/20">🧪 Scenarios</button>
+        <button @click="subnettingOpen = true"
+                class="rounded-lg border border-teal-700/60 bg-teal-500/10 px-3 py-1.5 text-sm text-teal-200 hover:bg-teal-500/20">🧮 Subnetting</button>
         <button @click="loadSample()"
                 class="rounded-lg border border-zinc-700 bg-zinc-800/70 px-3 py-1.5 text-sm text-zinc-200 hover:bg-zinc-700">🏗 Sample</button>
         <button @click="clearAll()"
@@ -334,6 +336,65 @@
                             <span x-text="p.icon"></span> <span x-text="p.title"></span>
                         </span>
                     </template>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Subnetting practice trainer --}}
+    <div x-show="subnettingOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/70" @click="subnettingOpen = false"></div>
+        <div class="relative z-10 flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-zinc-800 px-5 py-3">
+                <div>
+                    <h2 class="text-base font-bold text-zinc-100">🧮 Subnetting Practice</h2>
+                    <p class="text-xs text-zinc-500">All the core CCNA subnetting skills — unlimited random questions with worked solutions.</p>
+                </div>
+                <button @click="subnettingOpen = false"
+                        class="rounded-lg border border-zinc-700 px-2.5 py-1 text-sm text-zinc-300 hover:bg-zinc-800">✕</button>
+            </div>
+
+            <div x-data="subnetting" class="flex-1 overflow-y-auto p-5">
+                <div class="flex flex-wrap gap-1.5">
+                    <template x-for="t in types" :key="t.id">
+                        <button @click="pickType(t.id)"
+                                :class="active===t.id ? 'border-teal-500/40 bg-teal-500/20 text-teal-200' : 'border-zinc-800 text-zinc-400 hover:text-zinc-200'"
+                                class="rounded-full border px-3 py-1 text-xs" x-text="t.label"></button>
+                    </template>
+                </div>
+
+                <div class="mt-4 rounded-xl border border-zinc-800 bg-zinc-950/60 p-4">
+                    <div class="text-[11px] uppercase tracking-wide text-teal-400" x-text="q.typeLabel"></div>
+                    <p class="mt-1 text-sm leading-relaxed text-zinc-100" x-text="q.prompt"></p>
+
+                    <div class="mt-3 flex flex-wrap items-center gap-2">
+                        <input x-model="values.v1" :placeholder="q.p1" @keydown.enter="check()"
+                               class="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 font-mono text-sm text-zinc-100 outline-none focus:border-teal-500/60"/>
+                        <input x-show="q.two" x-model="values.v2" :placeholder="q.p2" @keydown.enter="check()"
+                               class="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 font-mono text-sm text-zinc-100 outline-none focus:border-teal-500/60"/>
+                        <button @click="check()"
+                                class="rounded-lg bg-teal-500/90 px-4 py-2 text-sm font-semibold text-zinc-950 hover:bg-teal-400">Check</button>
+                        <button @click="newQuestion()"
+                                class="rounded-lg border border-zinc-700 px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-800">↻ New question</button>
+                    </div>
+
+                    <div x-show="result" class="mt-3">
+                        <div x-show="result==='correct'" class="rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-300">✅ Correct!</div>
+                        <div x-show="result==='wrong'" class="rounded-lg border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-300">
+                            ❌ Not quite — the answer is <span class="font-mono font-bold" x-text="want"></span>
+                        </div>
+                        <div class="mt-2 rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
+                            <div class="mb-1 text-[10px] uppercase tracking-wide text-zinc-500">Worked solution</div>
+                            <ul class="space-y-0.5 font-mono text-[12px] leading-snug text-zinc-300">
+                                <template x-for="(l, i) in explain" :key="i"><li x-text="l"></li></template>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-3 flex items-center gap-3 text-sm">
+                    <span class="text-zinc-400">Score: <span class="font-semibold text-zinc-100" x-text="correct"></span>/<span x-text="total"></span></span>
+                    <button @click="resetScore()" class="text-xs text-zinc-500 hover:text-zinc-300">reset</button>
                 </div>
             </div>
         </div>
