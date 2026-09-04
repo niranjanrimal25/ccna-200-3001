@@ -4,6 +4,7 @@
 
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import * as E from './pt-engine.js';
 import * as C from './pt-cli.js';
 
@@ -45,119 +46,385 @@ function cyl(r, h, color, opts = {}) {
 
 // Local-space position of a device port (used for cable anchors + markers).
 function portLocalPos(dev, portName) {
-    const idx = dev.ports.findIndex((p) => E.normalizePort(p.name) === E.normalizePort(portName));
-    const n = dev.ports.length;
-    const i = idx < 0 ? 0 : idx;
-    const t = dev.type;
-    let x = 0;
-    let y = 0;
-    let z = 0;
-    if (t === 'router') {
-        const span = n <= 1 ? 0 : Math.min(2.2, (n - 1) * 0.75);
-        x = n <= 1 ? 0 : -span / 2 + i * (span / (n - 1));
-        y = 1.06;
-        z = -1.02;
-    } else if (t === 'switch') {
-        const span = n <= 1 ? 0 : Math.min(2.0, (n - 1) * 0.6);
-        x = n <= 1 ? 0 : -span / 2 + i * (span / (n - 1));
-        y = 0.98;
-        z = -0.92;
-    } else if (t === 'pc') {
-        x = 0; y = 0.9; z = -0.32;
-    } else { // server
-        x = 0; y = 1.32; z = -0.62;
+    const key = E.normalizePort(portName);
+    let p = dev.ports.find((pp) => E.normalizePort(pp.name) === key);
+    if (p && p.kind === 'subinterface') {
+        p = dev.ports.find((pp) => E.normalizePort(pp.name) === E.normalizePort(p.parent)) || p;
     }
-    return new THREE.Vector3(x, y, z);
+    const kind = p ? p.kind : 'ethernet';
+    const idx = p ? Math.max(0, dev.ports.filter((pp) => pp.kind === kind).findIndex((pp) => pp === p)) : 0;
+    const name = p ? E.normalizePort(p.name) : key;
+    const t = dev.type;
+
+    if (t === 'router') {
+        // Cisco ISR-style face: 3 x GE jacks + 2 x serial (WIC) jacks, front-facing.
+        if (kind === 'serial') return new THREE.Vector3(0.82 + idx * 0.30, 0.30, 0.83);
+        if (kind === 'loopback') return new THREE.Vector3(0, 0.30, 0.83);
+        return new THREE.Vector3(-0.45 + idx * 0.40, 0.30, 0.83); // G0/0..2
+    }
+    if (t === 'switch') {
+        // Catalyst-style face: 2 x 12 access ports + 2 x SFP uplinks, front-facing.
+        const n = parseInt((name.match(/\d+$/) || ['0'])[0], 10) || 0;
+        if (/^f/i.test(name)) {
+            const col = (n - 1) % 12;
+            const row = n <= 12 ? 0 : 1;
+            return new THREE.Vector3(-0.82 + col * 0.15, row === 0 ? 0.16 : 0.34, 0.88);
+        }
+        if (/^g/i.test(name)) {
+            return new THREE.Vector3(0.99 + idx * 0.15, 0.25, 0.88);
+        }
+        return new THREE.Vector3(0, 0.25, 0.88); // Vlan1 (virtual)
+    }
+    if (t === 'pc') {
+        return new THREE.Vector3(-0.18, 0.42, -0.26); // NIC at the tower's rear
+    }
+    return new THREE.Vector3(0.12, 0.20, -0.67); // server NIC at the rear
 }
 
 // ---------------------------------------------------------------------------
-// Device 3D models
+// Device 3D models -- stylised Cisco hardware: ISR router, Catalyst switch,
+// desktop PC, and a 1U rack server. Ports sit on the faces defined in
+// portLocalPos() above, so cable anchors and pick markers follow automatically.
 // ---------------------------------------------------------------------------
 
-function ledStrip(parent, x0, y, z, count, color) {
-    for (let k = 0; k < count; k++) {
-        const led = box(0.06, 0.06, 0.02, 0x0b0e0f);
-        led.position.set(x0 + k * 0.18, y, z);
-        parent.add(led);
+function rounded(w, h, d, color, radius, opts = {}) {
+    const geo = new RoundedBoxGeometry(w, h, d, 4, radius);
+    const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color, roughness: 0.5, metalness: 0.45, ...opts }));
+    m.castShadow = true;
+    m.receiveShadow = true;
+    return m;
+}
+
+// Thin flat panel used for face plates and bezels.
+function plate(w, h, color, opts = {}) {
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshStandardMaterial({ color, roughness: 0.6, metalness: 0.3, ...opts }));
+    m.receiveShadow = true;
+    return m;
+}
+
+// Unlit glowing dot (LED) -- stays bright regardless of scene lighting.
+function led(r, color) {
+    return new THREE.Mesh(new THREE.SphereGeometry(r, 10, 8), new THREE.MeshBasicMaterial({ color }));
+}
+
+// Recessed socket: dark opening inside a thin metallic surround.
+function jack(w, h, d, color = 0x05090a, rim = 0x3a4146) {
+    const g = new THREE.Group();
+    const rimMesh = box(w + 0.05, h + 0.05, d + 0.02, rim);
+    const hole = box(w, h, d + 0.03, color);
+    rimMesh.add(hole);
+    g.add(rimMesh);
+    return g;
+}
+
+function canvasTexture(w, h, draw) {
+    const canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    draw(ctx, w, h);
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.anisotropy = 4;
+    return tex;
+}
+
+// "CISCO" branding plate (+ optional model line) drawn to a canvas texture.
+function brandPlate(w, h, title, subtitle, opts = {}) {
+    const tex = canvasTexture(256, 96, (ctx) => {
+        ctx.clearRect(0, 0, 256, 96);
+        ctx.textAlign = 'center';
+        ctx.fillStyle = opts.fg || '#22d3ee';
+        ctx.font = 'bold 46px Arial, Helvetica, sans-serif';
+        ctx.fillText(title, 128, 48);
+        if (subtitle) {
+            ctx.fillStyle = opts.subFg || '#7c868d';
+            ctx.font = '20px Arial, Helvetica, sans-serif';
+            ctx.fillText(subtitle, 128, 76);
+        }
+    });
+    return new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: tex }));
+}
+
+// Rack-mount flange with two screw holes (side: -1 left, +1 right).
+function rackEar(side, w, h, d, y = 0, color = 0x23272a) {
+    const g = new THREE.Group();
+    const flange = box(0.06, h, d, color);
+    flange.position.set(side * (w / 2 + 0.05), y, 0);
+    g.add(flange);
+    for (const yy of [-h * 0.22, h * 0.22]) {
+        const screw = led(0.018, 0x8a9298);
+        screw.position.set(side * (w / 2 + 0.085), y + yy, 0);
+        g.add(screw);
     }
+    return g;
+}
+
+// Row of recessed vent slots along the top of a chassis.
+function ventRow(parent, x0, y, z, count, w = 0.10, gap = 0.05, depth = 0.3, color = 0x161a1d) {
+    for (let k = 0; k < count; k++) {
+        const slot = box(w, 0.015, depth, color);
+        slot.position.set(x0 + k * (w + gap), y, z);
+        parent.add(slot);
+    }
+}
+
+// Small link/activity LED above a port; its colour is kept live in _refreshLeds().
+function portLed(name, x, y, z) {
+    const m = led(0.028, 0x1b2023);
+    m.position.set(x, y, z);
+    m.userData.portName = name;
+    return m;
 }
 
 function buildRouterMesh() {
     const g = new THREE.Group();
-    const body = box(3.2, 0.62, 2.0, 0x272b2e);
-    body.position.y = 0.62;
-    g.add(body);
-    const lid = box(3.05, 0.26, 1.9, 0x34383c);
-    lid.position.y = 1.06;
-    g.add(lid);
-    // vent ridges on lid
-    for (let k = -2; k <= 2; k++) {
-        const vent = box(2.4, 0.04, 0.06, 0x1d2123);
-        vent.position.set(0, 1.21, k * 0.3);
-        g.add(vent);
-    }
-    // front face
-    const face = box(3.2, 0.22, 0.04, 0x171b1d);
-    face.position.set(0, 0.84, 1.0);
-    g.add(face);
-    ledStrip(g, -1.3, 0.95, 1.03, 8, 0x2dd4bf);
-    // brand
-    const brand = box(0.9, 0.12, 0.02, 0x22d3ee);
-    brand.position.set(1.0, 0.62, 1.01);
+    const portLeds = [];
+
+    // 1U chassis (ISR 2911-style) + rack ears
+    const chassis = rounded(2.5, 0.5, 1.6, 0x2a2e31, 0.05);
+    chassis.position.y = 0.28;
+    g.add(chassis);
+    g.add(rackEar(-1, 2.5, 0.5, 1.6, 0.28));
+    g.add(rackEar(1, 2.5, 0.5, 1.6, 0.28));
+
+    // top vents
+    ventRow(g, -0.95, 0.535, 0, 12, 0.10, 0.05, 1.2);
+
+    // front bezel
+    const bezel = plate(2.42, 0.42, 0x1a1e21);
+    bezel.position.set(0, 0.28, 0.805);
+    g.add(bezel);
+
+    // status LEDs: PWR, SYS (green) + ACT (amber)
+    const status = [led(0.03, 0x22c55e), led(0.03, 0x22c55e), led(0.03, 0xf59e0b)];
+    status.forEach((l, i) => { l.position.set(-1.06 + i * 0.09, 0.42, 0.815); g.add(l); });
+
+    // branding
+    const brand = brandPlate(0.72, 0.18, 'CISCO', '2911 ISR');
+    brand.position.set(0.12, 0.42, 0.815);
     g.add(brand);
-    g.userData.bodyCenterY = 0.62;
+
+    // 3 x GE jacks + 2 x serial WIC jacks
+    for (let i = 0; i < 3; i++) {
+        const j = jack(0.16, 0.13, 0.03);
+        j.position.set(-0.45 + i * 0.40, 0.24, 0.82);
+        g.add(j);
+        const pl = portLed('G0/' + i, -0.45 + i * 0.40, 0.335, 0.82);
+        g.add(pl); portLeds.push(pl);
+    }
+    for (let i = 0; i < 2; i++) {
+        const j = jack(0.20, 0.15, 0.04);
+        j.position.set(0.82 + i * 0.30, 0.24, 0.82);
+        g.add(j);
+        const pl = portLed('S0/0/' + i, 0.82 + i * 0.30, 0.345, 0.82);
+        g.add(pl); portLeds.push(pl);
+    }
+
+    // rear: power socket + fan grille (decorative)
+    const power = jack(0.16, 0.10, 0.02, 0x05090a, 0x2f353a);
+    power.position.set(-1.0, 0.22, -0.805);
+    g.add(power);
+    for (let i = 0; i < 6; i++) {
+        const slot = box(0.02, 0.16, 0.02, 0x101417);
+        slot.position.set(0.4 + i * 0.16, 0.28, -0.805);
+        g.add(slot);
+    }
+
+    // feet
+    for (const fx of [-0.9, 0.9]) {
+        const foot = box(0.16, 0.03, 0.5, 0x0d1012);
+        foot.position.set(fx, 0.015, 0);
+        g.add(foot);
+    }
+
+    g.userData.portLeds = portLeds;
     return g;
 }
 
 function buildSwitchMesh() {
     const g = new THREE.Group();
-    const body = box(2.6, 0.58, 1.7, 0x272b2e);
-    body.position.y = 0.56;
-    g.add(body);
-    const lid = box(2.46, 0.22, 1.6, 0x33383c);
-    lid.position.y = 0.96;
-    g.add(lid);
-    const face = box(2.6, 0.2, 0.04, 0x171b1d);
-    face.position.set(0, 0.78, 0.86);
-    g.add(face);
-    ledStrip(g, -1.0, 0.88, 0.89, 10, 0x2dd4bf);
+    const portLeds = [];
+
+    // 1U chassis (Catalyst 2960-style) + rack ears
+    const chassis = rounded(2.5, 0.44, 1.7, 0x272b2e, 0.04);
+    chassis.position.y = 0.25;
+    g.add(chassis);
+    g.add(rackEar(-1, 2.5, 0.44, 1.7, 0.25));
+    g.add(rackEar(1, 2.5, 0.44, 1.7, 0.25));
+
+    // front bezel
+    const bezel = plate(2.42, 0.38, 0x1a1e21);
+    bezel.position.set(0, 0.26, 0.855);
+    g.add(bezel);
+
+    // 24 x 10/100 access ports (2 rows of 12)
+    for (let n = 1; n <= 24; n++) {
+        const col = (n - 1) % 12;
+        const row = n <= 12 ? 0 : 1;
+        const x = -0.82 + col * 0.15;
+        const y = row === 0 ? 0.16 : 0.34;
+        const j = jack(0.10, 0.12, 0.02);
+        j.position.set(x, y, 0.87);
+        g.add(j);
+        const pl = portLed('F0/' + n, x, y + 0.10, 0.87);
+        g.add(pl); portLeds.push(pl);
+    }
+
+    // 2 x SFP uplinks
+    for (let i = 0; i < 2; i++) {
+        const x = 0.99 + i * 0.15;
+        const j = jack(0.12, 0.13, 0.02, 0x04080a, 0x354048);
+        j.position.set(x, 0.25, 0.87);
+        g.add(j);
+        const pl = portLed('G0/' + (i + 1), x, 0.36, 0.87);
+        g.add(pl); portLeds.push(pl);
+    }
+
+    // left strip: mode button + status LEDs (decorative)
+    const modeBtn = led(0.035, 0x22d3ee);
+    modeBtn.position.set(-1.12, 0.42, 0.86);
+    g.add(modeBtn);
+    [0x22c55e, 0x22c55e, 0x2dd4bf, 0x22c55e].forEach((c, i) => {
+        const l = led(0.024, c);
+        l.position.set(-1.12, 0.34 - i * 0.07, 0.86);
+        g.add(l);
+    });
+
+    const brand = brandPlate(0.44, 0.14, 'CISCO', null, { titleSize: 40 });
+    brand.position.set(-1.08, 0.07, 0.86);
+    g.add(brand);
+
+    // rear vents + power
+    ventRow(g, -0.95, 0.475, -0.4, 10, 0.10, 0.05, 0.5);
+    const power = jack(0.16, 0.10, 0.02, 0x05090a, 0x2f353a);
+    power.position.set(1.0, 0.20, -0.855);
+    g.add(power);
+
+    // feet
+    for (const fx of [-0.9, 0.9]) {
+        const foot = box(0.16, 0.03, 0.6, 0x0d1012);
+        foot.position.set(fx, 0.015, 0);
+        g.add(foot);
+    }
+
+    g.userData.portLeds = portLeds;
     return g;
 }
 
 function buildPcMesh() {
     const g = new THREE.Group();
-    // tower
-    const tower = box(0.5, 1.05, 0.55, 0x27292c);
-    tower.position.set(0, 0.53, 0);
+    const portLeds = [];
+
+    // tower case
+    const tower = rounded(0.46, 0.82, 0.5, 0x272b2e, 0.03);
+    tower.position.set(-0.18, 0.43, 0);
     g.add(tower);
-    const power = box(0.1, 0.1, 0.02, 0x22c55e);
-    power.position.set(0, 0.95, 0.28);
+
+    // front panel: power button, USB, DVD slot
+    const power = led(0.025, 0x22c55e);
+    power.position.set(-0.18, 0.74, 0.26);
     g.add(power);
-    // monitor stand + panel
-    const stand = box(0.12, 0.35, 0.12, 0x1f2326);
-    stand.position.set(0.32, 1.22, -0.05);
-    g.add(stand);
-    const screen = box(1.05, 0.66, 0.06, 0x0b0e0f);
-    screen.position.set(0.32, 1.62, -0.08);
+    const usb = jack(0.10, 0.05, 0.01, 0x05090a, 0x2f353a);
+    usb.position.set(-0.18, 0.56, 0.26);
+    g.add(usb);
+    const dvd = plate(0.30, 0.03, 0x14171a);
+    dvd.position.set(-0.18, 0.62, 0.26);
+    g.add(dvd);
+
+    // NIC jack + link LED (rear)
+    const nic = jack(0.14, 0.11, 0.02);
+    nic.position.set(-0.18, 0.42, -0.26);
+    g.add(nic);
+    const pl = portLed('eth0', -0.18, 0.50, -0.26);
+    g.add(pl); portLeds.push(pl);
+
+    // monitor: bezel + glowing terminal screen
+    const bezel = rounded(1.06, 0.66, 0.06, 0x14171a, 0.02);
+    bezel.position.set(0.30, 1.46, -0.10);
+    g.add(bezel);
+    const screenTex = canvasTexture(256, 160, (ctx) => {
+        ctx.fillStyle = '#0a1113';
+        ctx.fillRect(0, 0, 256, 160);
+        ctx.font = '15px ui-monospace, Menlo, monospace';
+        ctx.textAlign = 'left';
+        ctx.fillStyle = '#7c868d';
+        ctx.fillText('Microsoft Windows [Version 10.0]', 14, 30);
+        ctx.fillStyle = '#2dd4bf';
+        ctx.fillText('C:\\> ping 192.168.30.10', 14, 66);
+        ctx.fillText('Reply from 192.168.30.10:', 14, 92);
+        ctx.fillText('  bytes=32 time<1ms TTL=128', 14, 118);
+        ctx.fillStyle = '#22c55e';
+        ctx.fillText('C:\\> _', 14, 144);
+    });
+    const screen = new THREE.Mesh(new THREE.PlaneGeometry(0.98, 0.58), new THREE.MeshBasicMaterial({ map: screenTex }));
+    screen.position.set(0.30, 1.46, -0.065);
     g.add(screen);
-    const glow = box(0.93, 0.54, 0.02, 0x0f3a3a);
-    glow.position.set(0.32, 1.62, -0.05);
-    g.add(glow);
+
+    // stand + base
+    const neck = box(0.06, 0.16, 0.06, 0x1c2023);
+    neck.position.set(0.30, 1.08, -0.10);
+    g.add(neck);
+    const base = rounded(0.40, 0.04, 0.22, 0x1c2023, 0.02);
+    base.position.set(0.30, 0.02, -0.10);
+    g.add(base);
+
+    // keyboard
+    const kb = rounded(0.68, 0.035, 0.24, 0x1b1f22, 0.015);
+    kb.position.set(0.30, 0.025, 0.18);
+    g.add(kb);
+
+    g.userData.portLeds = portLeds;
     return g;
 }
 
 function buildServerMesh() {
     const g = new THREE.Group();
-    const body = box(0.7, 1.9, 1.1, 0x2c3033);
-    body.position.y = 0.95;
-    g.add(body);
-    const face = box(0.72, 1.86, 0.04, 0x171b1d);
-    face.position.set(0, 0.95, 0.56);
-    g.add(face);
-    ledStrip(g, -0.2, 1.6, 0.59, 3, 0x2dd4bf);
-    const badge = box(0.4, 0.14, 0.02, 0x22d3ee);
-    badge.position.set(0, 0.3, 0.59);
-    g.add(badge);
+    const portLeds = [];
+
+    // 1U chassis + rack ears
+    const chassis = rounded(2.0, 0.40, 1.3, 0x2b2f33, 0.04);
+    chassis.position.y = 0.21;
+    g.add(chassis);
+    g.add(rackEar(-1, 2.0, 0.40, 1.3, 0.21));
+    g.add(rackEar(1, 2.0, 0.40, 1.3, 0.21));
+
+    // front: 8 drive bays (2 x 4) + activity/power LEDs
+    const bezel = plate(1.92, 0.32, 0x1a1e21);
+    bezel.position.set(0, 0.21, 0.655);
+    g.add(bezel);
+    for (let i = 0; i < 8; i++) {
+        const col = i % 4;
+        const row = Math.floor(i / 4);
+        const bay = jack(0.14, 0.10, 0.02, 0x05090a, 0x32393e);
+        bay.position.set(-0.62 + col * 0.20, row === 0 ? 0.14 : 0.28, 0.66);
+        g.add(bay);
+    }
+    const hdd = led(0.026, 0x2dd4bf);
+    hdd.position.set(0.52, 0.32, 0.66);
+    g.add(hdd);
+    const pwr = led(0.026, 0x22c55e);
+    pwr.position.set(0.66, 0.32, 0.66);
+    g.add(pwr);
+
+    const brand = brandPlate(0.40, 0.12, 'CISCO', 'UCS', { titleSize: 34 });
+    brand.position.set(0.76, 0.14, 0.66);
+    g.add(brand);
+
+    // rear: NIC jack + link LED, PSU (decorative)
+    const nic = jack(0.14, 0.11, 0.02);
+    nic.position.set(0.12, 0.20, -0.66);
+    g.add(nic);
+    const pl = portLed('eth0', 0.12, 0.28, -0.66);
+    g.add(pl); portLeds.push(pl);
+    const psu = jack(0.20, 0.12, 0.03, 0x05090a, 0x2f353a);
+    psu.position.set(-0.55, 0.16, -0.66);
+    g.add(psu);
+
+    // top vents
+    ventRow(g, -0.6, 0.415, 0, 9, 0.10, 0.05, 1.0);
+
+    g.userData.portLeds = portLeds;
     return g;
 }
 
@@ -170,10 +437,6 @@ function buildDeviceMesh(dev) {
         default: return buildPcMesh();
     }
 }
-
-// ---------------------------------------------------------------------------
-// Alpine component
-// ---------------------------------------------------------------------------
 
 export default function practiceLabData() {
     return {
@@ -547,8 +810,10 @@ export default function practiceLabData() {
             const mesh = buildDeviceMesh(dev);
             mesh.userData.deviceId = dev.id;
             mesh.position.set(dev.x, 0, dev.z);
-            // port markers (for cable mode) — hidden by default
+            // port markers (for cable mode) — hidden by default; virtual
+            // interfaces (loopback / SVI / subinterface) have no physical jack.
             for (const p of dev.ports) {
+                if (p.kind === 'loopback' || p.kind === 'svi' || p.kind === 'subinterface') continue;
                 const pos = portLocalPos(dev, p.name);
                 const marker = new THREE.Mesh(
                     new THREE.SphereGeometry(0.16, 16, 12),
@@ -1046,6 +1311,20 @@ export default function practiceLabData() {
             this.statusHint = 'Add devices from the palette to start building.';
         },
 
+        // Update per-port link LEDs: green when the port's line protocol is up.
+        _refreshLeds() {
+            for (const g of this._groups.values()) {
+                const leds = g.userData.portLeds;
+                const dev = E.getDevice(this._state, g.userData.deviceId);
+                if (!leds || !dev) continue;
+                for (const m of leds) {
+                    const port = E.getPort(dev, m.userData.portName);
+                    const up = port ? E.lineProtocolUp(this._state, dev, port) : false;
+                    m.material.color.set(up ? 0x22c55e : 0x1b2023);
+                }
+            }
+        },
+
         // -------------------------------------------------------------------
         // Render loop
         // -------------------------------------------------------------------
@@ -1057,6 +1336,7 @@ export default function practiceLabData() {
             this._elapsed += dt;
             if (this._dirtyCables) this._rebuildCables();
             this._tickPackets(dt);
+            this._refreshLeds();
             this._controls.update();
 
             // keep selection ring glued to the selected device
