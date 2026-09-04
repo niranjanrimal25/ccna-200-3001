@@ -30,12 +30,12 @@ export default function routerLabData() {
         },
 
         init() {
-            this.print('Cisco IOS Software, Version 15.2(4)M5, RELEASE SOFTWARE (fc2)', 'text-slate-500');
-            this.print('Technical Support: http://www.cisco.com/techsupport', 'text-slate-500');
-            this.print('Copyright (c) 1986-2014 by Cisco Systems, Inc.', 'text-slate-500');
+            this.print('Cisco IOS Software, Version 15.2(4)M5, RELEASE SOFTWARE (fc2)', 'text-stone-500');
+            this.print('Technical Support: http://www.cisco.com/techsupport', 'text-stone-500');
+            this.print('Copyright (c) 1986-2014 by Cisco Systems, Inc.', 'text-stone-500');
             this.print('');
-            this.print('cisco CISCO2911/K9 (revision 1.0) with 483328K/40960K bytes of memory.', 'text-slate-500');
-            this.print('Processor board ID FTX15248720', 'text-slate-500');
+            this.print('cisco CISCO2911/K9 (revision 1.0) with 483328K/40960K bytes of memory.', 'text-stone-500');
+            this.print('Processor board ID FTX15248720', 'text-stone-500');
             this.print('');
             this.$nextTick(() => { if (this.$refs.input) this.$refs.input.focus(); });
         },
@@ -87,7 +87,7 @@ export default function routerLabData() {
                 if (raw === this.enableSecret) {
                     this.mode = 'privileged';
                 } else {
-                    this.print('% Access denied', 'text-red-400');
+                    this.print('% Access denied', 'text-rose-400');
                 }
                 this.currentInput = '';
                 this.scrollBottom();
@@ -130,7 +130,7 @@ export default function routerLabData() {
             const matches = list.filter(c => c.startsWith(input));
             if (matches.length === 1) return matches[0];
             if (matches.includes(input)) return input;
-            if (matches.length > 1) { this.print(`% Ambiguous command: "${input}"`, 'text-red-400'); return null; }
+            if (matches.length > 1) { this.print(`% Ambiguous command: "${input}"`, 'text-rose-400'); return null; }
             return null;
         },
 
@@ -145,7 +145,7 @@ export default function routerLabData() {
         },
 
         dispatchNo(args) {
-            if (!args.length) { this.print('% Incomplete command.', 'text-red-400'); return; }
+            if (!args.length) { this.print('% Incomplete command.', 'text-rose-400'); return; }
             const sub  = args[0];
             const rest = args.slice(1);
             if (this.mode === 'interface') {
@@ -173,7 +173,7 @@ export default function routerLabData() {
             if      (cmd === 'enable')  { this.cmdEnable(); }
             else if (cmd === 'show')    { this.dispatchShow(args); }
             else if (cmd === 'ping')    { this.cmdPing(args); }
-            else if (cmd === 'logout' || cmd === 'exit') { this.print('Connection closed by foreign host.', 'text-slate-400'); }
+            else if (cmd === 'logout' || cmd === 'exit') { this.print('Connection closed by foreign host.', 'text-stone-400'); }
             else { this.printError('% Unknown command or computer name, or unable to find computer address'); }
         },
 
@@ -185,15 +185,15 @@ export default function routerLabData() {
             else if (cmd === 'write')     { this.cmdCopyRunStart(); }
             else if (cmd === 'ping')      { this.cmdPing(args); }
             else if (cmd === 'reload')    { this.cmdReload(); }
-            else if (cmd === 'logout' || cmd === 'exit') { this.print('Connection closed by foreign host.', 'text-slate-400'); }
+            else if (cmd === 'logout' || cmd === 'exit') { this.print('Connection closed by foreign host.', 'text-stone-400'); }
             else { this.printError('% Unknown command or computer name, or unable to find computer address'); }
         },
 
         dispatchGlobal(cmd, args) {
             if      (cmd === 'hostname')  { this.cmdHostname(args); }
             else if (cmd === 'interface') { this.cmdInterface(args); }
-            else if (cmd === 'ip')        { args[0] === 'route' ? this.cmdIpRoute(args.slice(1)) : this.print('% Incomplete command.', 'text-red-400'); }
-            else if (cmd === 'enable')    { args[0] === 'secret' && args[1] ? this.enableSecret = args.slice(1).join(' ') : this.print('% Incomplete command.', 'text-red-400'); }
+            else if (cmd === 'ip')        { args[0] === 'route' ? this.cmdIpRoute(args.slice(1)) : this.print('% Incomplete command.', 'text-rose-400'); }
+            else if (cmd === 'enable')    { args[0] === 'secret' && args[1] ? this.enableSecret = args.slice(1).join(' ') : this.print('% Incomplete command.', 'text-rose-400'); }
             else if (cmd === 'banner')    { this.cmdBanner(args); }
             else if (cmd === 'exit')      { this.mode = 'privileged'; }
             else if (cmd === 'end')       { this.mode = 'privileged'; }
@@ -205,19 +205,19 @@ export default function routerLabData() {
                 if (args[0] === 'address' && args.length >= 3) {
                     this.interfaces[this.currentIface].ip   = args[1];
                     this.interfaces[this.currentIface].mask = args[2];
-                } else { this.print('% Incomplete command.', 'text-red-400'); }
+                } else { this.print('% Incomplete command.', 'text-rose-400'); }
             } else if (cmd === 'shutdown')    { this.cmdShutdown(); }
-            else if (cmd === 'description')   { args.length ? (this.interfaces[this.currentIface].description = args.join(' ')) : this.print('% Incomplete command.', 'text-red-400'); }
-            else if (cmd === 'clock')         { args[0] === 'rate' && args[1] ? (this.interfaces[this.currentIface].clockRate = parseInt(args[1])) : this.print('% Incomplete command.', 'text-red-400'); }
-            else if (cmd === 'duplex')        { ['auto','full','half'].includes(args[0]) ? (this.interfaces[this.currentIface].duplex = args[0]) : this.print('% Invalid input detected.', 'text-red-400'); }
-            else if (cmd === 'speed')         { ['10','100','1000','auto'].includes(args[0]) ? (this.interfaces[this.currentIface].speed = args[0]) : this.print('% Invalid input detected.', 'text-red-400'); }
+            else if (cmd === 'description')   { args.length ? (this.interfaces[this.currentIface].description = args.join(' ')) : this.print('% Incomplete command.', 'text-rose-400'); }
+            else if (cmd === 'clock')         { args[0] === 'rate' && args[1] ? (this.interfaces[this.currentIface].clockRate = parseInt(args[1])) : this.print('% Incomplete command.', 'text-rose-400'); }
+            else if (cmd === 'duplex')        { ['auto','full','half'].includes(args[0]) ? (this.interfaces[this.currentIface].duplex = args[0]) : this.print('% Invalid input detected.', 'text-rose-400'); }
+            else if (cmd === 'speed')         { ['10','100','1000','auto'].includes(args[0]) ? (this.interfaces[this.currentIface].speed = args[0]) : this.print('% Invalid input detected.', 'text-rose-400'); }
             else if (cmd === 'exit')          { this.mode = 'global'; this.currentIface = null; }
             else if (cmd === 'end')           { this.mode = 'privileged'; this.currentIface = null; }
             else { this.printError('% Unknown command or computer name, or unable to find computer address'); }
         },
 
         dispatchShow(args) {
-            if (!args.length) { this.print('% Incomplete command.', 'text-red-400'); return; }
+            if (!args.length) { this.print('% Incomplete command.', 'text-rose-400'); return; }
             const sub  = args[0];
             const rest = args.slice(1);
             if      (sub.startsWith('ver'))                            { this.cmdShowVersion(); }
@@ -233,30 +233,30 @@ export default function routerLabData() {
         // ── Commands ─────────────────────────────────────────────────────
 
         cmdEnable() {
-            if (this.enableSecret) { this.print('Password: ', 'text-slate-300'); this.awaitingPassword = true; }
+            if (this.enableSecret) { this.print('Password: ', 'text-stone-300'); this.awaitingPassword = true; }
             else { this.mode = 'privileged'; }
         },
 
         cmdConfigureTerminal() {
             this.mode = 'global';
-            this.print('Enter configuration commands, one per line.  End with CNTL/Z.', 'text-slate-500');
+            this.print('Enter configuration commands, one per line.  End with CNTL/Z.', 'text-stone-500');
         },
 
         cmdHostname(args) {
-            if (!args.length) { this.print('% Incomplete command.', 'text-red-400'); return; }
+            if (!args.length) { this.print('% Incomplete command.', 'text-rose-400'); return; }
             this.hostname = args[0];
         },
 
         cmdInterface(args) {
-            if (!args.length) { this.print('% Incomplete command.', 'text-red-400'); return; }
+            if (!args.length) { this.print('% Incomplete command.', 'text-rose-400'); return; }
             const name = this.resolveInterface(args.join(' '));
-            if (!name) { this.print("% Invalid input detected at '^' marker.", 'text-red-400'); return; }
+            if (!name) { this.print("% Invalid input detected at '^' marker.", 'text-rose-400'); return; }
             this.currentIface = name;
             this.mode = 'interface';
         },
 
         cmdBanner(args) {
-            if (args[0] !== 'motd' || args.length < 2) { this.print('% Incomplete command.', 'text-red-400'); return; }
+            if (args[0] !== 'motd' || args.length < 2) { this.print('% Incomplete command.', 'text-rose-400'); return; }
             const raw   = args.slice(1).join(' ');
             const delim = raw[0];
             const end   = raw.lastIndexOf(delim, raw.length - 1);
@@ -264,12 +264,12 @@ export default function routerLabData() {
         },
 
         cmdIpRoute(args) {
-            if (args.length < 3) { this.print('% Incomplete command.', 'text-red-400'); return; }
+            if (args.length < 3) { this.print('% Incomplete command.', 'text-rose-400'); return; }
             this.routes.push({ network: args[0], mask: args[1], nexthop: args[2], ad: 1 });
         },
 
         cmdNoIpRoute(args) {
-            if (args.length < 3) { this.print('% Incomplete command.', 'text-red-400'); return; }
+            if (args.length < 3) { this.print('% Incomplete command.', 'text-rose-400'); return; }
             this.routes = this.routes.filter(r => !(r.network === args[0] && r.mask === args[1] && r.nexthop === args[2]));
         },
 
@@ -277,16 +277,16 @@ export default function routerLabData() {
             const iface = this.interfaces[this.currentIface];
             iface.adminState    = 'up';
             iface.lineProtocol  = 'up';
-            this.print(`%LINK-3-UPDOWN: Interface ${this.currentIface}, changed state to up`, 'text-slate-500');
-            this.print(`%LINEPROTO-5-UPDOWN: Line protocol on Interface ${this.currentIface}, changed state to up`, 'text-slate-500');
+            this.print(`%LINK-3-UPDOWN: Interface ${this.currentIface}, changed state to up`, 'text-stone-500');
+            this.print(`%LINEPROTO-5-UPDOWN: Line protocol on Interface ${this.currentIface}, changed state to up`, 'text-stone-500');
         },
 
         cmdShutdown() {
             const iface = this.interfaces[this.currentIface];
             iface.adminState   = 'down';
             iface.lineProtocol = 'down';
-            this.print(`%LINK-5-CHANGED: Interface ${this.currentIface}, changed state to administratively down`, 'text-slate-500');
-            this.print(`%LINEPROTO-5-UPDOWN: Line protocol on Interface ${this.currentIface}, changed state to down`, 'text-slate-500');
+            this.print(`%LINK-5-CHANGED: Interface ${this.currentIface}, changed state to administratively down`, 'text-stone-500');
+            this.print(`%LINEPROTO-5-UPDOWN: Line protocol on Interface ${this.currentIface}, changed state to down`, 'text-stone-500');
         },
 
         cmdCopyRunStart() {
@@ -294,13 +294,13 @@ export default function routerLabData() {
                 hostname: this.hostname, interfaces: this.interfaces,
                 routes: this.routes, motd: this.motd, enableSecret: this.enableSecret,
             }));
-            this.print('Destination filename [startup-config]? ', 'text-slate-500');
-            this.print('Building configuration...', 'text-slate-500');
+            this.print('Destination filename [startup-config]? ', 'text-stone-500');
+            this.print('Building configuration...', 'text-stone-500');
             this.print('[OK]', 'text-green-400');
         },
 
         cmdReload() {
-            this.print('Proceed with reload? [confirm]', 'text-slate-500');
+            this.print('Proceed with reload? [confirm]', 'text-stone-500');
             setTimeout(() => {
                 this.output      = [];
                 this.hostname    = 'Router';
@@ -324,10 +324,10 @@ export default function routerLabData() {
         },
 
         cmdPing(args) {
-            if (!args.length) { this.print('% Incomplete command.', 'text-red-400'); return; }
+            if (!args.length) { this.print('% Incomplete command.', 'text-rose-400'); return; }
             const target = args[0];
-            this.print(`Type escape sequence to abort.`, 'text-slate-500');
-            this.print(`Sending 5, 100-byte ICMP Echos to ${target}, timeout is 2 seconds:`, 'text-slate-500');
+            this.print(`Type escape sequence to abort.`, 'text-stone-500');
+            this.print(`Sending 5, 100-byte ICMP Echos to ${target}, timeout is 2 seconds:`, 'text-stone-500');
             let reachable = target === '127.0.0.1';
             if (!reachable) {
                 for (const iface of Object.values(this.interfaces)) {
@@ -337,10 +337,10 @@ export default function routerLabData() {
                 }
             }
             if (!reachable) reachable = this.routes.some(r => r.nexthop === target);
-            this.print(reachable ? '!!!!!' : '.....', reachable ? 'text-green-400' : 'text-red-400');
+            this.print(reachable ? '!!!!!' : '.....', reachable ? 'text-green-400' : 'text-rose-400');
             this.print(
                 `Success rate is ${reachable ? 100 : 0} percent (${reachable ? '5/5' : '0/5'}), round-trip min/avg/max = 1/2/4 ms`,
-                'text-slate-500'
+                'text-stone-500'
             );
         },
 
@@ -365,17 +365,17 @@ export default function routerLabData() {
                 '256000K bytes of ATA System CompactFlash 0 (Read/Write)',
                 '',
                 'Configuration register is 0x2102',
-            ].forEach(l => this.print(l, 'text-slate-300'));
+            ].forEach(l => this.print(l, 'text-stone-300'));
         },
 
         cmdShowIpInterfaceBrief() {
-            this.print('Interface              IP-Address      OK? Method Status                Protocol', 'text-slate-300');
+            this.print('Interface              IP-Address      OK? Method Status                Protocol', 'text-stone-300');
             for (const [name, iface] of Object.entries(this.interfaces)) {
                 const ip     = iface.ip || 'unassigned';
                 const method = iface.ip ? 'manual ' : 'unset  ';
                 const status = iface.adminState === 'up' ? 'up                    ' : 'administratively down ';
                 const proto  = iface.lineProtocol === 'up' ? 'up' : 'down';
-                this.print(`${name.padEnd(23)}${ip.padEnd(16)}YES ${method}${status}${proto}`, 'text-slate-300');
+                this.print(`${name.padEnd(23)}${ip.padEnd(16)}YES ${method}${status}${proto}`, 'text-stone-300');
             }
         },
 
@@ -388,78 +388,78 @@ export default function routerLabData() {
             for (const [name, iface] of entries) {
                 const updown = iface.adminState === 'up' ? 'up' : 'administratively down';
                 const proto  = iface.lineProtocol === 'up' ? 'up' : 'down';
-                this.print(`${name} is ${updown}, line protocol is ${proto}`, 'text-slate-300');
-                this.print('  Hardware is CN Gigabit Ethernet', 'text-slate-400');
-                if (iface.description) this.print(`  Description: ${iface.description}`, 'text-slate-400');
-                this.print(iface.ip ? `  Internet address is ${iface.ip}/${this.maskToCidr(iface.mask)}` : '  Internet address is not set', 'text-slate-400');
-                this.print('  MTU 1500 bytes, BW 1000000 Kbit/sec, DLY 10 usec', 'text-slate-400');
-                this.print(`  Duplex: ${iface.duplex}, Speed: ${iface.speed}`, 'text-slate-400');
+                this.print(`${name} is ${updown}, line protocol is ${proto}`, 'text-stone-300');
+                this.print('  Hardware is CN Gigabit Ethernet', 'text-stone-400');
+                if (iface.description) this.print(`  Description: ${iface.description}`, 'text-stone-400');
+                this.print(iface.ip ? `  Internet address is ${iface.ip}/${this.maskToCidr(iface.mask)}` : '  Internet address is not set', 'text-stone-400');
+                this.print('  MTU 1500 bytes, BW 1000000 Kbit/sec, DLY 10 usec', 'text-stone-400');
+                this.print(`  Duplex: ${iface.duplex}, Speed: ${iface.speed}`, 'text-stone-400');
                 this.print('');
             }
         },
 
         cmdShowIpRoute() {
-            this.print('Codes: L - local, C - connected, S - static', 'text-slate-500');
+            this.print('Codes: L - local, C - connected, S - static', 'text-stone-500');
             this.print('');
-            this.print('Gateway of last resort is not set', 'text-slate-300');
+            this.print('Gateway of last resort is not set', 'text-stone-300');
             this.print('');
             let any = false;
             for (const [name, iface] of Object.entries(this.interfaces)) {
                 if (iface.ip && iface.adminState === 'up') {
                     const cidr = this.maskToCidr(iface.mask);
                     const net  = iface.ip.split('.').slice(0, 3).join('.') + '.0';
-                    this.print(`C    ${net}/${cidr} is directly connected, ${name}`, 'text-slate-300');
-                    this.print(`L    ${iface.ip}/32 is directly connected, ${name}`, 'text-slate-300');
+                    this.print(`C    ${net}/${cidr} is directly connected, ${name}`, 'text-stone-300');
+                    this.print(`L    ${iface.ip}/32 is directly connected, ${name}`, 'text-stone-300');
                     any = true;
                 }
             }
             for (const r of this.routes) {
-                this.print(`S    ${r.network}/${this.maskToCidr(r.mask)} [${r.ad}/0] via ${r.nexthop}`, 'text-slate-300');
+                this.print(`S    ${r.network}/${this.maskToCidr(r.mask)} [${r.ad}/0] via ${r.nexthop}`, 'text-stone-300');
                 any = true;
             }
-            if (!any) this.print('% No routes found', 'text-slate-500');
+            if (!any) this.print('% No routes found', 'text-stone-500');
         },
 
         cmdShowRunningConfig() {
-            this.print('Building configuration...', 'text-slate-500');
+            this.print('Building configuration...', 'text-stone-500');
             this.print('');
-            this.print('Current configuration:', 'text-slate-300');
-            this.print('!', 'text-slate-500');
-            this.print('version 15.2', 'text-slate-400');
-            this.print('!', 'text-slate-500');
-            this.print(`hostname ${this.hostname}`, 'text-slate-200');
-            this.print('!', 'text-slate-500');
-            if (this.enableSecret) { this.print(`enable secret 5 ${this.enableSecret}`, 'text-slate-200'); this.print('!', 'text-slate-500'); }
-            if (this.motd)         { this.print(`banner motd ^C${this.motd}^C`, 'text-slate-200'); this.print('!', 'text-slate-500'); }
+            this.print('Current configuration:', 'text-stone-300');
+            this.print('!', 'text-stone-500');
+            this.print('version 15.2', 'text-stone-400');
+            this.print('!', 'text-stone-500');
+            this.print(`hostname ${this.hostname}`, 'text-stone-200');
+            this.print('!', 'text-stone-500');
+            if (this.enableSecret) { this.print(`enable secret 5 ${this.enableSecret}`, 'text-stone-200'); this.print('!', 'text-stone-500'); }
+            if (this.motd)         { this.print(`banner motd ^C${this.motd}^C`, 'text-stone-200'); this.print('!', 'text-stone-500'); }
             for (const [name, iface] of Object.entries(this.interfaces)) {
-                this.print(`interface ${name}`, 'text-slate-200');
-                if (iface.description) this.print(` description ${iface.description}`, 'text-slate-400');
-                this.print(iface.ip ? ` ip address ${iface.ip} ${iface.mask}` : ' no ip address', 'text-slate-400');
-                if (iface.duplex !== 'auto')   this.print(` duplex ${iface.duplex}`, 'text-slate-400');
-                if (iface.speed !== 'auto')    this.print(` speed ${iface.speed}`, 'text-slate-400');
-                if (iface.clockRate)           this.print(` clock rate ${iface.clockRate}`, 'text-slate-400');
-                if (iface.adminState === 'down') this.print(' shutdown', 'text-slate-400');
-                this.print('!', 'text-slate-500');
+                this.print(`interface ${name}`, 'text-stone-200');
+                if (iface.description) this.print(` description ${iface.description}`, 'text-stone-400');
+                this.print(iface.ip ? ` ip address ${iface.ip} ${iface.mask}` : ' no ip address', 'text-stone-400');
+                if (iface.duplex !== 'auto')   this.print(` duplex ${iface.duplex}`, 'text-stone-400');
+                if (iface.speed !== 'auto')    this.print(` speed ${iface.speed}`, 'text-stone-400');
+                if (iface.clockRate)           this.print(` clock rate ${iface.clockRate}`, 'text-stone-400');
+                if (iface.adminState === 'down') this.print(' shutdown', 'text-stone-400');
+                this.print('!', 'text-stone-500');
             }
-            for (const r of this.routes) this.print(`ip route ${r.network} ${r.mask} ${r.nexthop}`, 'text-slate-200');
-            if (this.routes.length) this.print('!', 'text-slate-500');
-            this.print('end', 'text-slate-200');
+            for (const r of this.routes) this.print(`ip route ${r.network} ${r.mask} ${r.nexthop}`, 'text-stone-200');
+            if (this.routes.length) this.print('!', 'text-stone-500');
+            this.print('end', 'text-stone-200');
             this.print('');
         },
 
         cmdShowStartupConfig() {
-            if (!this.startupConfig) { this.print('startup-config is not present', 'text-slate-400'); return; }
+            if (!this.startupConfig) { this.print('startup-config is not present', 'text-stone-400'); return; }
             const sc = this.startupConfig;
-            this.print('!', 'text-slate-500');
-            this.print(`hostname ${sc.hostname}`, 'text-slate-300');
-            this.print('!', 'text-slate-500');
+            this.print('!', 'text-stone-500');
+            this.print(`hostname ${sc.hostname}`, 'text-stone-300');
+            this.print('!', 'text-stone-500');
             for (const [name, iface] of Object.entries(sc.interfaces)) {
-                this.print(`interface ${name}`, 'text-slate-300');
-                this.print(iface.ip ? ` ip address ${iface.ip} ${iface.mask}` : ' no ip address', 'text-slate-400');
-                if (iface.adminState === 'down') this.print(' shutdown', 'text-slate-400');
-                this.print('!', 'text-slate-500');
+                this.print(`interface ${name}`, 'text-stone-300');
+                this.print(iface.ip ? ` ip address ${iface.ip} ${iface.mask}` : ' no ip address', 'text-stone-400');
+                if (iface.adminState === 'down') this.print(' shutdown', 'text-stone-400');
+                this.print('!', 'text-stone-500');
             }
-            this.print('end', 'text-slate-300');
+            this.print('end', 'text-stone-300');
         },
 
         cmdHelp() {
@@ -502,7 +502,7 @@ export default function routerLabData() {
                 ],
             };
             this.print('');
-            (map[this.mode] || []).forEach(([cmd, desc]) => this.print(`  ${cmd.padEnd(20)}${desc}`, 'text-slate-300'));
+            (map[this.mode] || []).forEach(([cmd, desc]) => this.print(`  ${cmd.padEnd(20)}${desc}`, 'text-stone-300'));
             this.print('');
         },
 
@@ -514,7 +514,7 @@ export default function routerLabData() {
                 parts[parts.length - 1] = matches[0];
                 this.currentInput = parts.join(' ') + ' ';
             } else if (matches.length > 1) {
-                this.print(matches.join('  '), 'text-slate-400');
+                this.print(matches.join('  '), 'text-stone-400');
             }
         },
 
@@ -543,11 +543,11 @@ export default function routerLabData() {
             return (toNum(target) & m) === (toNum(ifaceIp) & m);
         },
 
-        print(text, cls = 'text-slate-200') {
+        print(text, cls = 'text-stone-200') {
             this.output.push({ text: text === '' ? ' ' : text, cls });
         },
 
-        printError(text) { this.print(text, 'text-red-400'); },
+        printError(text) { this.print(text, 'text-rose-400'); },
 
         scrollBottom() {
             this.$nextTick(() => {

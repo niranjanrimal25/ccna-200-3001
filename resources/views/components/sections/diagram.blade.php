@@ -7,7 +7,7 @@
 @if ($type === 'device_gallery')
     @include('components.svg.diagrams.device-gallery', ['content' => $content])
 @elseif ($type === 'topology')
-    <div class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+    <div class="rounded-xl border border-stone-800 bg-stone-900/60 p-4">
         <x-svg.topology :nodes="$content['nodes']" :links="$content['links'] ?? []" />
     </div>
 @elseif ($type === 'fiber_comparison')
@@ -19,7 +19,7 @@
 @elseif ($type === 'mode_transition')
     @include('components.svg.diagrams.mode-transition', ['content' => $content])
 @else
-    <div class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
-        <p class="text-sm text-slate-400">Unknown diagram type: {{ $type }}</p>
+    <div class="rounded-xl border border-stone-800 bg-stone-900/60 p-4">
+        <p class="text-sm text-stone-400">Unknown diagram type: {{ $type }}</p>
     </div>
 @endif

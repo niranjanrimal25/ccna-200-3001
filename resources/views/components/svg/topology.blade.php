@@ -14,7 +14,7 @@
 <svg viewBox="{{ $viewBox }}" class="w-full h-auto select-none" role="img">
     <defs>
         <pattern id="topo-dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-            <circle cx="1" cy="1" r="1" fill="#1e293b"/>
+            <circle cx="1" cy="1" r="1" fill="#241f16"/>
         </pattern>
     </defs>
 
@@ -49,7 +49,7 @@
             <g transform="translate({{ $node['x'] }}, {{ $node['y'] }})">
                 <rect x="-40" y="-34" width="80" height="56" rx="6" fill="none"
                     @if (in_array((string) $node['id'], $highlights, true))
-                        stroke="#60a5fa" stroke-width="2.5" stroke-dasharray="5 3"
+                        stroke="#fbbf24" stroke-width="2.5" stroke-dasharray="5 3"
                     @else
                         stroke="transparent" stroke-width="0"
                     @endif
@@ -60,7 +60,7 @@
                 {{-- Status LED --}}
                 <circle cx="30" cy="-28" r="4" fill="#22c55e" fill-opacity="0.2"/>
                 <circle cx="30" cy="-28" r="2" fill="#22c55e"/>
-                <text text-anchor="middle" y="34" fill="#cbd5e1" font-size="13" font-weight="500">
+                <text text-anchor="middle" y="34" fill="#cfc6b4" font-size="13" font-weight="500">
                     {{ $node['label'] }}
                 </text>
             </g>
@@ -72,11 +72,11 @@
         <g class="pointer-events-none">
             @foreach ($packets as $packet)
                 <g transform="translate({{ $packet['x'] }}, {{ $packet['y'] }})">
-                    <circle r="6" fill="{{ $packet['color'] ?? '#3b82f6' }}"/>
+                    <circle r="6" fill="{{ $packet['color'] ?? '#f59e0b' }}"/>
                     @if (! empty($packet['label']))
                         <rect x="-28" y="-24" width="56" height="14" rx="7"
-                              fill="#0f172a" stroke="#334155" stroke-width="0.8"/>
-                        <text text-anchor="middle" y="-13" fill="#e2e8f0"
+                              fill="#1a150d" stroke="#3d3426" stroke-width="0.8"/>
+                        <text text-anchor="middle" y="-13" fill="#e7e0d3"
                               font-size="9" font-family="ui-monospace,monospace">{{ $packet['label'] }}</text>
                     @endif
                 </g>

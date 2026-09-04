@@ -14,10 +14,10 @@
     ])->values();
 @endphp
 
-<div x-data="quizApp(@js($questions))" class="overflow-hidden rounded-xl border border-slate-800 bg-slate-900/60">
-    <div class="flex items-center justify-between border-b border-slate-800 px-4 py-3">
-        <div class="text-sm font-semibold text-slate-200">End-of-lesson quiz</div>
-        <div class="flex items-center gap-3 text-xs text-slate-400">
+<div x-data="quizApp(@js($questions))" class="overflow-hidden rounded-xl border border-stone-800 bg-stone-900/60">
+    <div class="flex items-center justify-between border-b border-stone-800 px-4 py-3">
+        <div class="text-sm font-semibold text-stone-200">End-of-lesson quiz</div>
+        <div class="flex items-center gap-3 text-xs text-stone-400">
             <span x-show="!finished">
                 Question <span x-text="current + 1"></span> / <span x-text="total"></span>
             </span>
@@ -30,12 +30,12 @@
     <div class="p-5">
         <template x-if="finished">
             <div class="text-center py-8">
-                <div class="text-2xl font-bold text-slate-100">Quiz complete</div>
-                <p class="mt-2 text-slate-400">
+                <div class="text-2xl font-bold text-stone-100">Quiz complete</div>
+                <p class="mt-2 text-stone-400">
                     You scored <span class="text-emerald-400 font-semibold" x-text="score"></span> out of
                     <span x-text="total"></span>.
                 </p>
-                <button @click="restart()" class="mt-6 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500">
+                <button @click="restart()" class="mt-6 rounded-md bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-500">
                     Retake quiz
                 </button>
             </div>
@@ -43,7 +43,7 @@
 
         <template x-if="!finished">
             <div>
-                <p class="font-medium text-slate-100 leading-relaxed" x-text="question.question"></p>
+                <p class="font-medium text-stone-100 leading-relaxed" x-text="question.question"></p>
 
                 <div class="mt-4 space-y-2">
                     <template x-for="opt in question.options" :key="opt.id">
@@ -52,11 +52,11 @@
                             :disabled="answered"
                             :class="{
                                 'border-emerald-600 bg-emerald-950/50 text-emerald-200': optionState(opt) === 'correct',
-                                'border-red-600 bg-red-950/50 text-red-200': optionState(opt) === 'wrong',
-                                'opacity-50 border-slate-700': optionState(opt) === 'muted',
-                                'border-slate-700 hover:border-slate-500 text-slate-300': optionState(opt) === 'idle',
+                                'border-rose-600 bg-rose-950/50 text-rose-200': optionState(opt) === 'wrong',
+                                'opacity-50 border-stone-700': optionState(opt) === 'muted',
+                                'border-stone-700 hover:border-stone-500 text-stone-300': optionState(opt) === 'idle',
                             }"
-                            class="flex w-full items-start gap-3 rounded-lg border bg-slate-950/50 px-4 py-3 text-left text-sm transition-colors">
+                            class="flex w-full items-start gap-3 rounded-lg border bg-stone-950/50 px-4 py-3 text-left text-sm transition-colors">
                             <span class="font-semibold" x-text="opt.label"></span>
                             <span x-text="opt.text"></span>
                             <span x-show="optionState(opt) === 'correct'" class="ml-auto">✓</span>
@@ -65,11 +65,11 @@
                     </template>
                 </div>
 
-                <div x-show="answered" class="mt-4 rounded-lg border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm text-slate-400">
+                <div x-show="answered" class="mt-4 rounded-lg border border-stone-800 bg-stone-950/60 px-4 py-3 text-sm text-stone-400">
                     <div x-show="optionState(question.options.find(o => o.id === selected)) === 'correct'" class="mb-2 font-medium text-emerald-400">
                         Correct!
                     </div>
-                    <div x-show="optionState(question.options.find(o => o.id === selected)) === 'wrong'" class="mb-2 font-medium text-red-400">
+                    <div x-show="optionState(question.options.find(o => o.id === selected)) === 'wrong'" class="mb-2 font-medium text-rose-400">
                         Incorrect.
                     </div>
                     <p x-text="question.explanation"></p>
@@ -78,7 +78,7 @@
                 <div class="mt-4 flex justify-end">
                     <button x-show="answered" @click="next()"
                             :disabled="current === total - 1 ? false : false"
-                            class="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500">
+                            class="rounded-md bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-500">
                         <span x-text="current === total - 1 ? 'Finish' : 'Next question'"></span>
                     </button>
                 </div>

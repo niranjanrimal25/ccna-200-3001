@@ -25,12 +25,12 @@
         <circle cx="893" cy="92" r="4" fill="#111" stroke="#333" stroke-width="0.5"/>
 
         {{-- System LEDs --}}
-        <text x="22" y="26" font-size="7" fill="#4b5563" font-family="monospace" text-anchor="middle">PWR</text>
+        <text x="22" y="26" font-size="7" fill="#57534e" font-family="monospace" text-anchor="middle">PWR</text>
         <circle cx="22" cy="38" r="5" fill="#22c55e"/>
         <circle cx="22" cy="38" r="9" fill="#22c55e" fill-opacity="0.12"/>
-        <text x="42" y="26" font-size="7" fill="#4b5563" font-family="monospace" text-anchor="middle">SYS</text>
+        <text x="42" y="26" font-size="7" fill="#57534e" font-family="monospace" text-anchor="middle">SYS</text>
         <circle cx="42" cy="38" r="5" fill="#22c55e"/>
-        <text x="62" y="26" font-size="7" fill="#4b5563" font-family="monospace" text-anchor="middle">ACT</text>
+        <text x="62" y="26" font-size="7" fill="#57534e" font-family="monospace" text-anchor="middle">ACT</text>
         <circle cx="62" cy="38" r="5" fill="#f59e0b"/>
 
         {{-- NM Slot --}}
@@ -44,7 +44,7 @@
         @foreach ($ports as $port)
             <g @click="toggleTooltip('{{ $port['key'] }}')" style="cursor:pointer">
                 {{-- Long label above --}}
-                <text x="{{ $port['x'] + 25 }}" y="17" text-anchor="middle" font-size="6" fill="#4b5563" font-family="monospace">{{ $port['key'] }}</text>
+                <text x="{{ $port['x'] + 25 }}" y="17" text-anchor="middle" font-size="6" fill="#57534e" font-family="monospace">{{ $port['key'] }}</text>
                 {{-- Port housing --}}
                 <rect x="{{ $port['x'] }}" y="20" width="50" height="46" rx="3" fill="#0a0a0a" stroke="#2e2e2e" stroke-width="0.8"/>
                 {{-- RJ-45 socket opening --}}
@@ -60,31 +60,31 @@
                 {{-- Activity LED --}}
                 <circle cx="{{ $port['x'] + 47 }}" cy="24" r="3.5" fill="#2d2d2d"/>
                 {{-- Short label below --}}
-                <text x="{{ $port['x'] + 25 }}" y="76" text-anchor="middle" font-size="8.5" fill="#9ca3af" font-family="monospace">{{ $port['short'] }}</text>
+                <text x="{{ $port['x'] + 25 }}" y="76" text-anchor="middle" font-size="8.5" fill="#a8a29e" font-family="monospace">{{ $port['short'] }}</text>
             </g>
         @endforeach
 
-        {{-- Console port (light blue — Cisco convention) --}}
-        <rect x="468" y="32" width="38" height="26" rx="2" fill="#0a0a0a" stroke="#0ea5e9" stroke-width="1"/>
+        {{-- Console port (light amber — Cisco convention) --}}
+        <rect x="468" y="32" width="38" height="26" rx="2" fill="#0a0a0a" stroke="#f59e0b" stroke-width="1"/>
         <rect x="472" y="36" width="30" height="17" rx="0.5" fill="#050505"/>
-        <text x="487" y="70" text-anchor="middle" font-size="7" fill="#0ea5e9" font-family="monospace">CONSOLE</text>
+        <text x="487" y="70" text-anchor="middle" font-size="7" fill="#f59e0b" font-family="monospace">CONSOLE</text>
 
         {{-- AUX port --}}
-        <rect x="520" y="32" width="38" height="26" rx="2" fill="#0a0a0a" stroke="#374151" stroke-width="0.8"/>
+        <rect x="520" y="32" width="38" height="26" rx="2" fill="#0a0a0a" stroke="#44403c" stroke-width="0.8"/>
         <rect x="524" y="36" width="30" height="17" rx="0.5" fill="#050505"/>
-        <text x="539" y="70" text-anchor="middle" font-size="7" fill="#6b7280" font-family="monospace">AUX</text>
+        <text x="539" y="70" text-anchor="middle" font-size="7" fill="#78716c" font-family="monospace">AUX</text>
 
         {{-- USB port --}}
-        <rect x="572" y="30" width="22" height="32" rx="1.5" fill="#0a0a0a" stroke="#374151" stroke-width="0.8"/>
+        <rect x="572" y="30" width="22" height="32" rx="1.5" fill="#0a0a0a" stroke="#44403c" stroke-width="0.8"/>
         <rect x="575" y="34" width="16" height="5" rx="0.5" fill="#1a1a1a"/>
-        <text x="583" y="74" text-anchor="middle" font-size="7" fill="#6b7280" font-family="monospace">USB</text>
+        <text x="583" y="74" text-anchor="middle" font-size="7" fill="#78716c" font-family="monospace">USB</text>
 
         {{-- Cisco branding --}}
-        <text x="790" y="56" text-anchor="middle" font-size="20" fill="#049fd4"
+        <text x="790" y="56" text-anchor="middle" font-size="20" fill="#f59e0b"
               font-family="Arial,Helvetica,sans-serif" font-weight="bold" letter-spacing="1">CISCO</text>
-        <text x="790" y="71" text-anchor="middle" font-size="11" fill="#6b7280"
+        <text x="790" y="71" text-anchor="middle" font-size="11" fill="#78716c"
               font-family="Arial,Helvetica,sans-serif">2911</text>
-        <text x="790" y="81" text-anchor="middle" font-size="5.5" fill="#374151"
+        <text x="790" y="81" text-anchor="middle" font-size="5.5" fill="#44403c"
               font-family="Arial,Helvetica,sans-serif" letter-spacing="0.5">INTEGRATED SERVICES ROUTER</text>
 
     </svg>
@@ -95,27 +95,27 @@
              x-transition:enter="transition ease-out duration-100"
              x-transition:enter-start="opacity-0 scale-95"
              x-transition:enter-end="opacity-100 scale-100"
-             class="absolute z-20 w-56 rounded-lg border border-slate-700 bg-slate-900 p-3 text-xs shadow-2xl"
+             class="absolute z-20 w-56 rounded-lg border border-stone-700 bg-stone-900 p-3 text-xs shadow-2xl"
              style="left: {{ ($port['x'] + 25) / 900 * 100 }}%; top: 100%; transform: translateX(-50%); margin-top: 4px;">
-            <div class="mb-2 font-semibold text-slate-100">{{ $port['key'] }}</div>
+            <div class="mb-2 font-semibold text-stone-100">{{ $port['key'] }}</div>
             <div class="space-y-1 font-mono">
                 <div class="flex justify-between gap-2">
-                    <span class="text-slate-500">IP</span>
-                    <span class="text-slate-200"
+                    <span class="text-stone-500">IP</span>
+                    <span class="text-stone-200"
                           x-text="interfaces['{{ $port['key'] }}'].ip
                               ? interfaces['{{ $port['key'] }}'].ip + ' / ' + interfaces['{{ $port['key'] }}'].mask
                               : 'unassigned'">
                     </span>
                 </div>
                 <div class="flex justify-between gap-2">
-                    <span class="text-slate-500">Status</span>
-                    <span :class="interfaces['{{ $port['key'] }}'].adminState === 'up' ? 'text-green-400' : 'text-red-400'"
+                    <span class="text-stone-500">Status</span>
+                    <span :class="interfaces['{{ $port['key'] }}'].adminState === 'up' ? 'text-green-400' : 'text-rose-400'"
                           x-text="interfaces['{{ $port['key'] }}'].adminState === 'up' ? 'up / up' : 'admin down / down'">
                     </span>
                 </div>
                 <div x-show="interfaces['{{ $port['key'] }}'].description" class="flex justify-between gap-2">
-                    <span class="text-slate-500">Desc</span>
-                    <span class="text-slate-200 truncate"
+                    <span class="text-stone-500">Desc</span>
+                    <span class="text-stone-200 truncate"
                           x-text="interfaces['{{ $port['key'] }}'].description">
                     </span>
                 </div>
