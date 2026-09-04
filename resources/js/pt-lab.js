@@ -76,7 +76,7 @@ function portLocalPos(dev, portName) {
 
 function ledStrip(parent, x0, y, z, count, color) {
     for (let k = 0; k < count; k++) {
-        const led = box(0.06, 0.06, 0.02, 0x0b0e12);
+        const led = box(0.06, 0.06, 0.02, 0x0c0a08);
         led.position.set(x0 + k * 0.18, y, z);
         parent.add(led);
     }
@@ -84,25 +84,25 @@ function ledStrip(parent, x0, y, z, count, color) {
 
 function buildRouterMesh() {
     const g = new THREE.Group();
-    const body = box(3.2, 0.62, 2.0, 0x23272f);
+    const body = box(3.2, 0.62, 2.0, 0x2a2620);
     body.position.y = 0.62;
     g.add(body);
-    const lid = box(3.05, 0.26, 1.9, 0x3a414d);
+    const lid = box(3.05, 0.26, 1.9, 0x3d362e);
     lid.position.y = 1.06;
     g.add(lid);
     // vent ridges on lid
     for (let k = -2; k <= 2; k++) {
-        const vent = box(2.4, 0.04, 0.06, 0x1a1e24);
+        const vent = box(2.4, 0.04, 0.06, 0x1f1a14);
         vent.position.set(0, 1.21, k * 0.3);
         g.add(vent);
     }
     // front face
-    const face = box(3.2, 0.22, 0.04, 0x171a20);
+    const face = box(3.2, 0.22, 0.04, 0x1b1611);
     face.position.set(0, 0.84, 1.0);
     g.add(face);
-    ledStrip(g, -1.3, 0.95, 1.03, 8, 0x2dd4bf);
+    ledStrip(g, -1.3, 0.95, 1.03, 8, 0xfbbf24);
     // brand
-    const brand = box(0.9, 0.12, 0.02, 0x0ea5e9);
+    const brand = box(0.9, 0.12, 0.02, 0xf59e0b);
     brand.position.set(1.0, 0.62, 1.01);
     g.add(brand);
     g.userData.bodyCenterY = 0.62;
@@ -111,36 +111,36 @@ function buildRouterMesh() {
 
 function buildSwitchMesh() {
     const g = new THREE.Group();
-    const body = box(2.6, 0.58, 1.7, 0x243349);
+    const body = box(2.6, 0.58, 1.7, 0x2e2820);
     body.position.y = 0.56;
     g.add(body);
-    const lid = box(2.46, 0.22, 1.6, 0x33465e);
+    const lid = box(2.46, 0.22, 1.6, 0x3b342a);
     lid.position.y = 0.96;
     g.add(lid);
-    const face = box(2.6, 0.2, 0.04, 0x141b26);
+    const face = box(2.6, 0.2, 0.04, 0x1a1611);
     face.position.set(0, 0.78, 0.86);
     g.add(face);
-    ledStrip(g, -1.0, 0.88, 0.89, 10, 0x22d3ee);
+    ledStrip(g, -1.0, 0.88, 0.89, 10, 0xfbbf24);
     return g;
 }
 
 function buildPcMesh() {
     const g = new THREE.Group();
     // tower
-    const tower = box(0.5, 1.05, 0.55, 0x2c313a);
+    const tower = box(0.5, 1.05, 0.55, 0x2b2722);
     tower.position.set(0, 0.53, 0);
     g.add(tower);
     const power = box(0.1, 0.1, 0.02, 0x22c55e);
     power.position.set(0, 0.95, 0.28);
     g.add(power);
     // monitor stand + panel
-    const stand = box(0.12, 0.35, 0.12, 0x20242b);
+    const stand = box(0.12, 0.35, 0.12, 0x221e19);
     stand.position.set(0.32, 1.22, -0.05);
     g.add(stand);
-    const screen = box(1.05, 0.66, 0.06, 0x0b0e12);
+    const screen = box(1.05, 0.66, 0.06, 0x0c0a08);
     screen.position.set(0.32, 1.62, -0.08);
     g.add(screen);
-    const glow = box(0.93, 0.54, 0.02, 0x134e4a);
+    const glow = box(0.93, 0.54, 0.02, 0x3a2a14);
     glow.position.set(0.32, 1.62, -0.05);
     g.add(glow);
     return g;
@@ -148,14 +148,14 @@ function buildPcMesh() {
 
 function buildServerMesh() {
     const g = new THREE.Group();
-    const body = box(0.7, 1.9, 1.1, 0x3a3f47);
+    const body = box(0.7, 1.9, 1.1, 0x35302a);
     body.position.y = 0.95;
     g.add(body);
-    const face = box(0.72, 1.86, 0.04, 0x1b1e23);
+    const face = box(0.72, 1.86, 0.04, 0x1c1813);
     face.position.set(0, 0.95, 0.56);
     g.add(face);
-    ledStrip(g, -0.2, 1.6, 0.59, 3, 0x34d399);
-    const badge = box(0.4, 0.14, 0.02, 0x0ea5e9);
+    ledStrip(g, -0.2, 1.6, 0.59, 3, 0xfbbf24);
+    const badge = box(0.4, 0.14, 0.02, 0xf59e0b);
     badge.position.set(0, 0.3, 0.59);
     g.add(badge);
     return g;
@@ -248,7 +248,7 @@ export default function practiceLabData() {
             host.appendChild(this._renderer.domElement);
 
             this._scene = raw(new THREE.Scene());
-            this._scene.background = new THREE.Color(0x0b1220);
+            this._scene.background = new THREE.Color(0x100c08);
 
             this._camera = raw(new THREE.PerspectiveCamera(50, w / h, 0.1, 400));
             this._camera.position.set(14, 14, 20);
@@ -263,7 +263,7 @@ export default function practiceLabData() {
             this._controls.update();
 
             // lights
-            const hemi = new THREE.HemisphereLight(0xffffff, 0x223047, 0.95);
+            const hemi = new THREE.HemisphereLight(0xfff2e0, 0x2b2117, 0.95);
             this._scene.add(hemi);
             const dir = new THREE.DirectionalLight(0xffffff, 1.6);
             dir.position.set(24, 36, 18);
@@ -274,25 +274,25 @@ export default function practiceLabData() {
             dir.shadow.camera.top = 40;
             dir.shadow.camera.bottom = -40;
             this._scene.add(dir);
-            this._scene.add(new THREE.AmbientLight(0x223047, 0.5));
+            this._scene.add(new THREE.AmbientLight(0x2b2117, 0.5));
 
             // floor
             const floor = new THREE.Mesh(
                 new THREE.PlaneGeometry(240, 240),
-                new THREE.MeshStandardMaterial({ color: 0x0d1520, roughness: 0.95, metalness: 0.05 }),
+                new THREE.MeshStandardMaterial({ color: 0x16110b, roughness: 0.95, metalness: 0.05 }),
             );
             floor.rotation.x = -Math.PI / 2;
             floor.receiveShadow = true;
             this._scene.add(floor);
 
-            const grid = new THREE.GridHelper(60, 60, 0x2f4058, 0x18222f);
+            const grid = new THREE.GridHelper(60, 60, 0x3a332a, 0x1d1812);
             grid.position.y = 0.01;
             this._scene.add(grid);
 
             // selection ring (flat halo under the selected device)
             this._selRing = raw(new THREE.Mesh(
                 new THREE.RingGeometry(1.5, 2.0, 48),
-                new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.6, side: THREE.DoubleSide }),
+                new THREE.MeshBasicMaterial({ color: 0xf59e0b, transparent: true, opacity: 0.6, side: THREE.DoubleSide }),
             ));
             this._selRing.rotation.x = -Math.PI / 2;
             this._selRing.position.y = 0.03;
@@ -552,7 +552,7 @@ export default function practiceLabData() {
                 const pos = portLocalPos(dev, p.name);
                 const marker = new THREE.Mesh(
                     new THREE.SphereGeometry(0.16, 16, 12),
-                    new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.85 }),
+                    new THREE.MeshBasicMaterial({ color: 0xf59e0b, transparent: true, opacity: 0.85 }),
                 );
                 marker.position.copy(pos);
                 marker.userData.deviceId = dev.id;
@@ -639,7 +639,7 @@ export default function practiceLabData() {
                 m.mesh.visible = this.tool === 'cable';
                 const isSrc = this.cableSrc && this.cableSrc.devId === m.devId
                     && E.normalizePort(this.cableSrc.port) === E.normalizePort(m.port);
-                m.mesh.material.color.set(isSrc ? 0x22c55e : 0x38bdf8);
+                m.mesh.material.color.set(isSrc ? 0x22c55e : 0xf59e0b);
             }
         },
 
@@ -716,15 +716,15 @@ export default function practiceLabData() {
             const name = dev.hostname || dev.name;
             if (mode === 'pc') {
                 return [
-                    { text: 'Microsoft Windows [Version 10.0.19045]', cls: 'text-slate-300' },
-                    { text: '(c) Microsoft Corporation. All rights reserved.', cls: 'text-slate-500' },
+                    { text: 'Microsoft Windows [Version 10.0.19045]', cls: 'text-stone-300' },
+                    { text: '(c) Microsoft Corporation. All rights reserved.', cls: 'text-stone-500' },
                     { text: '', cls: '' },
                     { text: 'C:\\>', cls: 'text-green-400' },
                 ];
             }
             return [
-                { text: `Cisco IOS Software, Practice Lab Simulator`, cls: 'text-slate-300' },
-                { text: `${name} con0 is now available`, cls: 'text-slate-500' },
+                { text: `Cisco IOS Software, Practice Lab Simulator`, cls: 'text-stone-300' },
+                { text: `${name} con0 is now available`, cls: 'text-stone-500' },
                 { text: '', cls: '' },
                 { text: `${name}>`, cls: 'text-green-400' },
             ];
@@ -768,7 +768,7 @@ export default function practiceLabData() {
             const isPassword = this.cli.prompt && this.cli.prompt.kind === 'password';
             const echo = isPassword ? '•'.repeat(Math.min(raw.length, 12)) : raw;
 
-            this.cli.output.push({ text: promptText + ' ' + echo, cls: 'text-slate-200' });
+            this.cli.output.push({ text: promptText + ' ' + echo, cls: 'text-stone-200' });
             if (raw.trim()) {
                 this.cli.history.push(raw);
                 this.cli.hi = this.cli.history.length;
@@ -802,10 +802,10 @@ export default function practiceLabData() {
         },
 
         _cliClass(line) {
-            if (/no route|unreachable|expired|dropped|timeout|not recognized|Invalid|down/.test(line)) return 'text-red-400';
+            if (/no route|unreachable|expired|dropped|timeout|not recognized|Invalid|down/.test(line)) return 'text-rose-400';
             if (/delivered|OK|complete|reply/.test(line)) return 'text-emerald-400';
             if (line.startsWith('%')) return 'text-amber-400';
-            return 'text-slate-300';
+            return 'text-stone-300';
         },
 
         cliKeydown(e) {
