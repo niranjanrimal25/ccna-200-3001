@@ -81,6 +81,65 @@
             </div>
 
             <div class="rounded-xl border border-slate-800 bg-slate-900/60 p-3">
+                <div class="mb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-500">Inspector</div>
+                <template x-if="selectedDetail">
+                    <div class="space-y-2.5">
+                        <div class="flex items-center gap-2">
+                            <span class="text-lg" x-text="selectedDetail.icon"></span>
+                            <div class="min-w-0">
+                                <div class="truncate text-sm font-semibold text-slate-200" x-text="selectedDetail.name"></div>
+                                <div class="text-[11px] capitalize text-slate-500" x-text="selectedDetail.type"></div>
+                            </div>
+                        </div>
+
+                        <div x-show="selectedDetail.interfaces.length">
+                            <div class="text-[10px] uppercase tracking-wide text-slate-600">Interfaces</div>
+                            <ul class="mt-1 space-y-0.5 font-mono text-[11px]">
+                                <template x-for="i in selectedDetail.interfaces" :key="i.name">
+                                    <li class="flex items-center gap-1.5">
+                                        <span class="h-1.5 w-1.5 shrink-0 rounded-full" :class="i.up ? 'bg-emerald-400' : 'bg-slate-600'"></span>
+                                        <span class="shrink-0 text-slate-300" x-text="i.name"></span>
+                                        <span x-show="i.tag" class="shrink-0 rounded bg-sky-900/60 px-1 text-[9px] text-sky-300" x-text="i.tag"></span>
+                                        <span class="ml-auto truncate pl-2 text-slate-500" x-text="i.ip"></span>
+                                    </li>
+                                </template>
+                            </ul>
+                        </div>
+
+                        <div x-show="selectedDetail.routes.length">
+                            <div class="text-[10px] uppercase tracking-wide text-slate-600">Routing table</div>
+                            <ul class="mt-1 space-y-0.5 font-mono text-[11px]">
+                                <template x-for="r in selectedDetail.routes" :key="r.code + r.prefix">
+                                    <li class="flex items-center gap-1.5">
+                                        <span class="shrink-0 rounded bg-slate-800 px-1 text-[9px] font-bold text-blue-300" x-text="r.code"></span>
+                                        <span class="shrink-0 text-slate-300" x-text="r.prefix"></span>
+                                        <span class="ml-auto truncate pl-2 text-slate-500" x-text="r.via"></span>
+                                    </li>
+                                </template>
+                            </ul>
+                        </div>
+
+                        <div x-show="selectedDetail.vlans.length">
+                            <div class="text-[10px] uppercase tracking-wide text-slate-600">VLANs</div>
+                            <ul class="mt-1 flex flex-wrap gap-1 font-mono text-[11px]">
+                                <template x-for="v in selectedDetail.vlans" :key="v.id">
+                                    <li class="rounded bg-slate-800 px-1.5 py-0.5 text-slate-300"><span class="font-semibold text-blue-300" x-text="v.id"></span> <span x-text="v.name"></span></li>
+                                </template>
+                            </ul>
+                        </div>
+
+                        <div x-show="selectedDetail.neighbors.length">
+                            <div class="text-[10px] uppercase tracking-wide text-slate-600">CDP neighbors</div>
+                            <ul class="mt-1 space-y-0.5 font-mono text-[11px] text-slate-400">
+                                <template x-for="n in selectedDetail.neighbors" :key="n"><li x-text="n"></li></template>
+                            </ul>
+                        </div>
+                    </div>
+                </template>
+                <div x-show="!selectedDetail" class="px-2 py-1 text-xs text-slate-600">Select a device to inspect its interfaces, routes and VLANs.</div>
+            </div>
+
+            <div class="rounded-xl border border-slate-800 bg-slate-900/60 p-3">
                 <div class="mb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-500">Links</div>
                 <ul class="space-y-1">
                     <template x-for="l in linkList" :key="l.id">
@@ -144,13 +203,13 @@
                         </template>
                         <div class="flex items-baseline" style="white-space:pre;">
                             <span class="text-green-400" x-text="cliPrompt"></span>
-                            <span class="text-green-400" x-text="cli.input"></span>
+                            <span class="text-green-400" x-text="cliInputEcho"></span>
                             <span class="ml-0.5 inline-block h-[14px] w-[7px] align-middle bg-green-400" style="animation:termBlink 1.1s step-end infinite;"></span>
                         </div>
                     </div>
 
                     <input x-ref="cliInput"
-                           type="text"
+                           :type="cli.prompt && cli.prompt.kind === 'password' ? 'password' : 'text'"
                            x-model="cli.input"
                            @keydown="cliKeydown($event)"
                            class="sr-only"

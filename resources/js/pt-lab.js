@@ -186,6 +186,7 @@ export default function practiceLabData() {
         logLines: [],
         cableSrc: null, // { devId, port }
         statusHint: 'Starting the 3D workspace…',
+        selectedDetail: null, // reactive inspector snapshot for the selected device
 
         // ---- non-reactive three/engine state (kept off Alpine) ----
         _state: null,
@@ -534,6 +535,7 @@ export default function practiceLabData() {
             } else if (this._selRing) {
                 this._selRing.visible = false;
             }
+            this._refreshDetail();
         },
 
         _devLabel(devId) {
@@ -700,6 +702,7 @@ export default function practiceLabData() {
                 input: '',
                 history: [],
                 hi: -1,
+                prompt: null,
                 output: this._greeting(dev, mode),
             };
             this.$nextTick(() => this.$refs.cliInput?.focus());
@@ -732,13 +735,22 @@ export default function practiceLabData() {
             const dev = E.getDevice(this._state, this.cli.devId);
             const name = dev ? dev.hostname || dev.name : '?';
             if (dev && (dev.type === 'pc' || dev.type === 'server')) return 'C:\\>';
-            switch (this.cli.mode) {
-                case 'user': return `${name}>`;
-                case 'priv': return `${name}#`;
-                case 'config': return `${name}(config)#`;
-                case 'iface': return `${name}(config-if)#`;
-                default: return `${name}>`;
+            // interactive prompts take over the prompt line
+            if (this.cli.prompt) {
+                if (this.cli.prompt.kind === 'password') return 'Password: ';
+                if (this.cli.prompt.kind === 'confirm') return 'Continue? [confirm] ';
+                return '';
             }
+            return C.promptFor(dev, this.cli.mode);
+        },
+
+        // Echo the in-progress input; masks password prompts.
+        get cliInputEcho() {
+            if (!this.cli) return '';
+            if (this.cli.prompt && this.cli.prompt.kind === 'password') {
+                return '•'.repeat(this.cli.input.length);
+            }
+            return this.cli.input;
         },
 
         get cliTitle() {
@@ -752,15 +764,19 @@ export default function practiceLabData() {
             const raw = this.cli.input;
             this.cli.input = '';
             const dev = E.getDevice(this._state, this.cli.devId);
-            const prompt = this.cliPrompt;
+            const promptText = this.cliPrompt;
+            const isPassword = this.cli.prompt && this.cli.prompt.kind === 'password';
+            const echo = isPassword ? '•'.repeat(Math.min(raw.length, 12)) : raw;
 
-            this.cli.output.push({ text: prompt + ' ' + raw, cls: 'text-slate-200' });
+            this.cli.output.push({ text: promptText + ' ' + echo, cls: 'text-slate-200' });
             if (raw.trim()) {
                 this.cli.history.push(raw);
                 this.cli.hi = this.cli.history.length;
             }
 
-            const res = C.execute(this._state, dev, this.cli.mode, raw);
+            const res = this.cli.prompt
+                ? C.executePrompt(this._state, dev, this.cli.mode, this.cli.prompt, raw)
+                : C.execute(this._state, dev, this.cli.mode, raw);
             for (const line of res.lines) {
                 if (line === '\u0000CLEAR') {
                     this.cli.output = [];
@@ -769,6 +785,7 @@ export default function practiceLabData() {
                 this.cli.output.push({ text: line, cls: this._cliClass(line) });
             }
             this.cli.mode = res.mode;
+            this.cli.prompt = res.prompt || null;
 
             for (const ev of res.events) {
                 if (ev.type === 'ping') {
@@ -776,6 +793,8 @@ export default function practiceLabData() {
                     this.logPing(ev.result);
                 } else if (ev.type === 'config-changed') {
                     this._dirtyCables = true;
+                } else if (ev.type === 'reload') {
+                    this.logEvent('🔁 ' + this._devLabel(ev.devId) + ' reloaded');
                 }
             }
             this._refreshLists();
@@ -861,9 +880,53 @@ export default function practiceLabData() {
                 a: `${this._devLabel(l.a.devId)} · ${l.a.port}`,
                 b: `${this._devLabel(l.b.devId)} · ${l.b.port}`,
             }));
+            this._refreshDetail();
+        },
+
+        // Snapshot of the selected device: interfaces, routing table, VLANs, neighbours.
+        _refreshDetail() {
+            if (!this.selectedId) { this.selectedDetail = null; return; }
+            const dev = E.getDevice(this._state, this.selectedId);
+            if (!dev) { this.selectedDetail = null; return; }
+            const isL3 = dev.type === 'router' || dev.type === 'pc' || dev.type === 'server';
+            const ports = dev.ports.filter((p) => {
+                if (dev.type === 'switch') {
+                    if (p.kind === 'svi') return Boolean(p.ip);
+                    if (p.mode === 'trunk') return true;
+                    return p.up || (p.accessVlan && p.accessVlan !== 1);
+                }
+                return true;
+            });
+            this.selectedDetail = {
+                id: dev.id,
+                name: dev.hostname || dev.name,
+                type: dev.type,
+                icon: { router: '🖧', switch: '🔀', pc: '🖥', server: '🗄' }[dev.type] || '▪',
+                interfaces: ports.map((p) => {
+                    const ip = p.ip
+                        ? p.ip + '/' + E.prefixLen(p.mask)
+                        : (p.ipv6 ? p.ipv6 + '/' + (p.ipv6Prefix || 64) : '—');
+                    const up = Boolean(p.up) && E.lineProtocolUp(this._state, dev, p);
+                    let tag = '';
+                    if (p.kind === 'subinterface') tag = '802.1Q ' + p.dot1q;
+                    else if (p.mode === 'trunk') tag = 'trunk';
+                    else if (p.kind === 'serial' && p.clockRate) tag = 'DCE';
+                    return { name: C.portLongName(p.name), ip, up, tag };
+                }),
+                routes: (isL3 ? E.routesOf(dev) : []).map((r) => ({
+                    code: r.type,
+                    prefix: r.net + '/' + r.prefix,
+                    via: r.nextHop || (r.egress ? C.portLongName(r.egress) : '—'),
+                })),
+                vlans: dev.type === 'switch' && dev.vlans
+                    ? dev.vlans.map((v) => ({ id: v.id, name: v.name }))
+                    : [],
+                neighbors: (E.cdpNeighbors(this._state, dev) || []).map((n) => n.deviceId + ' via ' + C.portLongName(n.localInterface)),
+            };
         },
 
         _syncAfterStateChange() {
+            E.bindState(this._state);
             this._refreshMarkers();
             this._rebuildCables();
             this._refreshLists();
@@ -889,12 +952,16 @@ export default function practiceLabData() {
             this._loadSample();
         },
 
+        // A realistic CCNA topology: two VLANs on a trunk to a router-on-a-stick,
+        // a serial WAN link (DCE), OSPF area 0, and an end-to-end ping path.
         _loadSample() {
             this._state = raw(E.makeState());
             this._rebuildScene();
             this.logLines = [];
             this.selectedId = null;
             this.cableSrc = null;
+            this.selectedDetail = null;
+            this.cli = null;
 
             const S = this._state;
             const mk = (t, n, x, z) => {
@@ -908,36 +975,62 @@ export default function practiceLabData() {
                 p.ip = ip; p.mask = mask; p.up = true;
             };
 
-            const PC1 = mk('pc', 'PC1', -9, 1.5);
-            const SRV = mk('server', 'Server1', -9, -2);
-            const SW1 = mk('switch', 'SW1', -5.5, 0);
-            const R1 = mk('router', 'R1', -1.5, 0);
-            const R2 = mk('router', 'R2', 2.5, 0);
-            const SW2 = mk('switch', 'SW2', 6, 0);
-            const PC4 = mk('pc', 'PC4', 9.5, 0);
+            const PC1 = mk('pc', 'PC1', -10, 1.6);
+            const PC2 = mk('pc', 'PC2', -10, -2.2);
+            const SW1 = mk('switch', 'SW1', -6.5, 0);
+            const R1 = mk('router', 'R1', -2.2, 0);
+            const R2 = mk('router', 'R2', 2.2, 0);
+            const SRV = mk('server', 'Server1', 6.5, 0);
 
-            setIp(PC1, 'eth0', '192.168.1.10', '255.255.255.0'); PC1.gateway = '192.168.1.1';
-            setIp(SRV, 'eth0', '192.168.1.20', '255.255.255.0'); SRV.gateway = '192.168.1.1';
-            setIp(R1, 'G0/0', '192.168.1.1', '255.255.255.0');
-            setIp(R1, 'G0/1', '192.168.12.1', '255.255.255.0');
-            setIp(R2, 'G0/0', '192.168.12.2', '255.255.255.0');
-            setIp(R2, 'G0/1', '192.168.4.1', '255.255.255.0');
-            setIp(PC4, 'eth0', '192.168.4.10', '255.255.255.0'); PC4.gateway = '192.168.4.1';
+            // ---- VLANs on SW1 ----
+            E.ensureVlan(SW1, 10, 'SALES');
+            E.ensureVlan(SW1, 20, 'ENGINEERING');
+            const swF1 = E.getPort(SW1, 'F0/1'); swF1.mode = 'access'; swF1.accessVlan = 10; swF1.up = true;
+            const swF2 = E.getPort(SW1, 'F0/2'); swF2.mode = 'access'; swF2.accessVlan = 20; swF2.up = true;
+            const swG1 = E.getPort(SW1, 'G0/1'); swG1.mode = 'trunk'; swG1.up = true;
+
+            // ---- Router-on-a-stick on R1 ----
+            E.getPort(R1, 'G0/1').up = true;
+            for (const [sub, vlan, ip] of [['G0/1.10', 10, '192.168.10.1'], ['G0/1.20', 20, '192.168.20.1']]) {
+                const p = E.addSubinterface(R1, sub, vlan);
+                p.encapsulation = 'dot1q';
+                p.ip = ip; p.mask = '255.255.255.0'; p.up = true;
+            }
+            const r1s = E.getPort(R1, 'S0/0/0');
+            r1s.ip = '10.0.12.1'; r1s.mask = '255.255.255.252'; r1s.clockRate = 64000; r1s.up = true;
+
+            // ---- R2 + server LAN ----
+            const r2s = E.getPort(R2, 'S0/0/0');
+            r2s.ip = '10.0.12.2'; r2s.mask = '255.255.255.252'; r2s.up = true;
+            setIp(R2, 'G0/0', '192.168.30.1', '255.255.255.0');
+
+            // ---- OSPF area 0 ----
+            R1.ospf = { pid: 1, routerId: '1.1.1.1', networks: [
+                { net: '192.168.10.0', wildcard: '0.0.0.255', area: '0' },
+                { net: '192.168.20.0', wildcard: '0.0.0.255', area: '0' },
+                { net: '10.0.12.0', wildcard: '0.0.0.3', area: '0' },
+            ], passive: [] };
+            R2.ospf = { pid: 1, routerId: '2.2.2.2', networks: [
+                { net: '10.0.12.0', wildcard: '0.0.0.3', area: '0' },
+                { net: '192.168.30.0', wildcard: '0.0.0.255', area: '0' },
+            ], passive: [] };
+
+            // ---- end hosts ----
+            setIp(PC1, 'eth0', '192.168.10.10', '255.255.255.0'); PC1.gateway = '192.168.10.1';
+            setIp(PC2, 'eth0', '192.168.20.10', '255.255.255.0'); PC2.gateway = '192.168.20.1';
+            setIp(SRV, 'eth0', '192.168.30.10', '255.255.255.0'); SRV.gateway = '192.168.30.1';
 
             E.addLink(S, PC1.id, 'eth0', SW1.id, 'F0/1');
-            E.addLink(S, SRV.id, 'eth0', SW1.id, 'F0/3');
-            E.addLink(S, SW1.id, 'F0/2', R1.id, 'G0/0');
-            E.addLink(S, R1.id, 'G0/1', R2.id, 'G0/0');
-            E.addLink(S, R2.id, 'G0/1', SW2.id, 'F0/1');
-            E.addLink(S, SW2.id, 'F0/2', PC4.id, 'eth0');
+            E.addLink(S, PC2.id, 'eth0', SW1.id, 'F0/2');
+            E.addLink(S, SW1.id, 'G0/1', R1.id, 'G0/1');
+            E.addLink(S, R1.id, 'S0/0/0', R2.id, 'S0/0/0');
+            E.addLink(S, R2.id, 'G0/0', SRV.id, 'eth0');
 
-            R1.staticRoutes.push({ net: '192.168.4.0', mask: '255.255.255.0', nextHop: '192.168.12.2', exit: null });
-            R2.staticRoutes.push({ net: '192.168.1.0', mask: '255.255.255.0', nextHop: '192.168.12.1', exit: null });
-
+            E.bindState(S);
             this._rebuildScene();
             this._syncAfterStateChange();
-            this.logEvent('🏗 Loaded sample network: PC1 + Server1 ⇄ SW1 ⇄ R1 ⇄ R2 ⇄ SW2 ⇄ PC4');
-            this.logEvent('💡 Try: open PC1 and type  ping 192.168.4.10');
+            this.logEvent('🏗 Loaded sample: PC1/PC2 (VLANs 10+20) ⇄ SW1 trunk ⇄ R1 (802.1Q) ⇄ serial ⇄ R2 ⇄ Server1 — OSPF area 0');
+            this.logEvent('💡 Try: open PC1 and type  ping 192.168.30.10');
         },
 
         clearAll() {
@@ -945,6 +1038,7 @@ export default function practiceLabData() {
             this._rebuildScene();
             this._syncAfterStateChange();
             this.selectedId = null;
+            this.selectedDetail = null;
             this.cli = null;
             this.cableSrc = null;
             this.logLines = [];
