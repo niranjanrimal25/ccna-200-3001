@@ -246,11 +246,155 @@ export const SCENARIOS = [
 
         doneText: 'All steps complete — SW1 learned, flooded, forwarded, aged-out and re-flooded. Restart to run it again.',
     },
+    {
+        id: 'arp-resolution',
+        icon: '🛰',
+        title: 'ARP Resolution',
+        tag: 'Layer 3 · ARP',
+        summary: 'Watch hosts turn an IP address into a MAC address — request, reply, cache, forward.',
+        objective:
+            'PC1, PC2 and PC3 share a LAN through SW1. PC1 wants to reach PC2 but only knows its IP. ' +
+            'Step through the ARP request (broadcast), the ARP reply (unicast), the cached unicast send, ' +
+            'and cache aging. Tip: open a PC console and run "arp -a" at any point.',
+        devices: [
+            { type: 'pc', name: 'PC1', x: -4, z: 0, ip: '192.168.1.10', gateway: '192.168.1.1' },
+            {
+                type: 'switch', name: 'SW1', x: 0, z: 0,
+                ports: { 'F0/1': { up: true }, 'F0/2': { up: true }, 'F0/3': { up: true } },
+            },
+            { type: 'pc', name: 'PC2', x: 0, z: 3, ip: '192.168.1.20', gateway: '192.168.1.1' },
+            { type: 'pc', name: 'PC3', x: 0, z: -3, ip: '192.168.1.30', gateway: '192.168.1.1' },
+        ],
+        links: [
+            ['PC1', 'eth0', 'SW1', 'F0/1'],
+            ['PC2', 'eth0', 'SW1', 'F0/2'],
+            ['PC3', 'eth0', 'SW1', 'F0/3'],
+        ],
+
+        build(state) {
+            buildTopology(state, this);
+        },
+
+        steps: [
+            {
+                title: 'PC1 → ARP request (broadcast)',
+                desc:
+                    'PC1 wants to send to 192.168.1.20 but its ARP cache is empty. It broadcasts ' +
+                    '"who has 192.168.1.20?" — SW1 floods the frame to PC2 and PC3.',
+                run(state) {
+                    return {
+                        log: [
+                            `PC1: ARP cache miss — no MAC for 192.168.1.20`,
+                            `PC1 broadcasts ARP request: who has 192.168.1.20? Tell 192.168.1.10`,
+                            `SW1 floods the broadcast out F0/2 and F0/3`,
+                        ],
+                        frames: [
+                            [idOf(state, 'PC1'), idOf(state, 'SW1'), AMBER],
+                            [idOf(state, 'SW1'), idOf(state, 'PC2'), ORANGE],
+                            [idOf(state, 'SW1'), idOf(state, 'PC3'), ORANGE],
+                        ],
+                        hint: 'ARP request broadcast to the whole LAN',
+                    };
+                },
+            },
+            {
+                title: 'PC2 → ARP reply (unicast)',
+                desc:
+                    'Only PC2 owns 192.168.1.20, so it answers with a unicast ARP reply. PC1 caches ' +
+                    'PC2\u2019s MAC; PC2 caches PC1\u2019s MAC from the request.',
+                run(state) {
+                    const m1 = hostMac(state, 'PC1');
+                    const m2 = hostMac(state, 'PC2');
+                    const p1 = device(state, 'PC1');
+                    const p2 = device(state, 'PC2');
+                    p1.arp['192.168.1.20'] = m2;
+                    p2.arp['192.168.1.10'] = m1;
+                    return {
+                        log: [
+                            `PC2 replies: 192.168.1.20 is at ${m2} (unicast to PC1)`,
+                            `PC1 caches 192.168.1.20 → ${m2}`,
+                            `PC2 caches 192.168.1.10 → ${m1} (learned from the request)`,
+                        ],
+                        frames: [
+                            [idOf(state, 'PC2'), idOf(state, 'SW1'), AMBER],
+                            [idOf(state, 'SW1'), idOf(state, 'PC1'), TEAL],
+                        ],
+                        hint: 'ARP reply cached on both hosts',
+                    };
+                },
+            },
+            {
+                title: 'PC1 → PC2 echo (cached MAC)',
+                desc:
+                    'Now PC1 has PC2\u2019s MAC, so the ICMP echo request goes as a normal unicast frame — ' +
+                    'no broadcast this time.',
+                run(state) {
+                    const m2 = hostMac(state, 'PC2');
+                    return {
+                        log: [
+                            `PC1 sends echo request to 192.168.1.20 using cached ${m2}`,
+                            `SW1 forwards the unicast frame out F0/2 only`,
+                        ],
+                        frames: [
+                            [idOf(state, 'PC1'), idOf(state, 'SW1'), AMBER],
+                            [idOf(state, 'SW1'), idOf(state, 'PC2'), TEAL],
+                        ],
+                        hint: 'Unicast forward using the cached MAC',
+                    };
+                },
+            },
+            {
+                title: 'Aging — caches cleared',
+                desc:
+                    'ARP entries are temporary. When the aging timer expires the mapping is removed, ' +
+                    'so the next packet triggers a fresh ARP exchange.',
+                run(state) {
+                    const p1 = device(state, 'PC1');
+                    const p2 = device(state, 'PC2');
+                    const n1 = Object.keys(p1.arp).length;
+                    const n2 = Object.keys(p2.arp).length;
+                    p1.arp = {};
+                    p2.arp = {};
+                    return {
+                        log: [
+                            `ARP aging timer expires (entries are dynamic)`,
+                            `PC1 removes ${n1} entr${n1 === 1 ? 'y' : 'ies'} · PC2 removes ${n2} entr${n2 === 1 ? 'y' : 'ies'}`,
+                            `Next send → a new ARP request/reply exchange`,
+                        ],
+                        frames: [],
+                        hint: 'ARP caches aged out (empty)',
+                    };
+                },
+            },
+        ],
+
+        table(state) {
+            const rows = [];
+            for (const name of ['PC1', 'PC2', 'PC3']) {
+                const d = device(state, name);
+                for (const [ip, mac] of Object.entries(d.arp || {})) {
+                    rows.push({ host: name, ip, mac, type: 'dynamic' });
+                }
+            }
+            return [{
+                id: 'arp',
+                title: 'ARP caches (PC1 / PC2 / PC3)',
+                columns: [
+                    { key: 'host', label: 'Host' },
+                    { key: 'ip', label: 'IP Address' },
+                    { key: 'mac', label: 'MAC Address' },
+                    { key: 'type', label: 'Type' },
+                ],
+                rows,
+            }];
+        },
+
+        doneText: 'ARP complete — request broadcast, unicast reply, cached forward, and aging. Restart to run it again.',
+    },
 ];
 
 // Roadmap shown in the scenario picker; each maps to a future scenario object above.
 export const PLANNED = [
-    { icon: '🛰', title: 'ARP Resolution', tag: 'Layer 3 · ARP' },
     { icon: '🏷', title: 'VLANs & Trunking (802.1Q)', tag: 'Layer 2 · VLAN' },
     { icon: '🌳', title: 'Spanning Tree (STP)', tag: 'Layer 2 · STP' },
     { icon: '🔒', title: 'Port Security', tag: 'Layer 2 · Security' },

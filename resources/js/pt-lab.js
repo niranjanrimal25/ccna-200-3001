@@ -509,7 +509,7 @@ export default function practiceLabData() {
                 try {
                     this._buildScene();
                     this._loadSample();
-                    this.statusHint = 'Ready — drag a device to move it · drag empty space to orbit · scroll to zoom · right-drag to pan · double-click for its console.';
+                    this.statusHint = 'Ready — drag a device to move it · drag empty space to orbit · scroll to zoom · right-drag to pan · double-click for console · R rotates.';
                     this.logEvent('✅ 3D workspace ready');
                 } catch (err) {
                     console.error('[practice-lab] init failed:', err);
@@ -590,6 +590,7 @@ export default function practiceLabData() {
             dom.addEventListener('pointercancel', (e) => this._onPointerUp(e));
             dom.addEventListener('dblclick', (e) => this._onDblClick(e));
             window.addEventListener('resize', () => this._onResize());
+            window.addEventListener('keydown', (e) => this._onKeydown(e));
 
             // keep the renderer sized to its container (e.g. when the CLI
             // console opens/closes and resizes the canvas area)
@@ -723,6 +724,18 @@ export default function practiceLabData() {
             }
         },
 
+        // Global key shortcuts. R rotates the selected device 90° clockwise
+        // (Cisco-style), unless a console is open (so R can still be typed).
+        _onKeydown(e) {
+            if (this.cli) return;
+            if (e.key === 'r' || e.key === 'R') {
+                if (this.selectedId) {
+                    e.preventDefault();
+                    this.rotateDevice(this.selectedId, 1);
+                }
+            }
+        },
+
         _deviceGroups() {
             return Array.from(this._groups.values());
         },
@@ -837,6 +850,17 @@ export default function practiceLabData() {
             this._refreshDetail();
         },
 
+        // Rotate a placed device around its Y axis (dir: +1 clockwise 90°, -1 counter).
+        rotateDevice(devId, dir) {
+            const dev = E.getDevice(this._state, devId);
+            if (!dev) return;
+            dev.rot = (((dev.rot || 0) + dir * Math.PI / 2) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
+            const g = this._groups.get(devId);
+            if (g) g.rotation.y = dev.rot;
+            this._dirtyCables = true; // cable anchors move with the ports
+            this._refreshDetail();
+        },
+
         _devLabel(devId) {
             const d = E.getDevice(this._state, devId);
             return d ? `${d.hostname || d.name}` : devId;
@@ -846,6 +870,7 @@ export default function practiceLabData() {
             const mesh = buildDeviceMesh(dev);
             mesh.userData.deviceId = dev.id;
             mesh.position.set(dev.x, 0, dev.z);
+            mesh.rotation.y = dev.rot || 0;
             // port markers (for cable mode) — hidden by default; virtual
             // interfaces (loopback / SVI / subinterface) have no physical jack.
             for (const p of dev.ports) {
@@ -1217,6 +1242,7 @@ export default function practiceLabData() {
                 name: dev.hostname || dev.name,
                 type: dev.type,
                 icon: { router: '🖧', switch: '🔀', pc: '🖥', server: '🗄' }[dev.type] || '▪',
+                rotDeg: Math.round(((((dev.rot || 0) % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2)) * 180 / Math.PI),
                 interfaces: ports.map((p) => {
                     const ip = p.ip
                         ? p.ip + '/' + E.prefixLen(p.mask)
@@ -1257,7 +1283,7 @@ export default function practiceLabData() {
             this.cableSrc = null;
             this._refreshMarkers();
             this.statusHint = {
-                select: 'Drag a device to move it · drag empty space to orbit · scroll to zoom · right-drag to pan · double-click to open console.',
+                select: 'Drag a device to move it · drag empty space to orbit · scroll to zoom · right-drag to pan · double-click for console · R rotates the selected device.',
                 cable: 'Click a port on the first device, then a port on the second device to connect them.',
                 delete: 'Click a device to delete it (its cables are removed too).',
             }[tool];

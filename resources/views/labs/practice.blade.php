@@ -86,6 +86,15 @@
                             </div>
                         </div>
 
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-[10px] uppercase tracking-wide text-zinc-500">Rotate</span>
+                            <button @click="rotateDevice(selectedDetail.id, -1)" title="Rotate 90° counter-clockwise"
+                                    class="rounded-md border border-zinc-700 px-2 py-0.5 text-xs text-zinc-300 hover:bg-zinc-800">⟲</button>
+                            <button @click="rotateDevice(selectedDetail.id, 1)" title="Rotate 90° clockwise (or press R)"
+                                    class="rounded-md border border-zinc-700 px-2 py-0.5 text-xs text-zinc-300 hover:bg-zinc-800">⟳</button>
+                            <span class="ml-auto font-mono text-[11px] text-zinc-500" x-text="selectedDetail.rotDeg + '°'"></span>
+                        </div>
+
                         <div x-show="selectedDetail.interfaces.length">
                             <div class="text-[10px] uppercase tracking-wide text-zinc-500">Interfaces</div>
                             <ul class="mt-1 space-y-0.5 font-mono text-[11px]">
