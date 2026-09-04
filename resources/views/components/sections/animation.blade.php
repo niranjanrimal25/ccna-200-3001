@@ -6,65 +6,65 @@
 @endphp
 
 @if ($diagramType === 'encapsulation')
-    <div x-data="encapsulationAnimation(@js($steps))" class="overflow-hidden rounded-xl border border-stone-800 bg-stone-900/60">
-        <div class="flex items-center justify-between border-b border-stone-800 px-4 py-3">
-            <button @click="prev()" :disabled="step === 0" class="rounded-md px-3 py-1.5 text-sm text-stone-300 hover:bg-stone-800 disabled:opacity-40">← Back</button>
-            <span class="text-sm text-stone-400">
+    <div x-data="encapsulationAnimation(@js($steps))" class="overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900/60">
+        <div class="flex items-center justify-between border-b border-zinc-800 px-4 py-3">
+            <button @click="prev()" :disabled="step === 0" class="rounded-md px-3 py-1.5 text-sm text-zinc-300 hover:bg-zinc-800 disabled:opacity-40">← Back</button>
+            <span class="text-sm text-zinc-400">
                 <span x-text="progress"></span> / <span x-text="total"></span>
             </span>
-            <button @click="next()" :disabled="step === steps.length - 1" class="rounded-md bg-amber-600 px-3 py-1.5 text-sm text-white hover:bg-amber-500 disabled:opacity-40">Next →</button>
+            <button @click="next()" :disabled="step === steps.length - 1" class="rounded-md bg-teal-600 px-3 py-1.5 text-sm text-white hover:bg-teal-500 disabled:opacity-40">Next →</button>
         </div>
 
         <div class="p-6">
             <div class="flex flex-col items-center gap-3">
                 <div class="w-full max-w-xl space-y-2 font-mono text-sm">
                     <div class="flex" x-show="state === 'app'">
-                        <span class="w-28 shrink-0 rounded-l-md bg-stone-800 px-3 py-2 text-stone-400">data</span>
-                        <span class="flex-1 rounded-r-md bg-amber-900/40 px-3 py-2 text-amber-200">HTTP request payload</span>
+                        <span class="w-28 shrink-0 rounded-l-md bg-zinc-800 px-3 py-2 text-zinc-400">data</span>
+                        <span class="flex-1 rounded-r-md bg-teal-900/40 px-3 py-2 text-teal-200">HTTP request payload</span>
                     </div>
                     <div class="flex" x-show="['transport','internet','local-network','physical'].includes(state)">
-                        <span class="w-28 shrink-0 rounded-l-md bg-stone-800 px-3 py-2 text-stone-400">L4 header</span>
-                        <span class="flex-1 rounded-r-md bg-amber-900/40 px-3 py-2 text-amber-200">segment / datagram</span>
+                        <span class="w-28 shrink-0 rounded-l-md bg-zinc-800 px-3 py-2 text-zinc-400">L4 header</span>
+                        <span class="flex-1 rounded-r-md bg-teal-900/40 px-3 py-2 text-teal-200">segment / datagram</span>
                     </div>
                     <div class="flex" x-show="['internet','local-network','physical'].includes(state)">
-                        <span class="w-28 shrink-0 rounded-l-md bg-stone-800 px-3 py-2 text-stone-400">L3 header</span>
-                        <span class="flex-1 rounded-r-md bg-amber-900/40 px-3 py-2 text-amber-200">packet</span>
+                        <span class="w-28 shrink-0 rounded-l-md bg-zinc-800 px-3 py-2 text-zinc-400">L3 header</span>
+                        <span class="flex-1 rounded-r-md bg-teal-900/40 px-3 py-2 text-teal-200">packet</span>
                     </div>
                     <div class="flex" x-show="['local-network','physical'].includes(state)">
-                        <span class="w-28 shrink-0 rounded-l-md bg-stone-800 px-3 py-2 text-stone-400">L2 header</span>
-                        <span class="flex-1 rounded-r-md bg-amber-900/40 px-3 py-2 text-amber-200">frame</span>
-                        <span class="w-28 shrink-0 rounded-r-md bg-stone-800 px-3 py-2 text-stone-400">L2 trailer</span>
+                        <span class="w-28 shrink-0 rounded-l-md bg-zinc-800 px-3 py-2 text-zinc-400">L2 header</span>
+                        <span class="flex-1 rounded-r-md bg-teal-900/40 px-3 py-2 text-teal-200">frame</span>
+                        <span class="w-28 shrink-0 rounded-r-md bg-zinc-800 px-3 py-2 text-zinc-400">L2 trailer</span>
                     </div>
                     <div class="flex" x-show="state === 'physical'">
-                        <div class="w-full rounded-md border border-dashed border-amber-700 px-3 py-2 text-center text-amber-300">bits sent as electrical / optical / radio signals</div>
+                        <div class="w-full rounded-md border border-dashed border-teal-700 px-3 py-2 text-center text-teal-300">bits sent as electrical / optical / radio signals</div>
                     </div>
                 </div>
             </div>
-            <p class="mt-4 text-sm text-stone-400" x-text="steps[step].narration"></p>
+            <p class="mt-4 text-sm text-zinc-400" x-text="steps[step].narration"></p>
         </div>
     </div>
 @elseif ($diagramType === 'cli_walkthrough')
-    <div x-data="cliAnimation(@js($steps))" class="overflow-hidden rounded-xl border border-stone-800 bg-stone-950">
-        <div class="flex items-center gap-2 border-b border-stone-800 bg-stone-900 px-4 py-2">
+    <div x-data="cliAnimation(@js($steps))" class="overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950">
+        <div class="flex items-center gap-2 border-b border-zinc-800 bg-zinc-900 px-4 py-2">
             <span class="h-3 w-3 rounded-full bg-rose-500/80"></span>
             <span class="h-3 w-3 rounded-full bg-yellow-500/80"></span>
             <span class="h-3 w-3 rounded-full bg-green-500/80"></span>
-            <span class="ml-2 text-xs text-stone-500">Cisco IOS CLI</span>
+            <span class="ml-2 text-xs text-zinc-500">Cisco IOS CLI</span>
             <div class="ml-auto flex gap-2">
-                <button @click="prev()" :disabled="step === 0" class="rounded-md px-2 py-1 text-xs text-stone-300 hover:bg-stone-800 disabled:opacity-40">← Back</button>
-                <button @click="next()" :disabled="step === steps.length - 1" class="rounded-md bg-amber-600 px-2 py-1 text-xs text-white hover:bg-amber-500 disabled:opacity-40">Next →</button>
+                <button @click="prev()" :disabled="step === 0" class="rounded-md px-2 py-1 text-xs text-zinc-300 hover:bg-zinc-800 disabled:opacity-40">← Back</button>
+                <button @click="next()" :disabled="step === steps.length - 1" class="rounded-md bg-teal-600 px-2 py-1 text-xs text-white hover:bg-teal-500 disabled:opacity-40">Next →</button>
             </div>
         </div>
         <div class="p-4 font-mono text-sm leading-relaxed">
             <template x-for="(line, i) in lines()" :key="i">
                 <div>
                     <span class="text-emerald-400" x-text="line.command"></span>
-                    <span class="text-stone-100" x-text="line.input ? ' ' + line.input : ''"></span>
-                    <span x-show="i === step" class="inline-block h-4 w-2 translate-y-0.5 animate-pulse bg-stone-200"></span>
+                    <span class="text-zinc-100" x-text="line.input ? ' ' + line.input : ''"></span>
+                    <span x-show="i === step" class="inline-block h-4 w-2 translate-y-0.5 animate-pulse bg-zinc-200"></span>
                 </div>
             </template>
         </div>
-        <div class="border-t border-stone-800 px-4 py-3 text-sm text-stone-400" x-text="steps[step].narration"></div>
+        <div class="border-t border-zinc-800 px-4 py-3 text-sm text-zinc-400" x-text="steps[step].narration"></div>
     </div>
 @else
     @php
@@ -76,7 +76,7 @@
         $vbWidth  = count($nodes) ? max(1000, max(array_column($nodes, 'x')) + 100) : 1000;
         $vbHeight = count($nodes) ? max(320,  max(array_column($nodes, 'y')) + 120) : 420;
 
-        $statusColor = fn ($status) => $status === 'fail' ? '#ef4444' : ($status === 'ok' ? '#22c55e' : '#f59e0b');
+        $statusColor = fn ($status) => $status === 'fail' ? '#ef4444' : ($status === 'ok' ? '#22c55e' : '#2dd4bf');
         $packetSlots = [];
         foreach ($steps as $i => $step) {
             $a = $step['animate'] ?? [];
@@ -108,13 +108,13 @@
         }
     @endphp
 
-    <div x-data="topologyAnimation(@js($content))" class="overflow-hidden rounded-xl border border-stone-800 bg-stone-900/60">
-        <div class="flex items-center justify-between border-b border-stone-800 px-4 py-3">
-            <button @click="prev()" :disabled="step === 0" class="rounded-md px-3 py-1.5 text-sm text-stone-300 hover:bg-stone-800 disabled:opacity-40">← Back</button>
-            <span class="text-sm text-stone-400">
+    <div x-data="topologyAnimation(@js($content))" class="overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900/60">
+        <div class="flex items-center justify-between border-b border-zinc-800 px-4 py-3">
+            <button @click="prev()" :disabled="step === 0" class="rounded-md px-3 py-1.5 text-sm text-zinc-300 hover:bg-zinc-800 disabled:opacity-40">← Back</button>
+            <span class="text-sm text-zinc-400">
                 <span x-text="step + 1"></span> / <span x-text="steps.length"></span>
             </span>
-            <button @click="next()" :disabled="step === steps.length - 1" class="rounded-md bg-amber-600 px-3 py-1.5 text-sm text-white hover:bg-amber-500 disabled:opacity-40">Next →</button>
+            <button @click="next()" :disabled="step === steps.length - 1" class="rounded-md bg-teal-600 px-3 py-1.5 text-sm text-white hover:bg-teal-500 disabled:opacity-40">Next →</button>
         </div>
 
         <div class="grid gap-4 lg:grid-cols-[1fr_auto]">
@@ -122,7 +122,7 @@
                 <svg viewBox="0 0 {{ $vbWidth }} {{ $vbHeight }}" class="w-full h-auto select-none" role="img">
                     <defs>
                         <pattern id="anim-dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-                            <circle cx="1" cy="1" r="1" fill="#241f16"/>
+                            <circle cx="1" cy="1" r="1" fill="#171c1e"/>
                         </pattern>
                     </defs>
 
@@ -151,11 +151,11 @@
                         @endforeach
                     </g>
 
-                    <g class="text-stone-500">
+                    <g class="text-zinc-500">
                         @foreach ($nodes as $n)
                             <g transform="translate({{ $n['x'] }} {{ $n['y'] }})">
                                 <rect x="-40" y="-34" width="80" height="56" rx="6" fill="none"
-                                      :class="isHighlighted('{{ $n['id'] }}') ? 'stroke-amber-400' : 'stroke-transparent'"
+                                      :class="isHighlighted('{{ $n['id'] }}') ? 'stroke-teal-400' : 'stroke-transparent'"
                                       :stroke-width="isHighlighted('{{ $n['id'] }}') ? 2.5 : 0"
                                       :stroke-dasharray="isHighlighted('{{ $n['id'] }}') ? '5 3' : ''" />
                                 <g transform="translate(-32, -24)">
@@ -164,7 +164,7 @@
                                 {{-- Status LED: glow halo + solid dot --}}
                                 <circle cx="30" cy="-28" r="4" fill="#22c55e" fill-opacity="0.2"/>
                                 <circle cx="30" cy="-28" r="2" fill="#22c55e"/>
-                                <text text-anchor="middle" y="34" class="fill-stone-300 text-[13px] font-medium">{{ $n['label'] }}</text>
+                                <text text-anchor="middle" y="34" class="fill-zinc-300 text-[13px] font-medium">{{ $n['label'] }}</text>
                             </g>
                         @endforeach
                     </g>
@@ -176,8 +176,8 @@
                                     <circle r="6" fill="{{ $p['color'] }}" />
                                     @if ($p['label'])
                                         <rect x="-28" y="-24" width="56" height="14" rx="7"
-                                              fill="#1a150d" stroke="#3d3426" stroke-width="0.8"/>
-                                        <text text-anchor="middle" y="-13" fill="#e7e0d3"
+                                              fill="#101214" stroke="#272c2e" stroke-width="0.8"/>
+                                        <text text-anchor="middle" y="-13" fill="#d4d4d8"
                                               font-size="9" font-family="ui-monospace,monospace">{{ $p['label'] }}</text>
                                     @endif
                                 </g>
@@ -188,11 +188,11 @@
             </div>
 
             @if (collect($steps)->contains(fn ($s) => isset($s['animate']['mac_table_add'])))
-                <div class="border-t border-stone-800 p-4 lg:border-l lg:border-t-0">
-                    <div class="text-xs font-semibold uppercase tracking-wider text-stone-500">MAC address table</div>
+                <div class="border-t border-zinc-800 p-4 lg:border-l lg:border-t-0">
+                    <div class="text-xs font-semibold uppercase tracking-wider text-zinc-500">MAC address table</div>
                     <table class="mt-2 w-full text-xs">
                         <thead>
-                            <tr class="text-left text-stone-500">
+                            <tr class="text-left text-zinc-500">
                                 <th class="pb-1 pr-3 font-medium">MAC</th>
                                 <th class="pb-1 pr-3 font-medium">Port</th>
                                 <th class="pb-1 font-medium">Type</th>
@@ -201,13 +201,13 @@
                         <tbody class="font-mono">
                             <template x-for="(row, i) in macTable" :key="i">
                                 <tr>
-                                    <td class="py-0.5 pr-3 text-stone-300" x-text="row.mac"></td>
-                                    <td class="py-0.5 pr-3 text-stone-300" x-text="row.port"></td>
+                                    <td class="py-0.5 pr-3 text-zinc-300" x-text="row.mac"></td>
+                                    <td class="py-0.5 pr-3 text-zinc-300" x-text="row.port"></td>
                                     <td class="py-0.5 text-emerald-400" x-text="row.type"></td>
                                 </tr>
                             </template>
                             <tr x-show="macTable.length === 0">
-                                <td colspan="3" class="py-1 text-stone-600">empty</td>
+                                <td colspan="3" class="py-1 text-zinc-600">empty</td>
                             </tr>
                         </tbody>
                     </table>
@@ -215,6 +215,6 @@
             @endif
         </div>
 
-        <div class="border-t border-stone-800 px-4 py-3 text-sm text-stone-400" x-text="steps[step].narration"></div>
+        <div class="border-t border-zinc-800 px-4 py-3 text-sm text-zinc-400" x-text="steps[step].narration"></div>
     </div>
 @endif

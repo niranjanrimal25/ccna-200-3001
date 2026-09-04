@@ -64,10 +64,10 @@
             </g>
         @endforeach
 
-        {{-- Console port (light amber — Cisco convention) --}}
-        <rect x="468" y="32" width="38" height="26" rx="2" fill="#0a0a0a" stroke="#f59e0b" stroke-width="1"/>
+        {{-- Console port (cyan — Cisco convention) --}}
+        <rect x="468" y="32" width="38" height="26" rx="2" fill="#0a0a0a" stroke="#22d3ee" stroke-width="1"/>
         <rect x="472" y="36" width="30" height="17" rx="0.5" fill="#050505"/>
-        <text x="487" y="70" text-anchor="middle" font-size="7" fill="#f59e0b" font-family="monospace">CONSOLE</text>
+        <text x="487" y="70" text-anchor="middle" font-size="7" fill="#22d3ee" font-family="monospace">CONSOLE</text>
 
         {{-- AUX port --}}
         <rect x="520" y="32" width="38" height="26" rx="2" fill="#0a0a0a" stroke="#44403c" stroke-width="0.8"/>
@@ -80,7 +80,7 @@
         <text x="583" y="74" text-anchor="middle" font-size="7" fill="#78716c" font-family="monospace">USB</text>
 
         {{-- Cisco branding --}}
-        <text x="790" y="56" text-anchor="middle" font-size="20" fill="#f59e0b"
+        <text x="790" y="56" text-anchor="middle" font-size="20" fill="#22d3ee"
               font-family="Arial,Helvetica,sans-serif" font-weight="bold" letter-spacing="1">CISCO</text>
         <text x="790" y="71" text-anchor="middle" font-size="11" fill="#78716c"
               font-family="Arial,Helvetica,sans-serif">2911</text>
@@ -95,27 +95,27 @@
              x-transition:enter="transition ease-out duration-100"
              x-transition:enter-start="opacity-0 scale-95"
              x-transition:enter-end="opacity-100 scale-100"
-             class="absolute z-20 w-56 rounded-lg border border-stone-700 bg-stone-900 p-3 text-xs shadow-2xl"
+             class="absolute z-20 w-56 rounded-lg border border-zinc-700 bg-zinc-900 p-3 text-xs shadow-2xl"
              style="left: {{ ($port['x'] + 25) / 900 * 100 }}%; top: 100%; transform: translateX(-50%); margin-top: 4px;">
-            <div class="mb-2 font-semibold text-stone-100">{{ $port['key'] }}</div>
+            <div class="mb-2 font-semibold text-zinc-100">{{ $port['key'] }}</div>
             <div class="space-y-1 font-mono">
                 <div class="flex justify-between gap-2">
-                    <span class="text-stone-500">IP</span>
-                    <span class="text-stone-200"
+                    <span class="text-zinc-500">IP</span>
+                    <span class="text-zinc-200"
                           x-text="interfaces['{{ $port['key'] }}'].ip
                               ? interfaces['{{ $port['key'] }}'].ip + ' / ' + interfaces['{{ $port['key'] }}'].mask
                               : 'unassigned'">
                     </span>
                 </div>
                 <div class="flex justify-between gap-2">
-                    <span class="text-stone-500">Status</span>
+                    <span class="text-zinc-500">Status</span>
                     <span :class="interfaces['{{ $port['key'] }}'].adminState === 'up' ? 'text-green-400' : 'text-rose-400'"
                           x-text="interfaces['{{ $port['key'] }}'].adminState === 'up' ? 'up / up' : 'admin down / down'">
                     </span>
                 </div>
                 <div x-show="interfaces['{{ $port['key'] }}'].description" class="flex justify-between gap-2">
-                    <span class="text-stone-500">Desc</span>
-                    <span class="text-stone-200 truncate"
+                    <span class="text-zinc-500">Desc</span>
+                    <span class="text-zinc-200 truncate"
                           x-text="interfaces['{{ $port['key'] }}'].description">
                     </span>
                 </div>

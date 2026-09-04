@@ -2,12 +2,12 @@
 
 <div class="space-y-4">
     @foreach ($content['modes'] as $mode)
-        <div class="rounded-xl border border-stone-800 bg-stone-900/60 p-4">
+        <div class="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4">
             <div class="flex items-center gap-4">
                 <div class="shrink-0 w-40">
-                    <div class="text-sm font-semibold text-stone-100">{{ $mode['label'] }}</div>
+                    <div class="text-sm font-semibold text-zinc-100">{{ $mode['label'] }}</div>
                 </div>
-                <svg viewBox="0 0 120 24" class="h-12 w-32 text-amber-300" role="img" aria-label="{{ $mode['label'] }} core">
+                <svg viewBox="0 0 120 24" class="h-12 w-32 text-teal-300" role="img" aria-label="{{ $mode['label'] }} core">
                     <rect x="4" y="12" width="{{ $mode['core_width'] }}" height="5" rx="2" fill="currentColor" fill-opacity="0.4"/>
                     <rect x="0" y="9" width="120" height="11" rx="2" stroke="currentColor" stroke-width="1" fill="none"/>
                     @if ($mode['id'] === 'multimode')
@@ -18,7 +18,7 @@
                     @endif
                 </svg>
             </div>
-            <p class="mt-2 text-sm text-stone-400">{{ $mode['description'] }}</p>
+            <p class="mt-2 text-sm text-zinc-400">{{ $mode['description'] }}</p>
         </div>
     @endforeach
 </div>

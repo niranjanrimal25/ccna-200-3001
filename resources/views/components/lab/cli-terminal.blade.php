@@ -14,7 +14,7 @@
         <div class="flex items-baseline" style="white-space:pre;">
             <span class="text-green-400" x-text="prompt"></span>
             <span x-show="!awaitingPassword" class="text-green-400" x-text="currentInput"></span>
-            <span x-show="awaitingPassword"  class="text-stone-500" x-text="'*'.repeat(currentInput.length)"></span>
+            <span x-show="awaitingPassword"  class="text-zinc-500" x-text="'*'.repeat(currentInput.length)"></span>
             <span class="inline-block w-[8px] h-[14px] ml-[1px] align-middle"
                   style="background:#4ade80; animation:termBlink 1.1s step-end infinite;"></span>
         </div>
@@ -32,15 +32,15 @@
            spellcheck="false"/>
 
     {{-- Status bar --}}
-    <div class="flex items-center justify-between border-t border-stone-800 px-4 py-2 text-xs"
+    <div class="flex items-center justify-between border-t border-zinc-800 px-4 py-2 text-xs"
          style="background:#111111;">
-        <span class="text-stone-600 space-x-2">
-            <kbd class="rounded bg-stone-800 px-1 py-0.5 text-stone-400 font-mono">?</kbd><span class="text-stone-700">help</span>
-            <kbd class="rounded bg-stone-800 px-1 py-0.5 text-stone-400 font-mono">Tab</kbd><span class="text-stone-700">complete</span>
-            <kbd class="rounded bg-stone-800 px-1 py-0.5 text-stone-400 font-mono">↑↓</kbd><span class="text-stone-700">history</span>
-            <kbd class="rounded bg-stone-800 px-1 py-0.5 text-stone-400 font-mono">Ctrl+C</kbd><span class="text-stone-700">break</span>
+        <span class="text-zinc-600 space-x-2">
+            <kbd class="rounded bg-zinc-800 px-1 py-0.5 text-zinc-400 font-mono">?</kbd><span class="text-zinc-700">help</span>
+            <kbd class="rounded bg-zinc-800 px-1 py-0.5 text-zinc-400 font-mono">Tab</kbd><span class="text-zinc-700">complete</span>
+            <kbd class="rounded bg-zinc-800 px-1 py-0.5 text-zinc-400 font-mono">↑↓</kbd><span class="text-zinc-700">history</span>
+            <kbd class="rounded bg-zinc-800 px-1 py-0.5 text-zinc-400 font-mono">Ctrl+C</kbd><span class="text-zinc-700">break</span>
         </span>
-        <span class="text-stone-600">
+        <span class="text-zinc-600">
             mode: <span class="text-green-500 font-mono" x-text="mode"></span>
         </span>
     </div>
