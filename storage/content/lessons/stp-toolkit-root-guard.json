@@ -1,0 +1,187 @@
+{
+    "slug": "stp-toolkit-root-guard",
+    "title": "STP Toolkit: Root Guard",
+    "summary": "Why root bridge placement matters for traffic flow and reliability, how a switch outside your control can steal the root role, and how Root Guard enforces your root bridge by blocking ports that receive superior BPDUs.",
+    "source_ref": "transcript_21_part_3.txt",
+    "order": 26,
+    "sections": [
+        {
+            "type": "explanation",
+            "title": "Choosing the root bridge is not a random decision",
+            "order": 1,
+            "content": {
+                "body": "STP prevents loops by electing a root bridge and ensuring every other switch has exactly one valid path to reach it. **Any** of the switches could be the root and STP would still prevent loops — but you should not pick one at random. Two things matter:\n\n**Optimal traffic flow** — minimise latency and congestion. *Latency* is how long traffic takes to cross the LAN; *congestion* is how busy the network is. Pumping too much water through a small pipe is inefficient, and the same applies to network links.\n\n**Stability and reliability** — once you have a root bridge that gives an efficient path, you want it to stay up as long as possible. If your LAN mixes switch models, make one of the **more advanced, reliable** switches the root. If you could only afford a couple of new switches and the rest are old junkers from the closet, make a new one the root — you can rely on it not to die after a few weeks.\n\n**Worked example.** SW1 connects to R1, the gateway to the outside world. In most LANs, PCs do not talk to each other much — they talk to servers on the Internet or across the WAN. Making SW1 the root means SW2's hosts use the direct SW2–SW1 link and SW3's hosts use the direct SW3–SW1 link: the most efficient path to R1 for everyone.\n\nMake **SW3** the root instead, and SW2's traffic must go SW2 → SW3 → SW1 before reaching R1. The extra latency is negligible — probably under a millisecond. **The real issue is congestion** on the SW3–SW1 link, which now carries everyone's traffic. On a busy network frames wait their turn and, in the worst case, get dropped."
+            }
+        },
+        {
+            "type": "explanation",
+            "title": "When a switch outside your control steals the root role",
+            "order": 2,
+            "content": {
+                "body": "Inside your own LAN, controlling the root bridge is easy — set its priority to **0**. On a Cisco switch running PVST+ the VLAN ID is always added, so SW1's Bridge ID priority becomes `0 + 1 = 1` in VLAN 1. With SW2 and SW3 at default priority, SW1 is the root.\n\nBut sometimes you connect your LAN to switches **outside your direct control**. A common example: a **service provider** offering **Metro Ethernet** to a **customer**. (Metro Ethernet is not a CCNA topic; it is often used to connect sites within a MAN — a metropolitan area network — such as offices in the same city.)\n\nSay the provider made SW1 its root with priority 0, and the customer made SW6 its root with priority 0 too. When the two networks connect, SW2 and SW3 advertise SW1 as root, while SW4 and SW5 advertise SW6. **Who wins?**\n\nSW1 and SW6 have identical priorities (1) and MAC addresses that match up to a point — `52:54:1...`. The next digit is **A** for SW1 and **8** for SW6. SW6 has the lower Bridge ID, so **SW6 becomes the root bridge for both networks.**\n\nThe lesson: **even with priority 0, your root's role can be taken by another switch with a lower MAC address.**\n\nThe consequence for the provider: SW1, SW2 and SW3 all accept SW6 as root. The SW1–SW3 and SW2–SW3 links get disabled, so frames from SW3 to SW1 must **detour through the customer's LAN**. Clearly unacceptable."
+            }
+        },
+        {
+            "type": "animation",
+            "title": "Root Guard in action",
+            "order": 3,
+            "content": {
+                "diagram_type": "topology",
+                "nodes": [
+                    {"id": "sw1", "label": "SW1\nprovider root", "icon": "switch", "x": 140, "y": 90},
+                    {"id": "sw2", "label": "SW2", "icon": "switch", "x": 140, "y": 300},
+                    {"id": "sw3", "label": "SW3", "icon": "switch", "x": 400, "y": 200},
+                    {"id": "sw4", "label": "SW4", "icon": "switch", "x": 660, "y": 90},
+                    {"id": "sw5", "label": "SW5", "icon": "switch", "x": 660, "y": 300},
+                    {"id": "sw6", "label": "SW6\ncustomer root", "icon": "switch", "x": 900, "y": 200}
+                ],
+                "links": [
+                    {"from": "sw1", "to": "sw2", "kind": "ethernet"},
+                    {"from": "sw1", "to": "sw3", "kind": "ethernet"},
+                    {"from": "sw2", "to": "sw3", "kind": "ethernet"},
+                    {"from": "sw3", "to": "sw4", "kind": "ethernet"},
+                    {"from": "sw3", "to": "sw5", "kind": "ethernet"},
+                    {"from": "sw4", "to": "sw6", "kind": "ethernet"},
+                    {"from": "sw5", "to": "sw6", "kind": "ethernet"}
+                ],
+                "steps": [
+                    {
+                        "narration": "The provider set SW1's priority to 0 so it is the root of their LAN. The customer did the same with SW6 in theirs. Both LANs are happy — separately.",
+                        "animate": {"highlight": ["sw1", "sw6"], "status": "ok"}
+                    },
+                    {
+                        "narration": "The networks are connected. SW2 and SW3 advertise SW1 as root; SW4 and SW5 advertise SW6. Both claim priority 1.",
+                        "animate": {"packet_from": "sw4", "packet_to": "sw3", "label": "SW6 is root", "highlight": ["sw4", "sw5"]}
+                    },
+                    {
+                        "narration": "The MAC addresses break the tie. SW6's is lower, so SW6 wins — a switch outside the provider's control becomes root for both LANs.",
+                        "animate": {"flood": true, "packet_from": "sw6", "label": "superior", "status": "fail", "highlight": ["sw6", "sw1", "sw2", "sw3"]}
+                    },
+                    {
+                        "narration": "The SW1–SW3 and SW2–SW3 links are disabled. Frames from SW3 to SW1 now detour through the customer's network. Unacceptable for the provider.",
+                        "animate": {"packet_from": "sw3", "packet_to": "sw4", "label": "detour", "status": "fail", "highlight": ["sw3"]}
+                    },
+                    {
+                        "narration": "Root Guard is configured on the provider's customer-facing ports — SW2's G0/2 and SW3's G0/2. When a superior BPDU arrives, those ports go broken / root-inconsistent.",
+                        "animate": {"packet_from": "sw5", "packet_to": "sw3", "label": "blocked", "status": "fail", "highlight": ["sw2", "sw3"]}
+                    },
+                    {
+                        "narration": "SW1 stays root for the provider LAN. The customer then raises SW6's priority to 4096+1; after about 20 seconds the superior BPDUs age out and the ports recover automatically.",
+                        "animate": {"highlight": ["sw1"], "status": "ok"}
+                    }
+                ]
+            }
+        },
+        {
+            "type": "explanation",
+            "title": "What Root Guard does",
+            "order": 4,
+            "content": {
+                "body": "**Root Guard prevents a port from becoming a root port by disabling it if superior BPDUs are received**, thereby enforcing the current root bridge.\n\nA **superior BPDU** is one with better parameters for the STP algorithm — most importantly, a **lower root Bridge ID**. SW6's BPDUs claim a lower root Bridge ID than SW1's, so they are superior.\n\nConfigure it only on the ports facing switches outside your control:\n\n```\nSW2(config)# interface g0/2\nSW2(config-if)# spanning-tree guard root\n```\n\n**There is no global command to enable Root Guard by default.** This is deliberate:\n\n- PortFast *can* be enabled by default, because you usually want it on all access ports.\n- BPDU Guard and BPDU Filter *can* be enabled by default on all PortFast ports, because they pair with PortFast.\n- Root Guard is **not** something you want everywhere. It belongs on specific ports only — hence no global option.\n\nWhen a Root Guard port receives a superior BPDU it enters the **broken / root-inconsistent** state:\n\n- **`BKN`** in the Status column of `show spanning-tree` = **broken** — the port cannot forward frames and discards anything it receives.\n- **`ROOT_Inc`** = **root inconsistent** — the reason it is broken is Root Guard.\n\nA log message also appears confirming Root Guard blocked the port."
+            }
+        },
+        {
+            "type": "callout",
+            "title": "Note",
+            "order": 5,
+            "content": {
+                "body": "While a Root Guard port is blocked, both ends of that link are designated ports — because the two switches disagree about who the root bridge is. In a normal, functioning spanning tree there is only ever one designated port per link. This is a special case caused by Root Guard blocking the link.",
+                "style": "note"
+            }
+        },
+        {
+            "type": "explanation",
+            "title": "Recovering a Root Guard blocked port",
+            "order": 6,
+            "content": {
+                "body": "Root Guard solved the provider's problem — but it also means the customer cannot communicate over the provider's network. The fix is to **stop the superior BPDUs**.\n\nThe provider tells the customer to raise SW6's priority, say to `4096 + 1` for the VLAN ID. Once the superior BPDUs already received by SW2 and SW3 **age out** — about **20 seconds**, the default max age — the ports are **automatically re-enabled**.\n\nAfter that, SW4, SW5 and SW6 accept SW1 as the root bridge, and the final topology gives every switch one active path to SW1 with the remaining links blocked.\n\n**The key point: you do nothing in the CLI of the switch running Root Guard.** Unlike BPDU Guard, there is no `shutdown` / `no shutdown` and no errdisable recovery. Just stop the superior BPDUs and the port recovers by itself.\n\n**One more caution:** the **customer** should not configure Root Guard on their ports facing the provider. Those ports would simply be disabled on receiving superior BPDUs, blocking the links — and there is no point connecting to a service provider if you cannot communicate over their network."
+            }
+        },
+        {
+            "type": "table",
+            "title": "BPDU Guard vs Root Guard",
+            "order": 7,
+            "content": {
+                "headers": ["", "BPDU Guard", "Root Guard"],
+                "rows": [
+                    ["Triggered by", "Receiving **any** BPDU", "Receiving a **superior** BPDU"],
+                    ["Resulting state", "`err-disabled`", "`broken` / `root-inconsistent` (BKN / ROOT_Inc)"],
+                    ["Interface command", "`spanning-tree bpduguard enable`", "`spanning-tree guard root`"],
+                    ["Global default command", "`spanning-tree portfast bpduguard default`", "**None — interface only**"],
+                    ["Recovery", "Manual `shutdown` / `no shutdown`, or errdisable recovery", "**Automatic** once superior BPDUs stop and age out (~20 s)"],
+                    ["Typical placement", "Ports facing end hosts", "Ports facing switches outside your control"]
+                ]
+            }
+        }
+    ],
+    "quiz": {
+        "questions": [
+            {
+                "order": 1,
+                "question": "What triggers Root Guard to block a port?",
+                "explanation": "Root Guard reacts only to superior BPDUs — those advertising a better (lower) root Bridge ID. Ordinary BPDUs are fine; that is BPDU Guard's trigger.",
+                "options": [
+                    {"label": "A", "text": "Receiving any BPDU", "is_correct": false},
+                    {"label": "B", "text": "Receiving a superior BPDU", "is_correct": true},
+                    {"label": "C", "text": "Ceasing to receive BPDUs", "is_correct": false},
+                    {"label": "D", "text": "Receiving a BPDU on a trunk port", "is_correct": false}
+                ]
+            },
+            {
+                "order": 2,
+                "question": "How do you re-enable a port that Root Guard has blocked?",
+                "explanation": "Nothing is done on the switch running Root Guard. Once the superior BPDUs stop arriving and the stored ones age out — roughly 20 seconds, the default max age — the port recovers automatically.",
+                "options": [
+                    {"label": "A", "text": "`shutdown` then `no shutdown`", "is_correct": false},
+                    {"label": "B", "text": "`errdisable recovery cause rootguard`", "is_correct": false},
+                    {"label": "C", "text": "Stop the superior BPDUs — the port recovers automatically after about 20 seconds", "is_correct": true},
+                    {"label": "D", "text": "Reload the switch", "is_correct": false}
+                ]
+            },
+            {
+                "order": 3,
+                "question": "Why is there no global command to enable Root Guard by default?",
+                "explanation": "PortFast, BPDU Guard and BPDU Filter suit blanket enabling because they belong on all host-facing ports. Root Guard belongs only on specific ports facing switches outside your control, so Cisco provides no global option.",
+                "options": [
+                    {"label": "A", "text": "Because it only works on trunk ports", "is_correct": false},
+                    {"label": "B", "text": "Because it should only be enabled on specific ports facing switches outside your control", "is_correct": true},
+                    {"label": "C", "text": "Because it requires PortFast to be enabled first", "is_correct": false},
+                    {"label": "D", "text": "Because it is a per-VLAN feature", "is_correct": false}
+                ]
+            },
+            {
+                "order": 4,
+                "question": "In `show spanning-tree`, what do the status values BKN and ROOT_Inc mean?",
+                "explanation": "BKN means broken — the port cannot forward frames and discards what it receives. ROOT_Inc means root inconsistent, identifying Root Guard as the reason.",
+                "options": [
+                    {"label": "A", "text": "The port is blocked, and Root Guard is the reason", "is_correct": true},
+                    {"label": "B", "text": "The port is err-disabled by BPDU Guard", "is_correct": false},
+                    {"label": "C", "text": "The port is in the Learning state", "is_correct": false},
+                    {"label": "D", "text": "The port has a native VLAN mismatch", "is_correct": false}
+                ]
+            },
+            {
+                "order": 5,
+                "question": "You set your root bridge's priority to 0, so it can never lose the root role. True or false?",
+                "explanation": "False. If another switch also has priority 0 (or the same effective priority), the MAC address breaks the tie — and a switch outside your control with a lower MAC address can still take over. That is exactly why Root Guard exists.",
+                "options": [
+                    {"label": "A", "text": "True — priority 0 is always the lowest possible Bridge ID", "is_correct": false},
+                    {"label": "B", "text": "False — another switch with the same priority and a lower MAC address can still win", "is_correct": true},
+                    {"label": "C", "text": "True — but only within a single VLAN", "is_correct": false},
+                    {"label": "D", "text": "False — priority 0 is not a valid value", "is_correct": false}
+                ]
+            },
+            {
+                "order": 6,
+                "question": "In a service-provider / customer Metro Ethernet connection, where should Root Guard be configured?",
+                "explanation": "On the provider's ports facing the customer. If the customer configured it on their provider-facing ports, those ports would block on receiving the provider's superior BPDUs — leaving the customer unable to use the service at all.",
+                "options": [
+                    {"label": "A", "text": "On the provider's ports facing the customer", "is_correct": true},
+                    {"label": "B", "text": "On the customer's ports facing the provider", "is_correct": false},
+                    {"label": "C", "text": "On both sides of the link", "is_correct": false},
+                    {"label": "D", "text": "On every port in both networks", "is_correct": false}
+                ]
+            }
+        ]
+    }
+}

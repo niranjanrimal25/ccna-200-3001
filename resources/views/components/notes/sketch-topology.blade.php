@@ -37,8 +37,16 @@
                 <rect x="-46" y="-20" width="92" height="40" rx="8"
                       fill="#fffdf5" stroke="{{ $ink }}" stroke-width="2"/>
                 <circle cx="0" cy="-20" r="3" fill="#1b2a52"/>
-                <text text-anchor="middle" y="4" font-family="'Caveat', cursive" font-size="18"
-                      font-weight="700" fill="{{ $ink }}">{{ $node['label'] }}</text>
+                @php $sketchLines = preg_split('/\r\n|\r|\n/', (string) $node['label']); @endphp
+                <text text-anchor="middle" y="{{ count($sketchLines) > 1 ? -2 : 4 }}"
+                      font-family="'Caveat', cursive" font-size="18"
+                      font-weight="700" fill="{{ $ink }}">
+                    @foreach ($sketchLines as $li => $sketchLine)
+                        <tspan x="0" dy="{{ $li === 0 ? 0 : 15 }}"
+                               font-size="{{ $li === 0 ? 18 : 13 }}"
+                               font-weight="{{ $li === 0 ? 700 : 400 }}">{{ $sketchLine }}</tspan>
+                    @endforeach
+                </text>
             </g>
         @endforeach
     </svg>

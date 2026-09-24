@@ -1,0 +1,189 @@
+{
+    "slug": "stp-toolkit-loop-guard",
+    "title": "STP Toolkit: Loop Guard",
+    "summary": "What a unidirectional link is and why fibre is especially prone to one, how a port that stops receiving BPDUs can create a Layer 2 loop, and how Loop Guard blocks that port instead — plus why Loop Guard and Root Guard are mutually exclusive.",
+    "source_ref": "transcript_21_part_4.txt",
+    "order": 27,
+    "sections": [
+        {
+            "type": "explanation",
+            "title": "Unidirectional links",
+            "order": 1,
+            "content": {
+                "body": "The whole point of STP is to prevent loops — so what is Loop Guard for? It acts as an **extra line of defence** against Layer 2 loops.\n\nA few situations can cause a switch to stop sending BPDUs, such as a **software bug**. But the classic scenario is a **unidirectional link**.\n\nA normal link is **bidirectional**: SW1 can transmit to SW2 and SW2 can transmit to SW1. A **unidirectional link** is one where data transmission occurs in **only one direction** — SW1 can send frames to SW2, but SW2's frames never reach SW1.\n\nThis is typically caused by a **Layer 1 issue**: damaged cables, or faulty connectors or transceivers such as **SFPs** (small form-factor pluggable transceivers) used for fibre.\n\n**Why fibre is more prone to this than copper UTP:**\n\n- A fibre connection uses **two separate fibres**. The **TX** side of SW1 connects to the **RX** side of SW2, and the TX of SW2 to the RX of SW1. Although separate, the two fibres are treated as one cable joining one interface to another.\n- If **one fibre** is damaged, data flow breaks in one direction while the other is unaffected.\n- Fibre is simply **more vulnerable to physical damage** than copper. Bend a fibre too far and you hear a small snap — the cable is dead.\n\nFor a fibre interface to be up/up, **both** fibres must be connected and functional. If you cut or disconnect one, the switches should detect it and disable their interfaces — the link lights go off and stay off. **That is not a unidirectional link; the link is disabled entirely, which is the safe outcome.**\n\nThe danger is when a physical problem stops transmission but the devices **fail to detect it**. Both interfaces stay up/up, both switches believe the connection is fine — and now there is a unidirectional link."
+            }
+        },
+        {
+            "type": "animation",
+            "title": "How a unidirectional link creates a loop",
+            "order": 2,
+            "content": {
+                "diagram_type": "topology",
+                "nodes": [
+                    {"id": "sw1", "label": "SW1\nroot", "icon": "switch", "x": 430, "y": 80},
+                    {"id": "sw2", "label": "SW2", "icon": "switch", "x": 200, "y": 330},
+                    {"id": "sw3", "label": "SW3", "icon": "switch", "x": 660, "y": 330}
+                ],
+                "links": [
+                    {"from": "sw1", "to": "sw2", "kind": "ethernet"},
+                    {"from": "sw1", "to": "sw3", "kind": "ethernet"},
+                    {"from": "sw2", "to": "sw3", "kind": "ethernet"}
+                ],
+                "steps": [
+                    {
+                        "narration": "Normal operation: BPDUs originate at root SW1 and are forwarded out of designated ports every 2 seconds. SW3's G0/1 is non-designated because SW2's BPDUs are superior.",
+                        "animate": {"flood": true, "packet_from": "sw1", "label": "BPDU", "highlight": ["sw1"]}
+                    },
+                    {
+                        "narration": "The SW2–SW3 link becomes unidirectional. SW2's BPDUs can no longer reach SW3, but neither switch detects the physical fault — both interfaces stay up/up.",
+                        "animate": {"packet_from": "sw2", "packet_to": "sw3", "label": "lost", "status": "fail", "highlight": ["sw2"]}
+                    },
+                    {
+                        "narration": "SW3 no longer receives BPDUs on G0/1, so it assumes there is no loop. After the max age timer expires, G0/1 becomes a DESIGNATED port and starts forwarding.",
+                        "animate": {"highlight": ["sw3"], "status": "fail"}
+                    },
+                    {
+                        "narration": "SW3 now sends its own BPDUs to SW2 — but they are inferior, so SW2 simply ignores them. Both SW2's G0/1 and SW3's G0/1 are forwarding.",
+                        "animate": {"packet_from": "sw3", "packet_to": "sw2", "label": "ignored", "status": "fail", "highlight": ["sw2", "sw3"]}
+                    },
+                    {
+                        "narration": "SW1 receives a broadcast and floods it to both neighbours. The copy sent to SW2 cannot loop — the link is unidirectional. But the copy sent to SW3 circles SW1 → SW3 → SW2 → SW1 forever.",
+                        "animate": {"flood": true, "packet_from": "sw1", "label": "broadcast", "status": "fail", "highlight": ["sw1", "sw2", "sw3"]}
+                    },
+                    {
+                        "narration": "With Loop Guard on SW3's G0/1, the max age expiry instead puts the port into broken / loop-inconsistent. No loop forms — and the port recovers automatically once BPDUs return.",
+                        "animate": {"highlight": ["sw3"], "status": "ok"}
+                    }
+                ]
+            }
+        },
+        {
+            "type": "explanation",
+            "title": "What Loop Guard does",
+            "order": 3,
+            "content": {
+                "body": "**Loop Guard does not prevent unidirectional links.** It provides a mechanism to *detect* them and then prevent the Layer 2 loop that would follow.\n\nWhen a Loop Guard-enabled port's **max age timer counts down to zero**, it does **not** become a designated port and transition toward forwarding. Instead it enters the **broken / loop-inconsistent** state, which blocks the port.\n\nIn `show spanning-tree` the status shows **`BKN`** (broken) with **`LOOP_Inc`** (loop inconsistent), and a log message appears: *\"Loop guard blocking port GigabitEthernet0/1\"*.\n\nNote that — exactly as with Root Guard — **the port remains up/up**. It is not shut down; STP is simply blocking it.\n\n**Recovery is automatic.** If the physical issue is fixed and the port starts receiving BPDUs again, it is re-enabled by itself. In `show spanning-tree` the status returns to `BLK` (blocking) and `LOOP_Inc` disappears. No commands are needed."
+            }
+        },
+        {
+            "type": "explanation",
+            "title": "Configuring Loop Guard",
+            "order": 4,
+            "content": {
+                "body": "**Per port:**\n\n```\nSW3(config)# interface g0/1\nSW3(config-if)# spanning-tree guard loop\n```\n\n**Globally, on all ports:**\n\n```\nSW3(config)# spanning-tree loopguard default\n```\n\nThen disable it on specific ports if needed:\n\n```\nSW3(config-if)# spanning-tree guard none\n```\n\nVerify with `show spanning-tree interface g0/1 detail`, which reports that Loop Guard is enabled — or \"enabled by default\" when configured globally.\n\n**Where to enable it.** Loop Guard should be activated on the ports that are **not designated** — that is, **root ports and non-designated ports**. Those are exactly the ports that are *supposed* to receive BPDUs from a designated port on the other end. If such a port stops receiving BPDUs, something is wrong, and Loop Guard blocks it."
+            }
+        },
+        {
+            "type": "explanation",
+            "title": "Loop Guard and Root Guard are mutually exclusive",
+            "order": 5,
+            "content": {
+                "body": "The two features **cannot be enabled on the same port at the same time**, because they serve opposite purposes:\n\n- **Root Guard** prevents a **designated** port from becoming a root port. It blocks the port if it receives **superior** BPDUs.\n- **Loop Guard** prevents a **root or non-designated** port from becoming a designated port. It blocks the port if it **stops receiving** BPDUs.\n\nSo on a switch where G0/0 and G0/1 face your own switches and G0/2 faces a switch outside your control: **G0/0 and G0/1 should use Loop Guard, and G0/2 should use Root Guard.** The opposite makes no sense — configuring Root Guard on G0/0 and G0/1 would block them both as soon as they received the normal superior BPDUs from your own root, cutting off the LAN.\n\n**What happens if you configure both?** The newer command replaces the older one:\n\n- Loop Guard configured, then `spanning-tree guard root` → **Loop Guard is disabled**.\n- Root Guard configured, then `spanning-tree guard loop` → **Root Guard is disabled**.\n- Loop Guard enabled globally, then Root Guard configured on a port → **Loop Guard is disabled on that port**.\n\nThat last case reflects a general IOS principle: **the more specific configuration takes effect.** An interface command applies to one interface and is more specific than a global command. The same applies to PortFast, BPDU Guard and BPDU Filter — enable globally, then disable on a specific interface, and the interface command wins."
+            }
+        },
+        {
+            "type": "table",
+            "title": "The four STP toolkit features side by side",
+            "order": 6,
+            "content": {
+                "headers": ["Feature", "Trigger", "Result", "Interface command", "Global command", "Recovery"],
+                "rows": [
+                    ["**PortFast**", "Port enabled", "Skips Listening/Learning, forwards immediately", "`spanning-tree portfast`", "`spanning-tree portfast default` (access ports)", "n/a"],
+                    ["**BPDU Guard**", "Receives any BPDU", "`err-disabled`", "`spanning-tree bpduguard enable`", "`spanning-tree portfast bpduguard default` (PortFast ports)", "Manual, or errdisable recovery"],
+                    ["**Root Guard**", "Receives a superior BPDU", "`BKN` / `ROOT_Inc`", "`spanning-tree guard root`", "**None**", "Automatic when superior BPDUs stop"],
+                    ["**Loop Guard**", "Stops receiving BPDUs", "`BKN` / `LOOP_Inc`", "`spanning-tree guard loop`", "`spanning-tree loopguard default` (all ports)", "Automatic when BPDUs return"]
+                ]
+            }
+        },
+        {
+            "type": "callout",
+            "title": "Exam tip",
+            "order": 7,
+            "content": {
+                "body": "Root Guard and Loop Guard both produce a BKN status, so read the second value. ROOT_Inc means a superior BPDU arrived where it should not have. LOOP_Inc means expected BPDUs stopped arriving. Both recover automatically — unlike BPDU Guard, which err-disables the port and needs manual intervention or errdisable recovery.",
+                "style": "exam_tip"
+            }
+        }
+    ],
+    "quiz": {
+        "questions": [
+            {
+                "order": 1,
+                "question": "What is a unidirectional link?",
+                "explanation": "A link where data transmission works in only one direction — one switch can send to the other, but not vice versa. It is typically caused by a Layer 1 problem that the devices fail to detect, so both interfaces stay up/up.",
+                "options": [
+                    {"label": "A", "text": "A link where data transmission occurs in only one direction", "is_correct": true},
+                    {"label": "B", "text": "A half-duplex link", "is_correct": false},
+                    {"label": "C", "text": "A link with only one VLAN allowed", "is_correct": false},
+                    {"label": "D", "text": "A link between a switch and a router", "is_correct": false}
+                ]
+            },
+            {
+                "order": 2,
+                "question": "Why are unidirectional links more common on fibre than on copper UTP?",
+                "explanation": "A fibre connection uses two separate fibres, one for each direction. Damage to just one fibre breaks transmission one way while the other keeps working. Fibre is also more physically fragile than copper.",
+                "options": [
+                    {"label": "A", "text": "Fibre does not support full duplex", "is_correct": false},
+                    {"label": "B", "text": "Fibre uses two separate fibres, so one can fail independently — and fibre is more fragile", "is_correct": true},
+                    {"label": "C", "text": "Fibre transceivers do not send BPDUs", "is_correct": false},
+                    {"label": "D", "text": "Copper cables automatically detect all faults", "is_correct": false}
+                ]
+            },
+            {
+                "order": 3,
+                "question": "A non-designated port stops receiving BPDUs because of a unidirectional link. Without Loop Guard, what happens?",
+                "explanation": "After the max age timer expires the port assumes there is no loop, becomes a designated port and starts forwarding. The other end is also forwarding, so a Layer 2 loop is created.",
+                "options": [
+                    {"label": "A", "text": "The port is err-disabled", "is_correct": false},
+                    {"label": "B", "text": "The port stays blocking indefinitely", "is_correct": false},
+                    {"label": "C", "text": "The port becomes designated and starts forwarding, creating a Layer 2 loop", "is_correct": true},
+                    {"label": "D", "text": "The switch reloads", "is_correct": false}
+                ]
+            },
+            {
+                "order": 4,
+                "question": "Which command enables Loop Guard on all ports?",
+                "explanation": "`spanning-tree loopguard default` in global configuration mode enables Loop Guard on all ports; `spanning-tree guard none` then disables it on specific ports.",
+                "options": [
+                    {"label": "A", "text": "spanning-tree guard loop", "is_correct": false},
+                    {"label": "B", "text": "spanning-tree loopguard default", "is_correct": true},
+                    {"label": "C", "text": "spanning-tree portfast loopguard default", "is_correct": false},
+                    {"label": "D", "text": "spanning-tree guard none", "is_correct": false}
+                ]
+            },
+            {
+                "order": 5,
+                "question": "On which ports should Loop Guard be enabled?",
+                "explanation": "Loop Guard belongs on ports that are supposed to receive BPDUs from a designated port on the other end — root ports and non-designated ports. Designated ports are the ones sending BPDUs.",
+                "options": [
+                    {"label": "A", "text": "Designated ports", "is_correct": false},
+                    {"label": "B", "text": "Root ports and non-designated ports", "is_correct": true},
+                    {"label": "C", "text": "PortFast-enabled access ports", "is_correct": false},
+                    {"label": "D", "text": "Ports facing switches outside your control", "is_correct": false}
+                ]
+            },
+            {
+                "order": 6,
+                "question": "Loop Guard is enabled on a port and you then configure `spanning-tree guard root` on it. What happens?",
+                "explanation": "The two features are mutually exclusive and cannot be active on the same port. Configuring Root Guard replaces Loop Guard, and vice versa.",
+                "options": [
+                    {"label": "A", "text": "Both are active at once", "is_correct": false},
+                    {"label": "B", "text": "The command is rejected", "is_correct": false},
+                    {"label": "C", "text": "Loop Guard is disabled and Root Guard takes effect", "is_correct": true},
+                    {"label": "D", "text": "The port is err-disabled", "is_correct": false}
+                ]
+            },
+            {
+                "order": 7,
+                "question": "A port shows status BKN with LOOP_Inc. How do you recover it?",
+                "explanation": "Recovery is automatic. Fix the underlying physical problem so BPDUs start arriving again, and Loop Guard unblocks the port by itself — no CLI commands and no errdisable recovery required.",
+                "options": [
+                    {"label": "A", "text": "`shutdown` then `no shutdown`", "is_correct": false},
+                    {"label": "B", "text": "Fix the physical fault — it recovers automatically once BPDUs return", "is_correct": true},
+                    {"label": "C", "text": "`errdisable recovery cause loopguard`", "is_correct": false},
+                    {"label": "D", "text": "`spanning-tree guard none`", "is_correct": false}
+                ]
+            }
+        ]
+    }
+}

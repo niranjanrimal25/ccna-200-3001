@@ -1,0 +1,265 @@
+{
+    "slug": "spanning-tree-part-2",
+    "title": "Spanning Tree Protocol: States, Timers and Configuration",
+    "summary": "The four STP port states, the hello / forward delay / max age timers, what is inside a BPDU, PortFast and BPDU Guard, and how to set the root bridge, port cost and port priority for per-VLAN load balancing.",
+    "source_ref": "transcript_21.txt",
+    "order": 23,
+    "sections": [
+        {
+            "type": "explanation",
+            "title": "The four STP port states",
+            "order": 1,
+            "content": {
+                "body": "You already know **Blocking** and **Forwarding**. There are two more: **Listening** and **Learning**.\n\n**Blocking and Forwarding are the two stable states.** Root and Designated ports sit stable in Forwarding; Non-designated ports sit stable in Blocking. They only stay stable while the topology does not change — adding a device, shutting an interface or a hardware failure can force a change.\n\n**Listening and Learning are transitional states**, passed through when an interface is activated, or when a Blocking port must move to Forwarding after a topology change.\n\nThere is also a **Disabled** state, which simply means the interface is administratively shut down. It plays no real role in STP.\n\nOne more important asymmetry: **a Forwarding interface can move straight to Blocking**, because blocking a port can never create a loop. But **a Blocking interface can never move straight to Forwarding** — it must pass through Listening and Learning."
+            }
+        },
+        {
+            "type": "table",
+            "title": "STP port state summary",
+            "order": 2,
+            "content": {
+                "headers": ["State", "Port roles", "Sends/receives BPDUs", "Forwards BPDUs", "Sends/receives normal traffic", "Learns MAC addresses"],
+                "rows": [
+                    ["**Blocking**", "Non-designated", "Receives only", "No", "No — traffic is dropped", "No"],
+                    ["**Listening** (15 s)", "Root, Designated", "Yes", "Yes", "No — traffic is discarded", "No"],
+                    ["**Learning** (15 s)", "Root, Designated", "Yes", "Yes", "No", "**Yes**"],
+                    ["**Forwarding**", "Root, Designated", "Yes", "Yes", "Yes", "Yes"],
+                    ["**Disabled**", "—", "No", "No", "No", "No"]
+                ]
+            }
+        },
+        {
+            "type": "table",
+            "title": "STP timers",
+            "order": 3,
+            "content": {
+                "headers": ["Timer", "Default", "What it controls"],
+                "rows": [
+                    ["**Hello**", "2 seconds", "How often the root bridge sends Hello BPDUs"],
+                    ["**Forward delay**", "15 seconds", "The length of EACH of the Listening and Learning states — 30 seconds in total"],
+                    ["**Max age**", "20 seconds", "How long an interface waits, after it stops receiving BPDUs, before re-evaluating the STP topology"]
+                ]
+            }
+        },
+        {
+            "type": "explanation",
+            "title": "How the timers work together",
+            "order": 4,
+            "content": {
+                "body": "**Hello.** The root bridge sends Hello BPDUs every 2 seconds. Other switches do not originate BPDUs — they forward the root's BPDUs, and **only out of their designated ports**. They do not forward them out of root ports or non-designated ports. As the BPDU passes along, fields such as root cost, sending Bridge ID and sending port ID are updated.\n\n**Max age.** Because BPDUs only flow out of designated ports, every root port and non-designated port *expects* to receive them. Each time one arrives, the receiving interface resets its max age timer to 20 and counts down: 19, 18, 17…\n\nIf a link fails, BPDUs stop arriving on that interface and the countdown continues to 0. Then:\n\n- If a BPDU arrives before 0, the timer resets to 20 and **nothing changes**.\n- If it reaches 0, the switch **re-evaluates all its STP choices** — root bridge, and its own root, designated and non-designated ports.\n\nIf a non-designated port is then chosen to become a root or designated port, it must transition Blocking → Listening (15 s) → Learning (15 s) → Forwarding.\n\n**So a blocking interface can take up to 50 seconds to start forwarding** — 20 (max age) + 15 (listening) + 15 (learning). That seems slow, but the delay exists precisely because Layer 2 loops are so destructive. STP is deliberately cautious before forwarding."
+            }
+        },
+        {
+            "type": "animation",
+            "title": "Max age countdown after a link failure",
+            "order": 5,
+            "content": {
+                "diagram_type": "topology",
+                "nodes": [
+                    {"id": "sw3", "label": "SW3\nroot", "icon": "switch", "x": 430, "y": 80},
+                    {"id": "sw1", "label": "SW1", "icon": "switch", "x": 180, "y": 290},
+                    {"id": "sw4", "label": "SW4", "icon": "switch", "x": 680, "y": 290},
+                    {"id": "sw2", "label": "SW2", "icon": "switch", "x": 430, "y": 430}
+                ],
+                "links": [
+                    {"from": "sw3", "to": "sw1", "kind": "ethernet"},
+                    {"from": "sw3", "to": "sw4", "kind": "ethernet"},
+                    {"from": "sw1", "to": "sw2", "kind": "ethernet"},
+                    {"from": "sw4", "to": "sw2", "kind": "ethernet"}
+                ],
+                "steps": [
+                    {
+                        "narration": "SW3 is the root bridge. Every 2 seconds (hello timer) it sends BPDUs out of all its ports.",
+                        "animate": {"flood": true, "packet_from": "sw3", "label": "hello", "highlight": ["sw3"]}
+                    },
+                    {
+                        "narration": "SW1 and SW4 forward those BPDUs out of their designated ports only — toward SW2.",
+                        "animate": {"packet_from": "sw1", "packet_to": "sw2", "label": "BPDU", "highlight": ["sw1", "sw4"]}
+                    },
+                    {
+                        "narration": "SW2's G0/1 receives a BPDU, so its max age timer resets to 20 and starts counting down: 19, 18…",
+                        "animate": {"highlight": ["sw2"], "status": "ok"}
+                    },
+                    {
+                        "narration": "The SW1–SW2 link fails. The root still sends BPDUs and SW1 still forwards them, but SW1's port is down — SW2 receives nothing on G0/1.",
+                        "animate": {"packet_from": "sw1", "packet_to": "sw2", "label": "lost", "status": "fail", "highlight": ["sw1", "sw2"]}
+                    },
+                    {
+                        "narration": "The max age timer keeps counting: 17, 16, 15… down to 0. SW2 now re-evaluates the root bridge and all its port roles.",
+                        "animate": {"highlight": ["sw2"], "status": "fail"}
+                    },
+                    {
+                        "narration": "Its previously blocked port toward SW4 becomes a root port: Listening 15 s, Learning 15 s, then Forwarding. Total recovery time up to 50 seconds.",
+                        "animate": {"packet_from": "sw2", "packet_to": "sw4", "label": "converging", "status": "ok", "highlight": ["sw2", "sw4"]}
+                    }
+                ]
+            }
+        },
+        {
+            "type": "explanation",
+            "title": "Inside the BPDU",
+            "order": 6,
+            "content": {
+                "body": "**Destination MAC addresses — worth memorising:**\n\n| Protocol | BPDU destination MAC |\n|---|---|\n| Cisco **PVST+** | `0100.0CCC.CCCD` |\n| Standard STP | `0180.C200.0000` |\n\n(**PVST** is the older version that only supports ISL trunk encapsulation; **PVST+** supports dot1Q. In practice \"PVST\" means PVST+, since ISL is essentially never used.)\n\n**BPDU fields** — you do not need to memorise these for the CCNA, but you should recognise them:\n\n| Field | Notes |\n|---|---|\n| Protocol identifier | Always `0x0000` for spanning tree |\n| Protocol version identifier | `0` for classic STP — a different value appears for Rapid STP |\n| BPDU type | `0x00` for a *configuration BPDU* |\n| Flags | Used to signal topology changes |\n| Root identifier | Bridge priority + extended system ID (VLAN) + root bridge MAC |\n| Root path cost | `0` means the sender is the root bridge |\n| Bridge identifier | The sender. If it matches the root identifier, the sender IS the root |\n| Port identifier | e.g. `0x8002` — `80` hex = 128, the default port priority; `02` is the port number |\n| Message age | Starts at 0 at the root, +1 per switch that forwards it; subtracted from max age |\n| Max age, Hello, Forward delay | The timers |\n\nOne important consequence: **the timers on the root bridge determine the timers for every switch in the network**, even if other switches are configured differently."
+            }
+        },
+        {
+            "type": "explanation",
+            "title": "PortFast",
+            "order": 7,
+            "content": {
+                "body": "A switch port connected to a PC is a designated port that will end up forwarding — but when first connected it must still spend 15 seconds Listening and 15 seconds Learning. **30 seconds before the host can send anything.**\n\nYou can see this in Packet Tracer (enable *Options → Preferences → Show Link Lights*): connect a PC to a switch and the link light is **orange** for 30 seconds, then turns **green**. The same happens with real hardware.\n\nBut **only interfaces connected to another switch can form a Layer 2 loop.** There is no loop risk with an end host — so the wait is pointless there.\n\n**PortFast** lets a port move **immediately to Forwarding**, bypassing Listening and Learning.\n\n```\nSW1(config-if)# spanning-tree portfast\n```\n\nIOS prints a warning that PortFast should only be enabled on ports connected to end hosts, and notes that it only takes effect if the interface is **non-trunking** (i.e. an access port). You can configure it on a trunk port, but it will not take effect — trunk ports are typically connected to other switches.\n\nTo enable it everywhere at once:\n\n```\nSW1(config)# spanning-tree portfast default\n```\n\nThis enables PortFast on **all access ports**, but not trunk ports."
+            }
+        },
+        {
+            "type": "explanation",
+            "title": "BPDU Guard",
+            "order": 8,
+            "content": {
+                "body": "PortFast carries a risk. If an employee — with no malicious intent, just unaware — plugs a switch into a PortFast port, that port goes straight to Forwarding and a **Layer 2 loop is formed**. The same can happen if cabling is changed carelessly and a switch ends up on a port that used to hold a host.\n\n**BPDU Guard** protects against this: if an interface with BPDU Guard enabled **receives a BPDU**, the interface is **shut down**, preventing the loop.\n\n```\nSW1(config-if)# spanning-tree bpduguard enable\n```\n\nOr globally, enabling it on all PortFast-enabled interfaces:\n\n```\nSW1(config)# spanning-tree portfast bpduguard default\n```\n\nNote the asymmetry in the commands — the interface-level command does **not** mention portfast, but the global one does.\n\n**Recovering a disabled port:** `shutdown` then `no shutdown` on the interface. But if the underlying problem is not fixed and a switch is still connected, the port will be disabled again as soon as the next BPDU arrives."
+            }
+        },
+        {
+            "type": "table",
+            "title": "The STP toolkit — names to know",
+            "order": 9,
+            "content": {
+                "headers": ["Feature", "What it does"],
+                "rows": [
+                    ["**PortFast**", "Moves a port straight to Forwarding, skipping Listening and Learning. Only for ports facing end hosts. **On the exam topics list**"],
+                    ["**BPDU Guard**", "Shuts down a port if it receives a BPDU. Usually paired with PortFast"],
+                    ["**Root Guard**", "If a superior BPDU (lower Bridge ID) arrives on the interface, the switch refuses to accept that switch as root and disables the interface. Protects the existing topology"],
+                    ["**Loop Guard**", "If an interface stops receiving BPDUs, it will NOT start forwarding — it is disabled instead. Protects against unidirectional links, where a link can send but not receive (or vice versa)"]
+                ]
+            }
+        },
+        {
+            "type": "callout",
+            "title": "Exam tip",
+            "order": 10,
+            "content": {
+                "body": "The 200-301 exam topics list only mentions PortFast, with BPDU Guard closely related to it. Know those two properly. For Root Guard, Loop Guard, UplinkFast and BackboneFast, knowing the name and basic purpose is enough.",
+                "style": "exam_tip"
+            }
+        },
+        {
+            "type": "animation",
+            "title": "Configuring spanning tree",
+            "order": 11,
+            "content": {
+                "diagram_type": "cli_walkthrough",
+                "steps": [
+                    {"narration": "Three mode options exist: `mst`, `pvst` and `rapid-pvst`. MST is not on the CCNA. Modern Cisco switches run rapid-pvst by default.", "command": "SW1(config)#", "input": "spanning-tree mode ?"},
+                    {"narration": "Set classic per-VLAN spanning tree, as used for these demonstrations.", "command": "SW1(config)#", "input": "spanning-tree mode pvst"},
+                    {"narration": "Make this switch the primary root bridge for VLAN 1. This sets the priority to 24576 — or 4096 lower than the current lowest, if something is already below 24576.", "command": "SW1(config)#", "input": "spanning-tree vlan 1 root primary"},
+                    {"narration": "Check the running config: the command actually applied is the priority command.", "command": "SW1#", "input": "show running-config | include spanning-tree"},
+                    {"narration": "The secondary root is next in line if the primary fails. This sets the priority to 28672.", "command": "SW2(config)#", "input": "spanning-tree vlan 1 root secondary"},
+                    {"narration": "You can always set the priority directly instead — the root commands just save you remembering the 4096 increments.", "command": "SW1(config)#", "input": "spanning-tree vlan 1 priority 24576"},
+                    {"narration": "Port cost is configured per VLAN. Range is 1 to 200,000,000. Cost primarily determines the root port.", "command": "SW1(config-if)#", "input": "spanning-tree vlan 1 cost 10"},
+                    {"narration": "Port priority is also per VLAN, configured in increments of 32 from 0 to 224. It is the first half of the port ID — the final root-port tie-breaker.", "command": "SW1(config-if)#", "input": "spanning-tree vlan 1 port-priority 64"},
+                    {"narration": "Verify. The Prio.Nbr column shows the port ID for each interface.", "command": "SW1#", "input": "show spanning-tree"}
+                ]
+            }
+        },
+        {
+            "type": "explanation",
+            "title": "Per-VLAN load balancing",
+            "order": 12,
+            "content": {
+                "body": "Because Cisco runs **PVST+**, each VLAN has its own independent spanning tree. If you make SW1 the root for VLAN 1, that only affects VLAN 1 — VLAN 2 keeps the default topology and may block a completely different link.\n\nThis is **spanning tree load balancing**. If you have multiple VLANs and every VLAN blocks the same interface, that link does nothing but wait for a failure — a waste of bandwidth. By making different switches the root bridge for different VLANs, different VLANs block different interfaces and all links carry traffic.\n\n**Worked example.** VLANs 10 and 20 are active and SW3 is the root for both by default. To make SW1 primary for VLAN 10 and secondary for VLAN 20, and SW2 the opposite:\n\n```\nSW1(config)# spanning-tree vlan 10 root primary\nSW1(config)# spanning-tree vlan 20 root secondary\n\nSW2(config)# spanning-tree vlan 20 root primary\nSW2(config)# spanning-tree vlan 10 root secondary\n```\n\nNow the VLAN 10 topology and the VLAN 20 topology block different links, and each acts as the other's backup root."
+            }
+        }
+    ],
+    "quiz": {
+        "questions": [
+            {
+                "order": 1,
+                "question": "Which STP port state learns MAC addresses but does not forward normal traffic?",
+                "explanation": "Learning is the only state that builds the MAC address table without forwarding user traffic. Listening forwards neither and learns nothing; Blocking drops everything.",
+                "options": [
+                    {"label": "A", "text": "Blocking", "is_correct": false},
+                    {"label": "B", "text": "Listening", "is_correct": false},
+                    {"label": "C", "text": "Learning", "is_correct": true},
+                    {"label": "D", "text": "Forwarding", "is_correct": false}
+                ]
+            },
+            {
+                "order": 2,
+                "question": "What is the maximum time a blocking port can take to reach the forwarding state after a link failure?",
+                "explanation": "20 seconds of max age waiting for BPDUs, then 15 seconds Listening and 15 seconds Learning = 50 seconds.",
+                "options": [
+                    {"label": "A", "text": "30 seconds", "is_correct": false},
+                    {"label": "B", "text": "35 seconds", "is_correct": false},
+                    {"label": "C", "text": "50 seconds", "is_correct": true},
+                    {"label": "D", "text": "20 seconds", "is_correct": false}
+                ]
+            },
+            {
+                "order": 3,
+                "question": "You issue `spanning-tree portfast default` in global configuration mode on Switch A, where PortFast is not configured on any port. Which ports will use PortFast?",
+                "explanation": "The global command enables PortFast on all access ports. It has no effect on trunk ports, which typically connect to other switches where a loop could form.",
+                "options": [
+                    {"label": "A", "text": "No ports, because PortFast cannot be enabled globally", "is_correct": false},
+                    {"label": "B", "text": "All ports", "is_correct": false},
+                    {"label": "C", "text": "All access ports", "is_correct": true},
+                    {"label": "D", "text": "All trunk ports", "is_correct": false}
+                ]
+            },
+            {
+                "order": 4,
+                "question": "A port shut down by BPDU Guard needs to be brought back. What do you do?",
+                "explanation": "Issue `shutdown` followed by `no shutdown` on the interface. But if the offending switch is still connected, the next BPDU will disable it again — fix the underlying problem first.",
+                "options": [
+                    {"label": "A", "text": "`shutdown` then `no shutdown` on the interface", "is_correct": true},
+                    {"label": "B", "text": "`clear spanning-tree bpduguard`", "is_correct": false},
+                    {"label": "C", "text": "Reload the switch — there is no other way", "is_correct": false},
+                    {"label": "D", "text": "Disable PortFast on the interface", "is_correct": false}
+                ]
+            },
+            {
+                "order": 5,
+                "question": "Which destination MAC address does Cisco PVST+ use for its BPDUs?",
+                "explanation": "PVST+ uses 0100.0CCC.CCCD. Standard (non-Cisco) spanning tree uses 0180.C200.0000.",
+                "options": [
+                    {"label": "A", "text": "0180.C200.0000", "is_correct": false},
+                    {"label": "B", "text": "0100.0CCC.CCCD", "is_correct": true},
+                    {"label": "C", "text": "FFFF.FFFF.FFFF", "is_correct": false},
+                    {"label": "D", "text": "0100.5E00.0001", "is_correct": false}
+                ]
+            },
+            {
+                "order": 6,
+                "question": "What does `spanning-tree vlan 10 root primary` actually configure?",
+                "explanation": "It applies the spanning-tree priority command — setting the priority to 24576, or to 4096 less than the current lowest priority if a switch is already below 24576. `root secondary` sets 28672.",
+                "options": [
+                    {"label": "A", "text": "A dedicated root-bridge flag in the BPDU", "is_correct": false},
+                    {"label": "B", "text": "A bridge priority of 24576, or 4096 below the current lowest priority", "is_correct": true},
+                    {"label": "C", "text": "A bridge priority of 0", "is_correct": false},
+                    {"label": "D", "text": "A bridge priority of 28672", "is_correct": false}
+                ]
+            },
+            {
+                "order": 7,
+                "question": "Which optional STP feature disables a port if it stops receiving BPDUs?",
+                "explanation": "Loop Guard. It protects against unidirectional links, where an interface can transmit but not receive (or vice versa), which would otherwise let a blocked port wrongly start forwarding.",
+                "options": [
+                    {"label": "A", "text": "PortFast", "is_correct": false},
+                    {"label": "B", "text": "BPDU Guard", "is_correct": false},
+                    {"label": "C", "text": "Root Guard", "is_correct": false},
+                    {"label": "D", "text": "Loop Guard", "is_correct": true}
+                ]
+            },
+            {
+                "order": 8,
+                "question": "Why configure different root bridges for different VLANs?",
+                "explanation": "Per-VLAN spanning tree means each VLAN blocks its own links. Using different roots per VLAN spreads traffic across links that would otherwise sit idle — spanning tree load balancing.",
+                "options": [
+                    {"label": "A", "text": "To reduce the number of BPDUs sent", "is_correct": false},
+                    {"label": "B", "text": "To achieve load balancing so blocked links are not wasted", "is_correct": true},
+                    {"label": "C", "text": "To shorten the forward delay timer", "is_correct": false},
+                    {"label": "D", "text": "Because a switch can only be the root bridge for one VLAN", "is_correct": false}
+                ]
+            }
+        ]
+    }
+}

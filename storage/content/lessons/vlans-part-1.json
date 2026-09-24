@@ -1,0 +1,265 @@
+{
+    "slug": "vlans-part-1",
+    "title": "VLANs: Broadcast Domains and Access Ports",
+    "summary": "What a LAN really is, how broadcast domains work, why a single flat Layer 2 network is bad for performance and security, and how to split one switch into multiple VLANs using access ports.",
+    "source_ref": "transcript_16.txt",
+    "order": 17,
+    "sections": [
+        {
+            "type": "explanation",
+            "title": "A LAN is a single broadcast domain",
+            "order": 1,
+            "content": {
+                "body": "Earlier in the course a **LAN** (Local Area Network) was described loosely as a group of devices — PCs, servers, routers, switches — in a single location such as a home or office. Here is the more precise definition:\n\n> **A LAN is a single broadcast domain.**\n\nA **broadcast domain** is the group of devices which will receive a broadcast frame — a frame with a destination MAC address of all Fs (`FFFF.FFFF.FFFF`) — sent by any one of the members.\n\nTwo rules determine the boundaries:\n\n- A **switch floods** a broadcast frame out of every interface except the one it was received on. Switches therefore **do not** break up broadcast domains.\n- A **router does not forward** a broadcast frame. It receives it, but it will not send it into another network. Routers **do** break up broadcast domains.\n\nSo the practical shortcut is: **each router interface, plus everything connected to it, is one broadcast domain.** Even a point-to-point link between two routers counts as a broadcast domain, despite having only two devices on it."
+            }
+        },
+        {
+            "type": "animation",
+            "title": "Following a broadcast frame",
+            "order": 2,
+            "content": {
+                "diagram_type": "topology",
+                "nodes": [
+                    {"id": "pc1", "label": "PC1", "icon": "pc", "x": 90, "y": 80},
+                    {"id": "pc2", "label": "PC2", "icon": "pc", "x": 90, "y": 240},
+                    {"id": "sw1", "label": "SW1", "icon": "switch", "x": 280, "y": 160},
+                    {"id": "r1", "label": "R1", "icon": "router", "x": 480, "y": 160},
+                    {"id": "sw2", "label": "SW2", "icon": "switch", "x": 680, "y": 160},
+                    {"id": "pc3", "label": "PC3", "icon": "pc", "x": 870, "y": 80},
+                    {"id": "pc4", "label": "PC4", "icon": "pc", "x": 870, "y": 240}
+                ],
+                "links": [
+                    {"from": "pc1", "to": "sw1", "kind": "ethernet"},
+                    {"from": "pc2", "to": "sw1", "kind": "ethernet"},
+                    {"from": "sw1", "to": "r1", "kind": "ethernet"},
+                    {"from": "r1", "to": "sw2", "kind": "ethernet"},
+                    {"from": "sw2", "to": "pc3", "kind": "ethernet"},
+                    {"from": "sw2", "to": "pc4", "kind": "ethernet"}
+                ],
+                "steps": [
+                    {
+                        "narration": "PC1 sends a broadcast frame — destination MAC FFFF.FFFF.FFFF. It travels to SW1.",
+                        "animate": {"packet_from": "pc1", "packet_to": "sw1", "label": "broadcast", "highlight": ["pc1"]}
+                    },
+                    {
+                        "narration": "SW1 is a Layer 2 device, so it floods the broadcast out of every interface except the one it arrived on — to PC2 and to R1.",
+                        "animate": {"flood": true, "packet_from": "sw1", "label": "flood", "highlight": ["sw1", "pc2", "r1"]}
+                    },
+                    {
+                        "narration": "R1 receives the frame but does NOT forward it. The broadcast stops here. PC1, PC2, SW1 and one R1 interface form broadcast domain #1.",
+                        "animate": {"highlight": ["pc1", "pc2", "sw1", "r1"], "status": "fail"}
+                    },
+                    {
+                        "narration": "The right-hand side is a separate broadcast domain. If PC3 broadcasts, SW2 floods it to PC4 and R1 — and R1 again blocks it. Two broadcast domains, so two LANs.",
+                        "animate": {"flood": true, "packet_from": "sw2", "label": "flood", "highlight": ["pc3", "pc4", "sw2", "r1"]}
+                    }
+                ]
+            }
+        },
+        {
+            "type": "explanation",
+            "title": "The problem with one flat LAN",
+            "order": 3,
+            "content": {
+                "body": "Picture a small office with three departments — **ENGINEERING**, **HR** and **SALES** — all connected to one switch, all in `192.168.1.0/24`. That is one LAN, one broadcast domain, and it causes two problems.\n\n**Performance.** When an engineering PC sends a broadcast intended only for other engineering PCs, the switch floods it out of every interface. Every PC in the office and the router receive it. The same happens with **unknown unicast** frames — frames whose destination MAC is not in the switch's MAC address table. Unnecessary traffic like this wastes bandwidth and CPU on every host.\n\n**Security.** Even inside one office you want to limit who can reach what. Security policies are applied on a **router or firewall** — but because all these PCs are in one LAN, they can reach each other **directly**, without the traffic ever passing through the router. Any policy you configure on the router simply has no effect on that traffic."
+            }
+        },
+        {
+            "type": "explanation",
+            "title": "Subnetting alone does not fix it",
+            "order": 4,
+            "content": {
+                "body": "The obvious first move is to split the departments into separate subnets:\n\n- ENGINEERING → `192.168.1.0/26`\n- HR → `192.168.1.64/26`\n- SALES → `192.168.1.128/26`\n\nThe router now needs an IP address in each subnet, so it needs one interface per subnet — three cables between switch and router. (There is a more efficient way that uses a single interface; that is *router on a stick*, covered later.)\n\nThis does force **unicast** traffic between departments through R1. PC1 (`192.168.1.1`) sees that PC2 (`192.168.1.129`) is in a different subnet, so it sets the destination MAC to its default gateway R1. R1 rewrites the source MAC to its own and the destination MAC to PC2's, then sends it back through the switch. Good — your security policies now apply.\n\n**But broadcast and unknown unicast frames still leak everywhere.** A switch is only aware up to **Layer 2**. It looks at source and destination MAC addresses; it has no idea three separate subnets exist. A broadcast from PC1 still gets flooded to every port. The three departments are separated at **Layer 3** but remain in **one broadcast domain — one LAN**."
+            }
+        },
+        {
+            "type": "explanation",
+            "title": "VLANs — separating hosts at Layer 2",
+            "order": 5,
+            "content": {
+                "body": "You *could* buy a separate physical switch for each department, but that is inflexible and expensive. This is where **VLANs** come in.\n\nA **VLAN** (Virtual Local Area Network) lets one physical switch behave like several separate switches. Assign ENGINEERING to **VLAN 10**, HR to **VLAN 20**, SALES to **VLAN 30**, and the switch treats each VLAN as its own LAN.\n\nKey facts:\n\n- VLANs are configured **on the switch**, on a **per-interface basis**. You put the *interface* in a VLAN, and the end host connected to it becomes part of that VLAN.\n- The switch will **not forward traffic between VLANs** — not broadcast, not unknown unicast, not known unicast.\n- A frame that arrives on a VLAN 10 interface is only ever forwarded out of other **VLAN 10** interfaces.\n- Moving traffic between VLANs is **inter-VLAN routing**, and a switch does not do it. The traffic must go through a **router**. (There are a couple of other inter-VLAN routing methods, covered in a later lesson.)\n\nSo VLANs logically split one Layer 2 broadcast domain into multiple separate broadcast domains — without buying more hardware."
+            }
+        },
+        {
+            "type": "animation",
+            "title": "A broadcast contained inside VLAN 10",
+            "order": 6,
+            "content": {
+                "diagram_type": "topology",
+                "nodes": [
+                    {"id": "pc1", "label": "PC1\nVLAN 10", "icon": "pc", "x": 90, "y": 70},
+                    {"id": "pc2", "label": "PC2\nVLAN 10", "icon": "pc", "x": 90, "y": 200},
+                    {"id": "pc3", "label": "PC3\nVLAN 20", "icon": "pc", "x": 90, "y": 330},
+                    {"id": "sw1", "label": "SW1", "icon": "switch", "x": 340, "y": 200},
+                    {"id": "pc4", "label": "PC4\nVLAN 30", "icon": "pc", "x": 590, "y": 330},
+                    {"id": "r1", "label": "R1", "icon": "router", "x": 590, "y": 120}
+                ],
+                "links": [
+                    {"from": "pc1", "to": "sw1", "kind": "ethernet"},
+                    {"from": "pc2", "to": "sw1", "kind": "ethernet"},
+                    {"from": "pc3", "to": "sw1", "kind": "ethernet"},
+                    {"from": "sw1", "to": "pc4", "kind": "ethernet"},
+                    {"from": "sw1", "to": "r1", "kind": "ethernet"}
+                ],
+                "steps": [
+                    {
+                        "narration": "Before VLANs: PC1 sends a broadcast and SW1 floods it to PC2, PC3, PC4 and R1 — every device in the office receives it.",
+                        "animate": {"flood": true, "packet_from": "sw1", "label": "flood all", "highlight": ["pc2", "pc3", "pc4", "r1"]}
+                    },
+                    {
+                        "narration": "Now VLANs are configured. PC1's port is an access port in VLAN 10, so the broadcast arrives on a VLAN 10 interface.",
+                        "animate": {"packet_from": "pc1", "packet_to": "sw1", "label": "VLAN 10", "highlight": ["pc1"]}
+                    },
+                    {
+                        "narration": "SW1 only forwards the frame out of other interfaces in VLAN 10 — so only PC2 receives it.",
+                        "animate": {"packet_from": "sw1", "packet_to": "pc2", "label": "VLAN 10", "status": "ok", "highlight": ["pc2"]}
+                    },
+                    {
+                        "narration": "PC3 (VLAN 20) and PC4 (VLAN 30) never see the frame. The single switch now contains three separate broadcast domains.",
+                        "animate": {"highlight": ["pc3", "pc4"], "status": "fail"}
+                    }
+                ]
+            }
+        },
+        {
+            "type": "explanation",
+            "title": "Access ports",
+            "order": 7,
+            "content": {
+                "body": "An **access port** is a switchport which belongs to a **single VLAN**, and usually connects to an end host such as a PC. The name comes from its job: it gives the end host *access* to the network.\n\nThe other important type is a **trunk port** — a switchport that carries **multiple VLANs**, used between switches and between a switch and a router. Trunk ports are covered in depth in the next lesson.\n\nA switchport connected to an end host should end up in access mode by default, but it is always better to configure the setting explicitly rather than rely on autonegotiation of the port type."
+            }
+        },
+        {
+            "type": "animation",
+            "title": "Configuring access ports and naming VLANs",
+            "order": 8,
+            "content": {
+                "diagram_type": "cli_walkthrough",
+                "steps": [
+                    {"narration": "Check which VLANs already exist. VLAN 1 (`default`) holds every interface, and VLANs 1002–1005 exist for legacy FDDI and Token Ring.", "command": "SW1#", "input": "show vlan brief"},
+                    {"narration": "Configure a whole block of ports at once with the `interface range` command.", "command": "SW1(config)#", "input": "interface range g1/0 - 3"},
+                    {"narration": "Explicitly set the ports to access mode rather than relying on autonegotiation.", "command": "SW1(config-if-range)#", "input": "switchport mode access"},
+                    {"narration": "Assign the VLAN. IOS replies `%Access VLAN does not exist. Creating vlan 10` — the switch creates VLAN 10 automatically.", "command": "SW1(config-if-range)#", "input": "switchport access vlan 10"},
+                    {"narration": "Repeat for the HR ports in VLAN 20.", "command": "SW1(config)#", "input": "interface range g2/0 - 2"},
+                    {"narration": "Access mode, then VLAN 20 — which is also created automatically.", "command": "SW1(config-if-range)#", "input": "switchport mode access"},
+                    {"narration": "Assign VLAN 20.", "command": "SW1(config-if-range)#", "input": "switchport access vlan 20"},
+                    {"narration": "And the SALES ports in VLAN 30.", "command": "SW1(config)#", "input": "interface range g3/0 - 3"},
+                    {"narration": "Assign VLAN 30 the same way.", "command": "SW1(config-if-range)#", "input": "switchport access vlan 30"},
+                    {"narration": "The default VLAN names (VLAN0010 etc.) are not descriptive. Enter VLAN configuration mode — this same command also creates a VLAN manually.", "command": "SW1(config)#", "input": "vlan 10"},
+                    {"narration": "Give it a meaningful name.", "command": "SW1(config-vlan)#", "input": "name ENGINEERING"},
+                    {"narration": "Do the same for VLAN 20.", "command": "SW1(config)#", "input": "vlan 20"},
+                    {"narration": "Name it HR.", "command": "SW1(config-vlan)#", "input": "name HR"},
+                    {"narration": "And VLAN 30.", "command": "SW1(config)#", "input": "vlan 30"},
+                    {"narration": "Name it SALES.", "command": "SW1(config-vlan)#", "input": "name SALES"},
+                    {"narration": "Confirm: each VLAN now has a name and the correct ports. A `ping 255.255.255.255` from PC1 will now only reach hosts in VLAN 10.", "command": "SW1#", "input": "show vlan brief"}
+                ]
+            }
+        },
+        {
+            "type": "table",
+            "title": "show vlan brief — after configuration",
+            "order": 9,
+            "content": {
+                "headers": ["VLAN", "Name", "Status", "Ports"],
+                "rows": [
+                    ["1", "default", "active", "G0/0 – G0/3 (all unassigned ports)"],
+                    ["10", "ENGINEERING", "active", "G1/0, G1/1, G1/2, G1/3"],
+                    ["20", "HR", "active", "G2/0, G2/1, G2/2"],
+                    ["30", "SALES", "active", "G3/0, G3/1, G3/2, G3/3"],
+                    ["1002", "fddi-default", "act/unsup", "—"],
+                    ["1003", "token-ring-default", "act/unsup", "—"],
+                    ["1004", "fddinet-default", "act/unsup", "—"],
+                    ["1005", "trnet-default", "act/unsup", "—"]
+                ]
+            }
+        },
+        {
+            "type": "callout",
+            "title": "Exam tip",
+            "order": 10,
+            "content": {
+                "body": "VLAN 1 and VLANs 1002–1005 exist by default and cannot be deleted. So if you create VLANs 10, 20 and 30, `show vlan brief` displays 8 VLANs in total — a classic exam question. Also remember: assigning an interface to a VLAN that does not exist does not fail; the switch creates the VLAN for you.",
+                "style": "exam_tip"
+            }
+        },
+        {
+            "type": "callout",
+            "title": "Two reasons for VLANs",
+            "order": 11,
+            "content": {
+                "body": "Performance — VLANs reduce unnecessary broadcast and unknown unicast traffic, preventing congestion. Security — those frames are never received by devices outside the VLAN, and inter-VLAN traffic is forced through a router where policies can be applied.",
+                "style": "note"
+            }
+        }
+    ],
+    "quiz": {
+        "questions": [
+            {
+                "order": 1,
+                "question": "No VLANs are configured. A network has two routers connected to each other, and each router has two switches hanging off separate interfaces, with PCs on each switch. How do you count the broadcast domains?",
+                "explanation": "With no VLANs configured, each router interface and everything connected to it forms one broadcast domain. Count the router interfaces — including the router-to-router link, which is a broadcast domain even though only two devices are on it.",
+                "options": [
+                    {"label": "A", "text": "One broadcast domain per router interface, including the router-to-router link", "is_correct": true},
+                    {"label": "B", "text": "One broadcast domain per switch", "is_correct": false},
+                    {"label": "C", "text": "One broadcast domain per PC", "is_correct": false},
+                    {"label": "D", "text": "One broadcast domain for the whole network", "is_correct": false}
+                ]
+            },
+            {
+                "order": 2,
+                "question": "What happens if you assign a switch interface to a VLAN that does not exist yet?",
+                "explanation": "IOS prints `%Access VLAN does not exist. Creating vlan 10` and creates the VLAN automatically. The command does not fail.",
+                "options": [
+                    {"label": "A", "text": "The command will fail", "is_correct": false},
+                    {"label": "B", "text": "The switch will create the VLAN", "is_correct": true},
+                    {"label": "C", "text": "The interface will be disabled until you create the VLAN", "is_correct": false},
+                    {"label": "D", "text": "All VLANs exist by default", "is_correct": false}
+                ]
+            },
+            {
+                "order": 3,
+                "question": "You create VLANs 10, 20 and 30 on a Cisco switch. How many VLANs will `show vlan brief` display?",
+                "explanation": "VLAN 1 plus VLANs 1002, 1003, 1004 and 1005 exist by default and cannot be deleted. 5 default + 3 created = 8.",
+                "options": [
+                    {"label": "A", "text": "3", "is_correct": false},
+                    {"label": "B", "text": "5", "is_correct": false},
+                    {"label": "C", "text": "8", "is_correct": true},
+                    {"label": "D", "text": "10", "is_correct": false}
+                ]
+            },
+            {
+                "order": 4,
+                "question": "A switch has two PCs in VLAN 20 and a router port in VLAN 20; the rest of its ports are in VLAN 10 and VLAN 30. If one of the VLAN 20 PCs sends a broadcast, how many devices receive it?",
+                "explanation": "The switch receives it, then floods it only out of interfaces in VLAN 20 — the other VLAN 20 PC and the router. That is 3 devices. Without VLANs, every PC would have received it.",
+                "options": [
+                    {"label": "A", "text": "1", "is_correct": false},
+                    {"label": "B", "text": "2", "is_correct": false},
+                    {"label": "C", "text": "3", "is_correct": true},
+                    {"label": "D", "text": "All devices on the switch", "is_correct": false}
+                ]
+            },
+            {
+                "order": 5,
+                "question": "Which statement about a switch and VLANs is correct?",
+                "explanation": "A switch never forwards traffic directly between two VLANs. Inter-VLAN routing must be performed by a router (or a Layer 3 switch / SVI, covered later).",
+                "options": [
+                    {"label": "A", "text": "A switch routes between VLANs using the VLAN database", "is_correct": false},
+                    {"label": "B", "text": "A switch forwards traffic between VLANs only if the hosts are in the same subnet", "is_correct": false},
+                    {"label": "C", "text": "A switch never forwards traffic directly between VLANs — a router must do the inter-VLAN routing", "is_correct": true},
+                    {"label": "D", "text": "A switch forwards broadcast frames between VLANs but not unicast frames", "is_correct": false}
+                ]
+            },
+            {
+                "order": 6,
+                "question": "What is an access port?",
+                "explanation": "An access port belongs to a single VLAN and normally connects to an end host, giving it access to the network. A port carrying multiple VLANs is a trunk port.",
+                "options": [
+                    {"label": "A", "text": "A switchport that belongs to a single VLAN, usually connected to an end host", "is_correct": true},
+                    {"label": "B", "text": "A switchport that carries multiple VLANs", "is_correct": false},
+                    {"label": "C", "text": "A router interface used for inter-VLAN routing", "is_correct": false},
+                    {"label": "D", "text": "A port reserved for console access to the switch", "is_correct": false}
+                ]
+            }
+        ]
+    }
+}

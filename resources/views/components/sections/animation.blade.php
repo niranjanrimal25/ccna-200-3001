@@ -164,7 +164,13 @@
                                 {{-- Status LED: glow halo + solid dot --}}
                                 <circle cx="30" cy="-28" r="4" fill="#22c55e" fill-opacity="0.2"/>
                                 <circle cx="30" cy="-28" r="2" fill="#22c55e"/>
-                                <text text-anchor="middle" y="34" class="fill-zinc-300 text-[13px] font-medium">{{ $n['label'] }}</text>
+                                @php $labelLines = preg_split('/\r\n|\r|\n/', (string) $n['label']); @endphp
+                                <text text-anchor="middle" y="34" class="fill-zinc-300 text-[13px] font-medium">
+                                    @foreach ($labelLines as $li => $labelLine)
+                                        <tspan x="0" dy="{{ $li === 0 ? 0 : 15 }}"
+                                               @class(['fill-zinc-500 text-[11px]' => $li > 0])>{{ $labelLine }}</tspan>
+                                    @endforeach
+                                </text>
                             </g>
                         @endforeach
                     </g>

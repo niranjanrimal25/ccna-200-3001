@@ -209,6 +209,20 @@
 }
 .notes-steps li { margin-bottom: 2px; }
 
+/* CLI walkthrough commands written into the notes */
+.notes-cmd {
+    display: inline-block;
+    margin-top: 2px;
+    padding: 1px 6px;
+    border: 1px dashed rgba(27, 42, 82, 0.45);
+    border-radius: 5px;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 14px;
+    line-height: 20px;
+    color: #14306b;
+    background: rgba(27, 42, 82, 0.05);
+}
+
 /* Quiz review */
 .notes-q { margin-top: 10px; }
 .notes-q-text {

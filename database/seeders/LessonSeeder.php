@@ -31,6 +31,17 @@ class LessonSeeder extends Seeder
         'subnetting-part-1' => 'subnetting',
         'subnetting-part-2' => 'subnetting',
         'subnetting-part-3' => 'subnetting',
+        'vlans-part-1' => 'vlans',
+        'vlans-part-2' => 'vlans',
+        'vlans-part-3' => 'vlans',
+        'vlans-lab-inter-vlan-routing' => 'vlans',
+        'dtp-and-vtp' => 'dtp-and-vtp',
+        'spanning-tree-part-1' => 'spanning-tree',
+        'spanning-tree-part-2' => 'spanning-tree',
+        'stp-toolkit-portfast' => 'stp-toolkit',
+        'stp-toolkit-bpdu-guard-filter' => 'stp-toolkit',
+        'stp-toolkit-root-guard' => 'stp-toolkit',
+        'stp-toolkit-loop-guard' => 'stp-toolkit',
     ];
 
     public function run(): void
@@ -137,6 +148,10 @@ class LessonSeeder extends Seeder
             'routing' => 'Routing',
             'life-of-a-packet' => 'Life of a Packet',
             'subnetting' => 'Subnetting',
+            'vlans' => 'VLANs',
+            'dtp-and-vtp' => 'DTP and VTP',
+            'spanning-tree' => 'Spanning Tree Protocol',
+            'stp-toolkit' => 'The STP Toolkit',
             default => ucwords(str_replace('-', ' ', $slug)),
         };
     }
@@ -155,6 +170,10 @@ class LessonSeeder extends Seeder
             'routing' => 9,
             'life-of-a-packet' => 10,
             'subnetting' => 11,
+            'vlans' => 12,
+            'dtp-and-vtp' => 13,
+            'spanning-tree' => 14,
+            'stp-toolkit' => 15,
             default => 99,
         };
     }

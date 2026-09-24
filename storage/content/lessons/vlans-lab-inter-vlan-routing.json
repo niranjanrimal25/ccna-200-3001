@@ -1,0 +1,166 @@
+{
+    "slug": "vlans-lab-inter-vlan-routing",
+    "title": "Lab: Migrating Router on a Stick to Layer 3 Switching",
+    "summary": "A hands-on lab replacing a router-on-a-stick design with a point-to-point Layer 3 link and SVIs on a multilayer switch, plus a structured walkthrough for troubleshooting broken inter-VLAN routing.",
+    "source_ref": "transcript_18_part_2.txt",
+    "order": 20,
+    "sections": [
+        {
+            "type": "explanation",
+            "title": "The starting point",
+            "order": 1,
+            "content": {
+                "body": "Everything is pre-configured as it was at the end of the trunking lesson, with one change: **SW2 has been replaced with a Layer 3 (multilayer) switch**.\n\nSo right now:\n\n- All hosts are already in the correct VLANs (10, 20 and 30).\n- SW1 and SW2 are connected with a **trunk**.\n- R1 and SW2 are connected using **router on a stick**.\n\nThe goal is to convert that router-on-a-stick design into **inter-VLAN routing via SVIs on SW2**, with a plain point-to-point Layer 3 link to R1 for traffic leaving the LAN.\n\nAddressing used in this lab:\n\n| Purpose | Address |\n|---|---|\n| VLAN 10 SVI | `10.0.0.62/26` |\n| VLAN 20 SVI | `10.0.0.126/26` |\n| VLAN 30 SVI | `10.0.0.190/26` |\n| SW2 ↔ R1 link, SW2 side | `10.0.0.193/30` |\n| SW2 ↔ R1 link, R1 side | `10.0.0.194/30` |\n\nBecause each SVI reuses the address R1 previously held for that VLAN, **no PC needs reconfiguring** — their default gateways are unchanged."
+            }
+        },
+        {
+            "type": "animation",
+            "title": "Step 1 — replace ROAS with a point-to-point Layer 3 link",
+            "order": 2,
+            "content": {
+                "diagram_type": "cli_walkthrough",
+                "steps": [
+                    {"narration": "On R1, look at the current configuration. Press Enter to scroll one line, or Space to scroll one screen.", "command": "R1#", "input": "show run"},
+                    {"narration": "The physical interface has only default settings plus `no shutdown`; the three sub-interfaces sit beneath it.", "command": "R1#", "input": "show ip interface brief"},
+                    {"narration": "Delete the first sub-interface.", "command": "R1(config)#", "input": "no interface g0/0.10"},
+                    {"narration": "Press the up arrow and change .10 to .20.", "command": "R1(config)#", "input": "no interface g0/0.20"},
+                    {"narration": "And once more for .30. In Packet Tracer these disappear immediately; on real IOS (or GNS3) they linger with a `deleted` status until reload.", "command": "R1(config)#", "input": "no interface g0/0.30"},
+                    {"narration": "Configure the physical interface with the new /30 address. `default interface g0/0` is not needed here because it already has default settings.", "command": "R1(config)#", "input": "interface g0/0"},
+                    {"narration": "R1's end of the point-to-point link.", "command": "R1(config-if)#", "input": "ip address 10.0.0.194 255.255.255.252"},
+                    {"narration": "Now on SW2. Note this Layer 3 switch model required `switchport trunk encapsulation dot1q`, unlike the switch in the previous lab.", "command": "SW2#", "input": "show run"},
+                    {"narration": "Reset the port to defaults. If it does not take effect the first time in Packet Tracer, issue it again.", "command": "SW2(config)#", "input": "default interface g1/0/2"},
+                    {"narration": "Enter the interface and try `ip ?` — there is no `address` option, because the port is still in Layer 2 mode.", "command": "SW2(config)#", "input": "interface g1/0/2"},
+                    {"narration": "Convert it to a Layer 3 routed port. Now `ip ?` offers `address`.", "command": "SW2(config-if)#", "input": "no switchport"},
+                    {"narration": "SW2's end of the link.", "command": "SW2(config-if)#", "input": "ip address 10.0.0.193 255.255.255.252"},
+                    {"narration": "Check the routing table — it is empty, even though a connected route should exist.", "command": "SW2(config)#", "input": "do show ip route"},
+                    {"narration": "The reason: routing is not enabled yet. This is the command people forget.", "command": "SW2(config)#", "input": "ip routing"},
+                    {"narration": "Now the connected route appears. (Packet Tracer omits the local route here; real IOS shows both.)", "command": "SW2(config)#", "input": "do show ip route"},
+                    {"narration": "Finally the default route pointing at R1.", "command": "SW2(config)#", "input": "ip route 0.0.0.0 0.0.0.0 10.0.0.194"}
+                ]
+            }
+        },
+        {
+            "type": "animation",
+            "title": "Step 2 — configure the SVIs and test",
+            "order": 3,
+            "content": {
+                "diagram_type": "cli_walkthrough",
+                "steps": [
+                    {"narration": "First confirm the VLANs exist — an SVI will not go up/up if its VLAN is missing. VLANs 10, 20 and 30 are present.", "command": "SW2(config)#", "input": "do show vlan brief"},
+                    {"narration": "Create the VLAN 10 SVI.", "command": "SW2(config)#", "input": "interface vlan 10"},
+                    {"narration": "Assign the last usable address of the subnet — the same address R1 used, so PCs keep working.", "command": "SW2(config-if)#", "input": "ip address 10.0.0.62 255.255.255.192"},
+                    {"narration": "VLAN 20 SVI.", "command": "SW2(config)#", "input": "interface vlan 20"},
+                    {"narration": "Its gateway address.", "command": "SW2(config-if)#", "input": "ip address 10.0.0.126 255.255.255.192"},
+                    {"narration": "VLAN 30 SVI.", "command": "SW2(config)#", "input": "interface vlan 30"},
+                    {"narration": "Its gateway address.", "command": "SW2(config-if)#", "input": "ip address 10.0.0.190 255.255.255.192"},
+                    {"narration": "All three SVIs show up/up. Inter-VLAN routing should now work.", "command": "SW2(config)#", "input": "do show ip interface brief"},
+                    {"narration": "From PC7 in VLAN 10, ping PC3 in VLAN 30. The first ping or two may fail while PC7 ARPs for its default gateway — that is normal.", "command": "PC7>", "input": "ping 10.0.0.129"},
+                    {"narration": "Switch to simulation mode and repeat: the traffic goes PC7 → SW2 → SW1, never touching R1. SW2 routed it from the VLAN 10 SVI to the VLAN 30 SVI internally.", "command": "PC7>", "input": "ping 10.0.0.129"},
+                    {"narration": "Finally test the default route by pinging the Internet. Static routes on R1 and the Internet router are already in place.", "command": "PC7>", "input": "ping 1.1.1.1"}
+                ]
+            }
+        },
+        {
+            "type": "callout",
+            "title": "Note",
+            "order": 4,
+            "content": {
+                "body": "The first one or two pings failing is not a fault. The PC must ARP for the MAC address of its default gateway before it can send the first packet, and the ARP exchange takes longer than the ICMP timeout.",
+                "style": "note"
+            }
+        },
+        {
+            "type": "explanation",
+            "title": "Troubleshooting inter-VLAN routing",
+            "order": 5,
+            "content": {
+                "body": "The second half of the lab is a troubleshooting exercise: PC3 cannot ping anything, not even hosts in its own VLAN 10.\n\n**Common causes of inter-VLAN routing problems on Layer 2 switches**\n\n- A host is in the **wrong VLAN** — the access port is assigned to a different VLAN than the documentation says.\n- The link between switches is **not a trunk** — someone forgot `switchport mode trunk`.\n- The required VLAN is **not allowed** on the trunk, so that VLAN's traffic cannot pass between switches.\n- A **native VLAN mismatch** between the two ends of the trunk.\n- On the host side, a **wrong subnet mask** or wrong default gateway.\n\n**How the fault was isolated**\n\n1. PC3's `ipconfig /all` showed the right IP address and gateway but a **/24 mask instead of /25**. Fixing it did not restore connectivity — so there was a second fault.\n2. PC3 could not ping **either** router sub-interface; PC1, in the same VLAN but on the other switch, could ping **both**. That pointed the finger at SW2 or the trunk between the switches, not at the router.\n3. `show vlan brief` on SW1 was fine. On SW2 it showed **no ports in VLAN 10** — Fa0/3 and Fa0/4 were both in VLAN 12.\n4. `show interfaces fa0/3 switchport` confirmed the port was in **static access** mode, so `switchport access vlan 10` was the fix.\n5. `show interfaces trunk` on both switches showed matching native VLANs and allowed VLANs, ruling the trunk out.\n\nAfter fixing PC3's VLAN, PC3 reached its gateway and PC1. A remaining fault stopped PC2 (VLAN 12) reaching its gateway while still reaching PC4 in the same VLAN — the classic signature of a problem on the **router's** sub-interface rather than in the Layer 2 path."
+            }
+        },
+        {
+            "type": "table",
+            "title": "Useful verification commands",
+            "order": 6,
+            "content": {
+                "headers": ["Command", "What it tells you"],
+                "rows": [
+                    ["`show vlan brief`", "Which VLANs exist and which access ports are in each. Trunk ports do NOT appear here"],
+                    ["`show interfaces trunk`", "Trunk ports, mode, encapsulation, native VLAN, allowed VLANs, active VLANs"],
+                    ["`show interfaces fa0/3 switchport`", "Administrative and operational mode of a single port — e.g. `static access`"],
+                    ["`show ip interface brief`", "IP addresses and up/up status of physical interfaces, sub-interfaces and SVIs"],
+                    ["`show interfaces status`", "Per-port status, and shows `routed` in the VLAN column for routed ports"],
+                    ["`show ip route`", "The switch's own routing table — empty until `ip routing` is enabled"],
+                    ["`ipconfig /all` (host)", "Host IP, mask and default gateway — a wrong mask is a very common fault"]
+                ]
+            }
+        },
+        {
+            "type": "callout",
+            "title": "Exam tip",
+            "order": 7,
+            "content": {
+                "body": "When one host in a VLAN works and another in the same VLAN does not, the fault is local to the broken host or its switch port. When every host in a VLAN can reach each other but none can reach the gateway, suspect the router sub-interface, the SVI, or the trunk carrying that VLAN.",
+                "style": "exam_tip"
+            }
+        }
+    ],
+    "quiz": {
+        "questions": [
+            {
+                "order": 1,
+                "question": "You configure `no switchport` and an IP address on a Layer 3 switch port, but `show ip route` shows no routes at all. What is missing?",
+                "explanation": "The switch will not build a routing table until `ip routing` is enabled globally. Without it, even connected routes for routed ports do not appear.",
+                "options": [
+                    {"label": "A", "text": "`ip routing` has not been enabled globally", "is_correct": true},
+                    {"label": "B", "text": "The port needs `switchport mode trunk`", "is_correct": false},
+                    {"label": "C", "text": "An SVI must be created first", "is_correct": false},
+                    {"label": "D", "text": "The default route must be configured before connected routes appear", "is_correct": false}
+                ]
+            },
+            {
+                "order": 2,
+                "question": "Why does `ip ?` offer no `address` option on a switch interface?",
+                "explanation": "The interface is still in Layer 2 switchport mode. `no switchport` converts it to a routed port, after which an IP address can be assigned.",
+                "options": [
+                    {"label": "A", "text": "The switch does not support IP addressing", "is_correct": false},
+                    {"label": "B", "text": "The interface is still a Layer 2 switchport — issue `no switchport` first", "is_correct": true},
+                    {"label": "C", "text": "You must create the VLAN first", "is_correct": false},
+                    {"label": "D", "text": "The interface is shut down", "is_correct": false}
+                ]
+            },
+            {
+                "order": 3,
+                "question": "PC2 can ping PC4 in the same VLAN but cannot ping its own default gateway. Where should you look first?",
+                "explanation": "Intra-VLAN traffic works, so the access ports, the VLAN and the Layer 2 path are fine. The problem is between the VLAN and its gateway — the router sub-interface, the SVI, or the trunk carrying that VLAN to the gateway.",
+                "options": [
+                    {"label": "A", "text": "PC2's IP address", "is_correct": false},
+                    {"label": "B", "text": "PC4's VLAN assignment", "is_correct": false},
+                    {"label": "C", "text": "The gateway side — the router sub-interface or SVI for that VLAN", "is_correct": true},
+                    {"label": "D", "text": "The switch's MAC address table", "is_correct": false}
+                ]
+            },
+            {
+                "order": 4,
+                "question": "Which command shows whether a single port's administrative and operational mode is static access?",
+                "explanation": "`show interfaces <port> switchport` displays the administrative and operational mode of that specific port, along with its access VLAN and trunk settings.",
+                "options": [
+                    {"label": "A", "text": "show vlan brief", "is_correct": false},
+                    {"label": "B", "text": "show interfaces fa0/3 switchport", "is_correct": true},
+                    {"label": "C", "text": "show interfaces trunk", "is_correct": false},
+                    {"label": "D", "text": "show ip interface brief", "is_correct": false}
+                ]
+            },
+            {
+                "order": 5,
+                "question": "In simulation mode the ping between two VLANs goes PC → SW2 → SW1 → destination and never reaches R1. Why?",
+                "explanation": "SW2 is a multilayer switch with SVIs for both VLANs, so it routes the packet internally from one SVI to the other. Only traffic leaving the LAN follows the default route to R1.",
+                "options": [
+                    {"label": "A", "text": "R1 is down", "is_correct": false},
+                    {"label": "B", "text": "SW2 routed it internally between its VLAN SVIs", "is_correct": true},
+                    {"label": "C", "text": "The trunk does not allow the VLAN toward R1", "is_correct": false},
+                    {"label": "D", "text": "The packet was flooded rather than routed", "is_correct": false}
+                ]
+            }
+        ]
+    }
+}

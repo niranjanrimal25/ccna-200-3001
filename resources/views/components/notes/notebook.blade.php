@@ -140,7 +140,12 @@
                     @if (! empty($content['steps']))
                         <ol class="notes-steps">
                             @foreach ($content['steps'] as $step)
-                                <li>{{ str_replace('`', '', $step['narration'] ?? '') }}</li>
+                                <li>
+                                    {{ str_replace('`', '', $step['narration'] ?? '') }}
+                                    @if (! empty($step['input']))
+                                        <br><span class="notes-cmd">{{ trim(($step['command'] ?? '') . ' ' . $step['input']) }}</span>
+                                    @endif
+                                </li>
                             @endforeach
                         </ol>
                     @endif

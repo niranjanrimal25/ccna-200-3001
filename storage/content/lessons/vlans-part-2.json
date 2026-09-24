@@ -1,0 +1,312 @@
+{
+    "slug": "vlans-part-2",
+    "title": "VLANs: Trunk Ports, 802.1Q and Router on a Stick",
+    "summary": "Carrying many VLANs over a single link with trunk ports, the fields of the 802.1Q tag, the native VLAN and why it must match, and using router sub-interfaces to do inter-VLAN routing over one cable.",
+    "source_ref": "transcript_17.txt",
+    "order": 18,
+    "sections": [
+        {
+            "type": "explanation",
+            "title": "Why access ports alone do not scale",
+            "order": 1,
+            "content": {
+                "body": "Take a topology with two switches. VLAN 10 (engineering) is split across **both** switches — very common, since departments are not always neatly divided by location; some engineers may sit on one floor and some on another.\n\nUsing only access ports, SW1 and SW2 need **one link per VLAN**:\n\n- A VLAN 10 link, because VLAN 10 PCs hang off both switches and because SW1's PCs must reach R1 through SW2.\n- A VLAN 30 link, because VLAN 30 PCs also need to reach R1 through SW2.\n- **No** VLAN 20 link, because no VLAN 20 PCs are connected to SW1. VLAN 20 hosts can still reach SW1's hosts — R1 performs the inter-VLAN routing.\n\nIn a small network with a handful of VLANs this works. But as the VLAN count grows it becomes unworkable: interfaces are wasted, and routers often simply do not have enough physical ports for one per VLAN.\n\nThe answer is the **trunk port** — a switch interface that carries traffic from **multiple VLANs** over a single physical link."
+            }
+        },
+        {
+            "type": "animation",
+            "title": "Inter-VLAN routing across two switches",
+            "order": 2,
+            "content": {
+                "diagram_type": "topology",
+                "nodes": [
+                    {"id": "pc1", "label": "PC1\nVLAN 10", "icon": "pc", "x": 90, "y": 90},
+                    {"id": "pc2", "label": "PC2\nVLAN 30", "icon": "pc", "x": 90, "y": 260},
+                    {"id": "sw1", "label": "SW1", "icon": "switch", "x": 300, "y": 175},
+                    {"id": "sw2", "label": "SW2", "icon": "switch", "x": 560, "y": 175},
+                    {"id": "pc3", "label": "PC3\nVLAN 20", "icon": "pc", "x": 560, "y": 340},
+                    {"id": "r1", "label": "R1", "icon": "router", "x": 800, "y": 175}
+                ],
+                "links": [
+                    {"from": "pc1", "to": "sw1", "kind": "ethernet"},
+                    {"from": "pc2", "to": "sw1", "kind": "ethernet"},
+                    {"from": "sw1", "to": "sw2", "kind": "ethernet"},
+                    {"from": "sw2", "to": "pc3", "kind": "ethernet"},
+                    {"from": "sw2", "to": "r1", "kind": "ethernet"}
+                ],
+                "steps": [
+                    {
+                        "narration": "PC3 in VLAN 20 wants to reach PC1 in VLAN 10. Different subnets, so PC3 sets the destination MAC to its default gateway, R1.",
+                        "animate": {"packet_from": "pc3", "packet_to": "sw2", "label": "to R1", "highlight": ["pc3"]}
+                    },
+                    {
+                        "narration": "SW2 forwards the frame to R1 — still tagged as VLAN 20 on the trunk.",
+                        "animate": {"packet_from": "sw2", "packet_to": "r1", "label": "VLAN 20", "highlight": ["r1"]}
+                    },
+                    {
+                        "narration": "R1 routes the packet into the VLAN 10 subnet, rewrites the MAC addresses, and sends it back to SW2 tagged as VLAN 10.",
+                        "animate": {"packet_from": "r1", "packet_to": "sw2", "label": "VLAN 10", "highlight": ["r1", "sw2"]}
+                    },
+                    {
+                        "narration": "The traffic is now in VLAN 10, so SW2 forwards it to SW1 over the trunk, still tagged VLAN 10.",
+                        "animate": {"packet_from": "sw2", "packet_to": "sw1", "label": "VLAN 10", "highlight": ["sw1"]}
+                    },
+                    {
+                        "narration": "SW1 strips the tag and delivers the frame out of PC1's untagged access port. There is no VLAN 20 link to SW1 at all — the router made it work.",
+                        "animate": {"packet_from": "sw1", "packet_to": "pc1", "label": "untagged", "status": "ok", "highlight": ["pc1"]}
+                    }
+                ]
+            }
+        },
+        {
+            "type": "explanation",
+            "title": "VLAN tagging — tagged vs untagged ports",
+            "order": 3,
+            "content": {
+                "body": "If both VLAN 10 and VLAN 30 are allowed on one trunk, how does the receiving switch know which VLAN a frame belongs to? The answer is **VLAN tagging**. Switches tag every frame they send over a trunk link so the receiving switch can identify the VLAN.\n\nThat is why:\n\n- A **trunk port** is also called a **tagged port**.\n- An **access port** is also called an **untagged port**.\n\nFrames sent over access ports are **not** tagged — they do not need to be, because the interface belongs to a single VLAN. If a frame arrives on a port in VLAN 10, the switch already knows it is VLAN 10 traffic.\n\nThere are two trunking protocols:\n\n| Protocol | Origin | Notes |\n|---|---|---|\n| **ISL** (Inter-Switch Link) | Cisco proprietary | Old, pre-dates the standard. Even modern Cisco gear often does not support it. Know the name only. |\n| **IEEE 802.1Q** (\"dot1Q\") | Industry standard (IEEE) | The one you use, and the one to study for the CCNA. |\n\nThe IEEE also standardised 802.3 — Ethernet."
+            }
+        },
+        {
+            "type": "diagram",
+            "title": "The 802.1Q tag",
+            "order": 4,
+            "content": {
+                "diagram_type": "frame_fields",
+                "fields": [
+                    {"name": "TPID", "length": "16 bits", "purpose": "Tag Protocol Identifier — always 0x8100, which marks the frame as 802.1Q tagged"},
+                    {"name": "PCP", "length": "3 bits", "purpose": "Priority Code Point — used for Class of Service (CoS) to prioritise important traffic"},
+                    {"name": "DEI", "length": "1 bit", "purpose": "Drop Eligible Indicator — marks frames that can be dropped when the network is congested"},
+                    {"name": "VID", "length": "12 bits", "purpose": "VLAN ID — identifies which VLAN the frame belongs to. The most important field"}
+                ],
+                "note": "The 4-byte (32-bit) tag is inserted between the **Source MAC** and **Type/Length** fields of the Ethernet header. TPID is the first half; PCP + DEI + VID together form the **TCI** (Tag Control Information)."
+            }
+        },
+        {
+            "type": "explanation",
+            "title": "VLAN ranges",
+            "order": 5,
+            "content": {
+                "body": "The VID field is **12 bits**, so 2¹² = **4096** values exist. VLAN 0 and VLAN 4095 are reserved and cannot be used, leaving the usable range **1–4094**. (Cisco's ISL also uses 1–4094.)\n\nThat range is split in two:\n\n- **Normal VLANs** — 1 to 1005\n- **Extended VLANs** — 1006 to 4094\n\nSome older devices cannot use the extended range, but it is safe to expect modern switches to support all of 1–4094."
+            }
+        },
+        {
+            "type": "explanation",
+            "title": "The native VLAN",
+            "order": 6,
+            "content": {
+                "body": "802.1Q has a feature that ISL does not: the **native VLAN**.\n\n- The native VLAN is **VLAN 1 by default** on all trunk ports.\n- It is configured **per trunk port**, not globally on the switch.\n- The switch **does not add an 802.1Q tag** to frames in the native VLAN — they are forwarded untagged.\n- When a switch receives an **untagged frame on a trunk port**, it assumes the frame belongs to the **native VLAN**.\n\nBecause of that last rule, the native VLAN **must match on both ends of the trunk**.\n\n**Matching example.** Native VLAN 10 is set on both ends. A VLAN 10 frame crosses the trunk untagged; the receiving switch assumes untagged = VLAN 10 and delivers it correctly.\n\n**Mismatch example.** SW2 has native VLAN 10, SW1 has native VLAN 30. SW2 sends the VLAN 10 frame untagged. SW1 receives it and reasons: *\"No tag, so this must be VLAN 30.\"* The destination is in VLAN 10, so SW1 will not forward the frame. Traffic still flows in general, but problems like this occur — which is why the native VLAN must match.\n\nFor security, best practice is to set the native VLAN to an **unused VLAN**."
+            }
+        },
+        {
+            "type": "animation",
+            "title": "Native VLAN mismatch",
+            "order": 7,
+            "content": {
+                "diagram_type": "topology",
+                "nodes": [
+                    {"id": "pc1", "label": "PC1\nVLAN 10", "icon": "pc", "x": 110, "y": 90},
+                    {"id": "sw2", "label": "SW2\nnative 10", "icon": "switch", "x": 340, "y": 180},
+                    {"id": "sw1", "label": "SW1\nnative 30", "icon": "switch", "x": 620, "y": 180},
+                    {"id": "pc2", "label": "PC2\nVLAN 10", "icon": "pc", "x": 860, "y": 90}
+                ],
+                "links": [
+                    {"from": "pc1", "to": "sw2", "kind": "ethernet"},
+                    {"from": "sw2", "to": "sw1", "kind": "ethernet"},
+                    {"from": "sw1", "to": "pc2", "kind": "ethernet"}
+                ],
+                "steps": [
+                    {
+                        "narration": "PC1 (VLAN 10) sends a frame destined for PC2, also in VLAN 10. It arrives at SW2 on an untagged access port.",
+                        "animate": {"packet_from": "pc1", "packet_to": "sw2", "label": "VLAN 10", "highlight": ["pc1"]}
+                    },
+                    {
+                        "narration": "SW2's trunk has native VLAN 10 configured, so it sends the frame across the trunk WITHOUT an 802.1Q tag.",
+                        "animate": {"packet_from": "sw2", "packet_to": "sw1", "label": "untagged", "highlight": ["sw2"]}
+                    },
+                    {
+                        "narration": "SW1's native VLAN is 30. It sees an untagged frame on a trunk and concludes: this must be VLAN 30 traffic.",
+                        "animate": {"highlight": ["sw1"], "status": "fail"}
+                    },
+                    {
+                        "narration": "The destination PC2 is in VLAN 10, not VLAN 30 — so SW1 refuses to forward the frame. The native VLAN must match on both ends.",
+                        "animate": {"packet_from": "sw1", "packet_to": "pc2", "label": "dropped", "status": "fail", "highlight": ["pc2"]}
+                    }
+                ]
+            }
+        },
+        {
+            "type": "animation",
+            "title": "Configuring a trunk port",
+            "order": 8,
+            "content": {
+                "diagram_type": "cli_walkthrough",
+                "steps": [
+                    {"narration": "Enter the interface facing the other switch.", "command": "SW1(config)#", "input": "interface g0/0"},
+                    {"narration": "Try to make it a trunk. On a switch supporting both ISL and 802.1Q this is REJECTED: `An interface whose trunk encapsulation is Auto can not be configured to trunk mode`.", "command": "SW1(config-if)#", "input": "switchport mode trunk"},
+                    {"narration": "The encapsulation defaults to `auto`, so set it manually first. Options are dot1q, isl and negotiate.", "command": "SW1(config-if)#", "input": "switchport trunk encapsulation dot1q"},
+                    {"narration": "Now the trunk command is accepted. On switches that only support 802.1Q, this one command is all you need.", "command": "SW1(config-if)#", "input": "switchport mode trunk"},
+                    {"narration": "Confirm. Mode `on` means manually configured, encapsulation 802.1q, status trunking, native VLAN 1, and all VLANs 1–4094 allowed by default.", "command": "SW1#", "input": "show interfaces trunk"},
+                    {"narration": "Restrict the trunk to only the VLANs it needs. SW1 has hosts in VLAN 10 and VLAN 30 only.", "command": "SW1(config-if)#", "input": "switchport trunk allowed vlan 10,30"},
+                    {"narration": "`add` appends to the existing list rather than replacing it.", "command": "SW1(config-if)#", "input": "switchport trunk allowed vlan add 20"},
+                    {"narration": "`remove` takes a VLAN back off the list — VLAN 20 is not needed here.", "command": "SW1(config-if)#", "input": "switchport trunk allowed vlan remove 20"},
+                    {"narration": "For security, change the native VLAN to an unused VLAN — and make it match on the other end.", "command": "SW1(config-if)#", "input": "switchport trunk native vlan 1001"},
+                    {"narration": "Note the trunk port does NOT appear under `show vlan brief` — that command lists access ports per VLAN. Always use `show interfaces trunk` for trunks.", "command": "SW1#", "input": "show interfaces trunk"}
+                ]
+            }
+        },
+        {
+            "type": "table",
+            "title": "switchport trunk allowed vlan options",
+            "order": 9,
+            "content": {
+                "headers": ["Option", "Example", "Result"],
+                "rows": [
+                    ["*word*", "`switchport trunk allowed vlan 10,30`", "Sets the allowed list to exactly those VLANs, replacing whatever was there"],
+                    ["add", "`switchport trunk allowed vlan add 20`", "Adds VLAN 20 to the current list"],
+                    ["remove", "`switchport trunk allowed vlan remove 20`", "Removes VLAN 20 from the current list"],
+                    ["all", "`switchport trunk allowed vlan all`", "Allows all VLANs — this is the default state"],
+                    ["except", "`switchport trunk allowed vlan except 1-5,10`", "Allows everything except the listed VLANs (so 6–9 and 11–4094)"],
+                    ["none", "`switchport trunk allowed vlan none`", "Allows no VLANs — effectively no traffic passes over the trunk"]
+                ]
+            }
+        },
+        {
+            "type": "table",
+            "title": "Reading show interfaces trunk",
+            "order": 10,
+            "content": {
+                "headers": ["Section", "Meaning"],
+                "rows": [
+                    ["Mode", "`on` = manually configured as a trunk. Other modes negotiate automatically (covered with DTP)"],
+                    ["Encapsulation", "802.1q or ISL — what the trunk actually negotiated or was set to"],
+                    ["Status", "`trunking` when the port is operating as a trunk"],
+                    ["Native vlan", "The VLAN sent untagged over this trunk; default 1"],
+                    ["Vlans allowed on trunk", "The configured allowed list — 1-4094 by default"],
+                    ["Vlans allowed and active in management domain", "Allowed VLANs that actually exist on this switch. A VLAN that does not exist locally will not appear here"],
+                    ["Vlans in spanning tree forwarding state and not pruned", "Allowed, active VLANs that STP is forwarding — covered with spanning tree"]
+                ]
+            }
+        },
+        {
+            "type": "explanation",
+            "title": "Router on a stick (ROAS)",
+            "order": 11,
+            "content": {
+                "body": "With only one physical link between SW2 and R1, the router cannot have a separate physical interface per VLAN. Instead it uses **sub-interfaces** — and the design is called **router on a stick (ROAS)**, because the single link looks like a stick on the topology diagram.\n\nOne physical interface `G0/0` is divided into logical sub-interfaces `G0/0.10`, `G0/0.20` and `G0/0.30`. They behave like three separate interfaces.\n\nHow it works:\n\n- **No extra switch configuration is needed.** SW2's port is configured as an ordinary trunk with VLANs 10, 20 and 30 allowed.\n- On the router, each sub-interface gets `encapsulation dot1q <vlan>` and an IP address.\n- Frames arriving **tagged with VLAN 10** are treated by the router as if they arrived on `G0/0.10`.\n- Frames leaving `G0/0.10` are **tagged with VLAN 10** on the way out.\n\nThe sub-interface number does **not** have to match the VLAN number, but matching them is strongly recommended so the configuration is readable."
+            }
+        },
+        {
+            "type": "animation",
+            "title": "Configuring router on a stick",
+            "order": 12,
+            "content": {
+                "diagram_type": "cli_walkthrough",
+                "steps": [
+                    {"narration": "Router interfaces are shut down by default — enable the physical interface first. It gets no IP address of its own.", "command": "R1(config)#", "input": "interface g0/0"},
+                    {"narration": "Bring it up.", "command": "R1(config-if)#", "input": "no shutdown"},
+                    {"narration": "Create the first sub-interface. The number after the dot is arbitrary, but match it to the VLAN for clarity.", "command": "R1(config)#", "input": "interface g0/0.10"},
+                    {"narration": "Tell the router this sub-interface handles VLAN 10 — arriving VLAN 10 tagged frames are treated as arriving here, and frames leaving are tagged VLAN 10.", "command": "R1(config-subif)#", "input": "encapsulation dot1q 10"},
+                    {"narration": "Assign the gateway address for the VLAN 10 subnet (the last usable address here).", "command": "R1(config-subif)#", "input": "ip address 192.168.1.62 255.255.255.192"},
+                    {"narration": "Repeat for VLAN 20.", "command": "R1(config)#", "input": "interface g0/0.20"},
+                    {"narration": "Tag VLAN 20 on this sub-interface.", "command": "R1(config-subif)#", "input": "encapsulation dot1q 20"},
+                    {"narration": "Gateway address for the VLAN 20 subnet.", "command": "R1(config-subif)#", "input": "ip address 192.168.1.126 255.255.255.192"},
+                    {"narration": "And VLAN 30.", "command": "R1(config)#", "input": "interface g0/0.30"},
+                    {"narration": "Tag VLAN 30.", "command": "R1(config-subif)#", "input": "encapsulation dot1q 30"},
+                    {"narration": "Gateway address for the VLAN 30 subnet.", "command": "R1(config-subif)#", "input": "ip address 192.168.1.190 255.255.255.192"},
+                    {"narration": "Each sub-interface appears alongside the physical interface — which itself has no IP address.", "command": "R1#", "input": "show ip interface brief"},
+                    {"narration": "Connected and local routes are added for each sub-interface, exactly as they would be for physical interfaces.", "command": "R1#", "input": "show ip route"}
+                ]
+            }
+        },
+        {
+            "type": "callout",
+            "title": "Exam tip",
+            "order": 13,
+            "content": {
+                "body": "If `switchport mode trunk` is rejected with \"An interface whose trunk encapsulation is Auto can not be configured to trunk mode\", the fix is `switchport trunk encapsulation dot1q` first. And if a VLAN you allowed does not show up under \"VLANs allowed and active in management domain\", the VLAN probably does not exist on that switch — create it.",
+                "style": "exam_tip"
+            }
+        }
+    ],
+    "quiz": {
+        "questions": [
+            {
+                "order": 1,
+                "question": "You want SW1 to send VLAN 10 frames untagged over its G0/1 trunk interface. Which command is appropriate?",
+                "explanation": "Traffic in the native VLAN is sent untagged over a trunk, so setting VLAN 10 as the native VLAN achieves this. `encapsulation dot1q 10` is a router sub-interface command; the `allowed vlan` commands only modify which VLANs may cross the trunk.",
+                "options": [
+                    {"label": "A", "text": "encapsulation dot1q 10", "is_correct": false},
+                    {"label": "B", "text": "switchport trunk allowed vlan 10", "is_correct": false},
+                    {"label": "C", "text": "switchport trunk allowed vlan add 10", "is_correct": false},
+                    {"label": "D", "text": "switchport trunk native vlan 10", "is_correct": true}
+                ]
+            },
+            {
+                "order": 2,
+                "question": "After modifying the VLANs allowed on a trunk, which command returns it to the default state?",
+                "explanation": "All VLANs are allowed on a trunk by default, so `switchport trunk allowed vlan all` restores the default. Option D lists the VLANs that exist on a switch by default — a different thing entirely.",
+                "options": [
+                    {"label": "A", "text": "switchport trunk allowed vlan default", "is_correct": false},
+                    {"label": "B", "text": "switchport trunk allowed vlan all", "is_correct": true},
+                    {"label": "C", "text": "switchport trunk allowed vlan none", "is_correct": false},
+                    {"label": "D", "text": "switchport trunk allowed vlan 1,1002-1005", "is_correct": false}
+                ]
+            },
+            {
+                "order": 3,
+                "question": "`switchport mode trunk` is rejected on a Cisco switch. Which command might fix the issue?",
+                "explanation": "On switches supporting both 802.1Q and ISL, the trunk encapsulation defaults to auto, and an auto-encapsulation port cannot be manually set to trunk mode. Set the encapsulation explicitly first. Note the CLI keyword is `dot1q`, not `802.1Q`.",
+                "options": [
+                    {"label": "A", "text": "switchport mode dynamic desirable", "is_correct": false},
+                    {"label": "B", "text": "switchport trunk encapsulation 802.1Q", "is_correct": false},
+                    {"label": "C", "text": "switchport trunk encapsulation dot1q", "is_correct": true},
+                    {"label": "D", "text": "switchport trunk encapsulation auto", "is_correct": false}
+                ]
+            },
+            {
+                "order": 4,
+                "question": "Which field of the 802.1Q tag identifies the VLAN ID of the frame?",
+                "explanation": "VID (VLAN ID) is 12 bits long and carries the VLAN number. TPID is the 0x8100 marker, PCP is used for Class of Service, and TCI is the container for PCP + DEI + VID.",
+                "options": [
+                    {"label": "A", "text": "TPID", "is_correct": false},
+                    {"label": "B", "text": "VID", "is_correct": true},
+                    {"label": "C", "text": "TCI", "is_correct": false},
+                    {"label": "D", "text": "PCP", "is_correct": false}
+                ]
+            },
+            {
+                "order": 5,
+                "question": "You configured `switchport trunk allowed vlan add 10`, but VLAN 10 does not appear in the \"VLANs allowed and active in management domain\" section of `show interfaces trunk`. Why?",
+                "explanation": "A VLAN that does not exist on the switch will not appear as active, even though it is in the allowed list. Create VLAN 10 on the switch.",
+                "options": [
+                    {"label": "A", "text": "VLAN 10 does not exist on the switch", "is_correct": true},
+                    {"label": "B", "text": "The command is invalid", "is_correct": false},
+                    {"label": "C", "text": "The command should be switchport trunk allowed vlan 10", "is_correct": false},
+                    {"label": "D", "text": "VLAN 10 is reserved and cannot be used", "is_correct": false}
+                ]
+            },
+            {
+                "order": 6,
+                "question": "How many usable VLANs does 802.1Q support, and why?",
+                "explanation": "The VID field is 12 bits, giving 2¹² = 4096 values. VLAN 0 and VLAN 4095 are reserved, leaving 1–4094 usable.",
+                "options": [
+                    {"label": "A", "text": "1024, because the VID field is 10 bits", "is_correct": false},
+                    {"label": "B", "text": "4094, because the 12-bit VID gives 4096 values and 0 and 4095 are reserved", "is_correct": true},
+                    {"label": "C", "text": "4096, because the VID field is 12 bits and all values are usable", "is_correct": false},
+                    {"label": "D", "text": "1005, because VLANs above 1005 are extended and unsupported", "is_correct": false}
+                ]
+            },
+            {
+                "order": 7,
+                "question": "In a router-on-a-stick configuration, what must be configured on the switch port facing the router?",
+                "explanation": "No special configuration is required — the switch port is configured as an ordinary trunk with the needed VLANs allowed. All the sub-interface work happens on the router.",
+                "options": [
+                    {"label": "A", "text": "A sub-interface for each VLAN", "is_correct": false},
+                    {"label": "B", "text": "An access port in each VLAN", "is_correct": false},
+                    {"label": "C", "text": "A regular trunk port with the required VLANs allowed", "is_correct": true},
+                    {"label": "D", "text": "`encapsulation dot1q` under each VLAN", "is_correct": false}
+                ]
+            }
+        ]
+    }
+}
