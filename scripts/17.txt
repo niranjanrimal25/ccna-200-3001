@@ -1,0 +1,371 @@
+[0:02]
+Welcome to Jeremy's IT Lab. This is a free complete course for the CCNA. If you like these videos, please subscribe to follow along with the series. Also, please like and leave a comment and share the video to help spread this free series of videos. Thanks for your help.
+
+[0:20]
+In this video, we will continue with the topic of VLANs, virtual local area networks. In the last video, day 16, we covered the absolute basics of VLANs.
+
+[0:31]
+What a VLAN is, what their purpose is, and the most basic VLAN configurations. However, that's not really enough information. There is still more basic knowledge you need to be able to understand and use VLANs. That's what we'll cover in today's video.
+
+[0:48]
+So, let's take a look at what we'll cover exactly. This will be a fairly long video, I think, but let's take it step by step. First of all, what is a trunk port? I mentioned trunk ports briefly in the last video. Whereas an access port belongs to a single VLAN, trunk ports carry traffic from multiple VLANs on a single interface.
+
+[1:11]
+Next, what is the purpose of trunk ports? How are they actually used? Next, I will talk about 802.1Q encapsulation. This is an additional tag added to an Ethernet frame which is used to identify which VLAN traffic belongs to on a trunk.
+
+[1:29]
+Next, we'll go into trunkport configuration. It's not so complicated. You only need to learn a few more commands. Finally, we'll cover router on a stick.
+
+[1:40]
+It's a bit of an odd name, but this is something you really need to know for your CCNA. It's a more efficient way of performing intervan routing, an alternative to using a separate router interface for every VLAN. So, let's get started.
+
+[1:56]
+For a quick review, here is the network topology used in the last video. There is a single switch and three VLANs. All of the switch interfaces are access ports which belong to a single VLAN, either VLAN 10, VLAN 20 or VLAN 30.
+
+[2:13]
+Three interfaces are used to connect to the router, one for each VLAN. For this video, let's use a different network topology. Here's the network topology we'll start with for this lesson. This time, there are two switches used. Note that VLAN 10, the VLAN for the engineering department, is split between the two switches. This is very common, as departments in a company aren't always split up exactly by location. You might have some engineers on one floor of the building, for example, and some on another floor. We are still using only access ports. There are two links between switch one and switch 2. One for VLAN 10 and one for VLAN 30. There must be a link in VLAN 10 between the two switches because VLAN 10 PCs are connected to both switch one and switch 2. And also because the PCs connected to switch one need to be able to reach R1
+
+[3:10]
+via switch 2. As for the link in VLAN 30, it is necessary because PCs in VLAN 30 also need to be able to reach R1 via switch 2. There is no link in VLAN 20 between switch one and switch 2. This is because there are no PCs in VLAN 20 connected to switch one. PCs in VLAN 20 can still reach PCs connected to switch one. R1 will perform the inter VLAN routing.
+
+[3:38]
+Let me demonstrate that inter VLAN routing. Let's say this PC in VLAN 20 wants to send traffic to one of the VLAN 10 PCs connected to switch one. It will send the frame with a destination MAC address of R1, its default gateway.
+
+[3:54]
+R1 then forwards it back to switch 2. Note that this traffic arrived at switch 2 on the VLAN 10 interface. The traffic is now in VLAN 10. So it forwards it to switch one on the VLAN 10 connection between them and then switch one forwards the traffic to the destination PC. So you can see that even though there isn't a VLAN 20 connection between switch 2 and switch one, the PC in VLAN 20 can still send traffic to the PC in VLAN 10 because the router performs inter VLAN routing.
+
+[4:27]
+In a small network with few VLANs, it is possible to use a separate interface for each VLAN when connecting switches to switches and switches to routers.
+
+[4:37]
+However, when the number of VLANs increases, this is not viable. It will result in wasted interfaces and often routers won't have enough interfaces for each VLAN.
+
+[4:48]
+You can use trunk ports to carry traffic from multiple VLANs over a single interface. Once again, these are different than access ports which belong to a single VLAN only. Let's take a quick look at how trunk ports work.
+
+[5:06]
+So now I've replaced those separate connections for each VLAN with a single connection between switch one and switch 2 and switch 2 and R1. However, to make it more clear, let's add those colors back.
+
+[5:20]
+Okay, so now you can see which VLANs are allowed on each trunk. Remember these are single physical connections but traffic from multiple VLANs is allowed over each trunk. Let's say this PC in VLAN 10 wants to send some data to this other PC in VLAN 10. It sends the traffic to switch 2 which then sends it to switch one. Now here's a question.
+
+[5:45]
+How does switch one know which VLAN the traffic belongs to? Both VLANs 10 and 30 are allowed on the interface the traffic was received on. But how does switch one know which VLAN it belongs to? The answer is VLAN tagging. Switches will tag all frames that they send over a trunk link. This allows the receiving switch to know which VLAN the frame belongs to. In fact, another name for a trunk port is a tagged port and another name for an access port is an untagged port.
+
+[6:18]
+Frames sent over access ports aren't tagged. They don't need to be tagged because the interface belongs to a single VLAN. If a frame arrives on a switch port in VLAN 10, the switch knows the frame is in VLAN 10. Let's talk about those VLAN tags.
+
+[6:35]
+There are two main trunking protocols ISL interlink and ILE E 802.1Q. Usually we call 802.1Q1Q. ISL is an old Cisco proprietary protocol created before the industry standard ILE E 802.1Q1Q is an industry standard protocol created by the ILE E institute of electrical and electronics engineers.
+
+[7:06]
+Remember the ILE E. How about IE 802.3? That's Ethernet, another industry standard protocol. You will probably never use ISL in the real world. Even modern Cisco equipment doesn't support it. For the CCNA, you only need to learn.1Q.
+
+[7:25]
+You should know what ISL is, but you don't have to study it like 1Q. Okay, here's an old slide back from day five on Ethernet switching. Do you remember the fields of the Ethernet header and trailer? If you don't, I recommend going back to check out day 5's video. I won't waste time explaining it all again here. However, the reason I am showing this is because the.11q tag is actually inserted between two fields of the Ethernet header.
+
+[7:55]
+So, here's just the Ethernet header. 1Q inserts a 4 by 32bit field between two fields of this Ethernet header. Let's take a look. As you can see here, the.11q tag is inserted between the source MAC address and the type or length fields of the Ethernet header.
+
+[8:16]
+Let's go over some basics. As I just said, the 802.1 Q tag is inserted between the source and type/length fields of the Ethernet frame. The tag is four bytes or 32 bits in length.
+
+[8:32]
+The tag consists of two main fields. Those are the tag protocol identifier TP ID and the tag control information TCI. The TCI itself consists of three sub fields. Let's quickly take a look at each field of the1q tag.
+
+[8:52]
+Here's a diagram of the1q tag format thanks to Wikipedia. Notice that it can be divided into two halves, the TP ID and TCI I mentioned before. Also, the TCI can be divided into three sub fields. The PCP, DEI, and VID.
+
+[9:14]
+Okay, first up, let's look at the TP ID field. The field is 16 bits or two bytes in length, taking up half of the 802.1Q tags length. The TP ID is always set to a value of 0x 810 0. Remember 0x just means hexadimal.
+
+[9:34]
+So the actual value in the field is just 8 1 0 0 four hexadimal digits. Each hexadimal digit is four bits. So 4 * 4 is 16. The total length of the field.
+
+[9:48]
+This value of 810 0 indicates that the frame is.1q tagged. As I just showed you, the1q tag comes after the source MAC field of the Ethernet frame. This is where the type field is usually located.
+
+[10:04]
+When the switch sees this value of 810 0 here, it knows it's a.11q tagged frame. Okay, that's all for the TP ID field. Next up, let's look at the first field of the TCI, which is the PCP or priority code point. The field is three bits in length. It is used for class of service COS which prioritizes important traffic in congested networks. Don't worry about this field too much. Just know the name and that it is used for COS.
+
+[10:39]
+Next up is the DEI drop eligible indicator. This field is just a single bit in length. It is used to indicate frames that can be dropped if the network is congested, which makes sure more important network traffic gets through.
+
+[10:55]
+Once again, you don't really need to worry about this field too much for your CCNA. Just know the name and its basic purpose. Okay. Finally, is a very important field, the Vid or VLAN ID. It is 12 bits in length. It is the field that actually identifies the VLAN the frame belongs to. So you could say this is the most important field of the1q tag.
+
+[11:20]
+Because this field is 12 bits in length, that means there are 4,96 total VLANs because 2 ^ of 12 equ= 496. However, the first and last VLANs 0 and 495 are reserved and can't be used.
+
+[11:38]
+Therefore, the actual range of VLANs that can be used is 1 to 494. By the way, Cisco's proprietary ISL, which is an alternative protocol for VLAN tagging over trunk connections, also uses a VLAN range of 1 to 4,94.
+
+[11:55]
+As I mentioned before, however, you don't really need to know ISL. It's almost been completely replaced by the industry standard.1Q. So, those are the fields of the 1Q tag.
+
+[12:08]
+Take a look at this diagram. Do you remember the names of each section and their basic function? If you want to read a little bit about 1Q, I recommend checking out the Wikipedia page for a solid overview of it.
+
+[12:22]
+Okay, let me talk about the VLAN ranges a little bit more. The range of VLANs, which as I mentioned is 1 to 4,94, is divided into two sections. normal VLANs which are numbered from 1 to 105 and extended VLANs which are numbered from 106 to 494.
+
+[12:44]
+Some older devices cannot use the extended VLAN range. However, it's safe to expect that modern switches will support the extended VLAN range. I work with Cisco switches a lot in my job and I've never encountered a switch that doesn't support the entire range from 1 to 494.
+
+[13:02]
+Just be aware that some older switches might not support the extended range. Okay, so let's look at this diagram once again. So this PC in VLAN 10 wants to send traffic to this other PC in VLAN 10. The traffic goes to switch 2, which then forwards it to switch one with a tag indicating that the traffic belongs to VLAN 10.
+
+[13:27]
+Switch one receives the frame and because the destination is also in VLAN 10, it will forward the traffic to the destination. Remember, a standard layer 2 switch like this will only forward traffic in the same VLAN. It will not forward traffic between VLANs.
+
+[13:45]
+Let me introduce another concept of.1Q1Q has a feature called the native VLAN. Cisco's ISL does not have this feature, by the way. The native VLAN is VLAN 1 by default on all trunk ports. However, this can be manually configured on each trunk port.
+
+[14:04]
+It's important to remember that this has to be configured on each trunk port separately. It's not a global configuration on the switch. Now, what exactly does the native VLAN do? The switch does not add an 802.1Q tag to frames in the native VLAN. It will forward the frame normally without adding the1q tag to it.
+
+[14:25]
+So what does the receiving switch do when it receives this untagged frame on a trunk port? When a switch receives an untagged frame on a trunk port, it assumes the frame belongs to the native VLAN.
+
+[14:37]
+So it's very important that the native VLAN matches between switches. Switches will still forward traffic if there is a native VLAN mismatch, but problems may occur. Let's look at an example this time. Let's say I've configured the native VLAN to be VLAN 10 on the trunk link between switch one and switch 2.
+
+[14:58]
+Let's follow some traffic on the same path as usual. This PC sends the traffic to switch 2. It will send the traffic to switch one, but because it is in the native VLAN, VLAN 10, it won't tag it as being in VLAN 10. The untagged frame arrives at switch 1, which assumes that the traffic belongs to VLAN 10. So, it forwards it to the destination.
+
+[15:23]
+This time, let's look at if there is a native VLAN mismatch configuration. On switch 2's interface, I've configured VLAN 10 as the native VLAN. However, on switch one's interface, I've configured VLAN 30 as the native VLAN.
+
+[15:39]
+Let's see what happens. Up to the point the traffic reaches switch one, it's the same. However, when switch one receives the frame, this is what it will think.
+
+[15:50]
+This frame has no VLAN tag. Therefore, it must belong to VLAN 30. But the destination is in VLAN 10, not VLAN 30. So, I won't forward the frame. So, I think you can see why it is important that the native VLAN configuration matches between switches.
+
+[16:06]
+Okay, let's finally get into the configuration of trunk ports. I've added the interface numbers to the diagram to make it easier to understand. So we will be configuring G0 on switch one and G00 and G01 on switch 2 as trunk ports.
+
+[16:24]
+Let's go on switch one first. First let's look at the most basic trunk configuration. Manually configuring the interface as a trunk. After entering interface configuration mode, use this command switchport mode trunk to manually configure the interface as a trunk.
+
+[16:45]
+However, in this case, we got an error message. Command rejected. An interface whose trunk encapsulation is auto cannot be configured to trunk mode. This is a little tricky. Many modern switches do not support Cisco's ISL at all. They only support.1q.
+
+[17:03]
+Even though ISL is a proprietary Cisco protocol, even Cisco switches are moving towards supporting only.1Q. However, switches that do support both.11q and ISL, like the one I'm using in this example, have a trunk encapsulation of auto by default. To manually configure the interface as a trunk port, you must first set the encapsulation to 802.1Q or ISL.
+
+[17:31]
+On switches that only support.1Q, this is not necessary. After you set the encapsulation type, you can then configure the interface as a trunk. So let's see how to set the encapsulation type. You use the switchport trunk encapsulation command.
+
+[17:49]
+I use the question mark to see the options. There are1Q ISL and negotiate. Negotiate sets it to auto mode. So we can't choose that. I will talk more about auto mode in the next lecture video by the way. So if you have questions, I will answer them there. I set the encapsulation to.1q and then this time the switchport mode trunk command is accepted.
+
+[18:14]
+On switches that only support 1q, you will only need the switchport mode trunk command. But on some switches, you will need to set the encapsulation first.
+
+[18:26]
+I used the show interfaces trunk command to confirm. First up, the trunk interfaces are listed here. Mode on means that the interface was manually configured as a trunk. In the next lecture, we will look at how a port can automatically become a trunk without configuration, but we'll forget about that for the moment.
+
+[18:46]
+Encapsulation is.11q as we configured. Status is trunking and the native VLAN which I mentioned before is the default of one. Under that, the VLANs allowed on the trunk are displayed. By default, all VLANs 1 to 4,94 are allowed on the trunk. However, for security purposes, we might want to limit which VLANs can be forwarded on the trunk. So, we'll look at that configuration next.
+
+[19:15]
+Next up is VLANs allowed and active and management domain. This includes the default VLAN of one as well as VLANs 10 and 30, which I already configured on this switch. Note that although VLAN 1, which exists by default, appears here, VLANs 10002 to 105, which I showed you in the previous lecture video, do not. As I mentioned before, don't worry about those VLANs.
+
+[19:41]
+They're not really used in modern networks. The last field of the show interfaces trunk command is VLANs in spanning tree forwarding state and not pruned. I'll talk about this in a future lecture. We don't know about spanning tree and VLAN pruning yet.
+
+[19:59]
+Here is the command to configure the VLANs allowed on a trunk. Switchport trunk allowed VLAN and then there are some options. Word allows you to simply configure the list of VLANs allowed.
+
+[20:12]
+Let's see how that works. So I use the command switchport trunk allowed VLAN 10, 30. Notice that the show interfaces trunk command now only shows VLANs 10 and 30 as being allowed on the trunk.
+
+[20:28]
+Now let's take a look at the add option. This allows you to add allowed VLANs to the currently existing list. Currently VLANs 10 and 30 are allowed. Let's say I also want to add 20 even though no hosts in VLAN 20 are connected to switch one.
+
+[20:46]
+This time I use the command switchport trunk allowed VLAN add 20. The show interfaces trunk command now shows VLANs 10, 20, and 30 as allowed. So 20 was added to the list.
+
+[21:00]
+Note that because I haven't actually created VLAN 20 on this switch. VLAN 20 still isn't displayed in the VLANs allowed and active in management domain section.
+
+[21:11]
+Next up, I'll show you the remove option. VLAN 20 isn't necessary on this trunk, so let's remove it. I use the command switchport trunk allowed VLAN remove 20. Now, as you can see, VLAN 20 has been removed from the list of allowed VLANs, leaving only VLANs 10 and 30.
+
+[21:33]
+Next up, let's look at the all option. I think this one is fairly obvious, but let's take a look anyway. This time I use the command switchport trunk allowed VLAN all. Now all VLANs are allowed on the trunk. This is the same as the default state as all VLANs are allowed by default.
+
+[21:54]
+Next up, let's look at the accept option. It allows all VLANs except the ones you specify. Let's check it out. I'll use the command switchport trunk allowed VLAN except 1 to 5, 10.
+
+[22:11]
+As you can see, it allows all VLANs except those. So 6 to 9 and 11 to 494. Okay. Finally, let's look at the none option, which also is pretty easy to understand.
+
+[22:27]
+This time I use the command switchport trunk allowed VLAN none. And as you can see, no VLANs are allowed on the trunk. This effectively allows no traffic to pass over the trunk. So now let's do the actual settings we want for this network.
+
+[22:43]
+Here's the diagram once more. Switch one has hosts in VLAN 10 and VLAN 30 connected to it. No hosts in VLAN 20 are connected, so there's no need to allow VLAN 20 on the trunk between switch one and switch two.
+
+[22:57]
+So, let's set the allowed VLANs to 10 and 30 like we did before. Okay, there we go. Now, the only VLANs allowed on the trunk are VLANs 10 and 30. The reason to do this is for security purposes to make sure only traffic in the necessary VLANs can use that connection.
+
+[23:16]
+Also, for network performance purposes, this avoids unnecessary traffic because broadcasts and such in other VLANs won't be sent over the trunk. Now, I said I'd show you how to change the native VLAN. For security purposes, it is best to change the native VLAN to an unused VLAN. Network security will be explained more in depth later in the course. This video is already getting long, so I won't explain the detailed reasons, but again, it's about limiting unnecessary traffic in the network and controlling what traffic is allowed.
+
+[23:50]
+Also, remember to make the native VLAN match between switches. Now let's look at how to change the native VLAN. The command to change the native VLAN is switchport trunk native VLAN followed by the VLAN number. I chose an unused VLAN 1001.
+
+[24:10]
+As you can see, the native VLAN has now been changed to 1001. After configuring this trunk port, I did the show VLAN brief command. Notice that G0 is not listed anywhere, not in VLAN 10 or VLAN 30, even though those are the VLANs allowed on the trunk. This is because the show VLAN brief command shows the access ports assigned to each VLAN, not the trunk ports that allow each VLAN. Use the show interfaces trunk command instead to confirm trunk ports.
+
+[24:45]
+Now that we've seen the configurations on switch one, I'll quickly do the configurations on switch two as well. On switch 2's G0 interface, we must allow VLANs 10 and 30. On switch 2's G01 interface, however, we must allow VLAN 20 as well.
+
+[25:03]
+Here are the configurations for switch 2's G00 interface, the interface connected to switch one. These are the same as before, so I won't go through each one. You can pause the video if you want to take a look at them to review.
+
+[25:18]
+Now let's move on to G01 which is connected to R1. Okay, here are the configurations almost identical to G0 except I allowed VLAN 20 in addition to VLAN 10 and 30.
+
+[25:33]
+Now both G00 and G01 are displayed in the output of the show interfaces trunk command. So that's all for the switch configurations for this lesson. However, you may be wondering about the router.
+
+[25:47]
+In the previous lecture, we used three separate interfaces for the connection from switch 2 to R1 and assigned a separate IP address to each one on R1.
+
+[25:58]
+Each one served as the default gateway address for the PCs in each VLAN. However, now we are using only one physical connection between the two devices. So, we must use sub interfaces on R1. Let's take a look.
+
+[26:14]
+First of all, take a look at the title of the slide. Router on a stick, also written as RO A. It's a bit of a strange name, but it's the name used for this method of inter VLAN routing. As there is only a single physical interface connecting the router and the switch, and it looks like a stick on the network topology diagram.
+
+[26:35]
+So in this case, that one physical interface being used on R1 to connect to switch 2 is G0. It's connected to G01 on switch 2. But we can actually divide this one physical interface into three separate sub interfaces which will allow us to perform interline routing with only one physical interface.
+
+[26:57]
+So it would look like this. G0010 for VLAN 10, G00.20 for VLAN 20 and G00.30 for VLAN 30. These three logical sub interfaces are really one physical interface G0 which is connected to switch 2's G01 interface but they can operate like three separate interfaces.
+
+[27:24]
+Before we look at the router configurations, note that we don't need to do any additional configurations on switch 2. We already configured G01 as a trunk and made sure that VLANs 10, 20, and 30 are allowed. That's all you need to do on the switch. Configure the interface like a regular trunk. Now, let's look at the router configurations.
+
+[27:47]
+Here are the configurations. First, make sure the interface is enabled with no shutdown as router interfaces are disabled by default. Next up is the first sub interface.
+
+[28:00]
+Notice how to enter sub interface configuration mode. Interface G00.10. 10. This sub interface number does not have to match the VLAN number. However, it is highly recommended that they do match to make it easier to understand.
+
+[28:18]
+If each sub interfaces number matches the VLAN number, it's easy to see which sub interface is used for each VLAN. The next command after that is encapsulation.1q followed by the VLAN number, which is 10 in this case.
+
+[28:34]
+This tells the router to treat any arriving frames tagged with the specific VLAN number as if they arrived on this sub interface. If a frame arrives tagged with VLAN 10, R1 will behave as if it arrived on interface G00.10.
+
+[28:51]
+It will also tag all frames leaving this sub interface with VLAN 10 using 1q. Finally, after the encapsulation.11q command, simply assign the IP address to the sub interface.
+
+[29:05]
+Once again, I have assigned the last usable address of the subnet. And that's all for this sub interface. Then I did the same thing with the other two sub interfaces.
+
+[29:16]
+Again, I made the sub interface and VLAN numbers match and configured the last usable IP address of each subnet as the IP address of the sub interface.
+
+[29:27]
+If you confirm with the show ip interface brief command, you can see that each of the sub interfaces appears as well as the physical interface. Although the physical interface itself has no IP address assigned to it.
+
+[29:41]
+And here is the routing table. Notice the connected and local routes are added just like when IP addresses are added to regular physical interfaces. When R1 sends frames out of these sub interfaces, it adds the VLAN tag configured on the sub interface.
+
+[29:59]
+For example, if a packet arrives destined for the 1 192.168.1.64/26 subnet, it will send the packet out of its G00 interface tagged with VLAN 20. Okay, let's review the important points about router on a stick.
+
+[30:17]
+ROAS is used to route between multiple VLANs using a single interface on the router and switch. The switch interface is configured as a regular trunk.
+
+[30:28]
+The router interface is configured using sub interfaces. You configure the VLAN tag and IP address on each sub interface. The router will behave as if frames arriving with a certain VLAN tag have arrived on the sub interface configured with that VLAN tag.
+
+[30:45]
+Finally, the router will tag frames sent out of each sub interface with the VLAN tag configured on the sub interface. Now that we have configured the router, let's return to this diagram to see how inter VLAN routing works with these sub interfaces.
+
+[31:02]
+This PC in VLAN 10 is trying to reach this PC in VLAN 30. The frame is sent to switch 2. Switch 2 sends the frame on its G01 interface to R1, tagging it as being in VLAN 10. R1 receives it on its G00 interface, identifying it as arriving on the G00.10 sub interface because of the VLAN 10 tag. The destination is in the subnet 1 192.168.1.128/26 which is connected to R1's G00.30 sub interface.
+
+[31:39]
+So it sends the frame out of its G00 interface. It tags it as VLAN 30 because that is what was configured on the G00.30 sub interface. Switch 2 then forwards it to switch one tagging it as VLAN 30 over the trunk.
+
+[31:55]
+Switch one then forwards the frame to the destination. Okay, let's quickly review before moving on to today's quiz. I think I say this after every video these days, but there was a lot of information in this video.
+
+[32:09]
+Please rewatch certain parts of the video if you need to and use the supplementary materials to help you practice and review as well. First off, we answered the question, what is a trunk port? It's a switch interface that carries traffic over multiple VLANs.
+
+[32:26]
+We also answered what the purpose of a trunk port is. It allows switches to forward traffic from multiple VLANs over a single physical interface instead of having to use a separate physical interface for every single VLAN. I also introduced 802.1Q encapsulation, which is a tag inserted into the Ethernet frame and is used to identify which VLAN the frame belongs to when sent over a trunk port.
+
+[32:52]
+I showed how to configure trunk ports on a Cisco switch, including the encapsulation type, allowed VLANs, and native VLAN. Finally, I showed you how to configure router on a stick, which involves configuring multiple sub interfaces on a single physical interface, which again allows for traffic from multiple VLANs and subnets to be routed without having to use a separate physical interface for each one. It's like a trunk port on a router.
+
+[33:21]
+Finally, let's move on to today's quiz. First up, question one. You want to configure switch one to send VLAN 10 frames untagged over its gigabit Ethernet01 interface, a trunk. Which command is appropriate?
+
+[33:37]
+A. Encapsulation.1q10. B. Switchport trunk allowed VLAN 10. C. Switchport trunk allowed VLAN add 10. D. Switchport trunk native VLAN 10. Pause the video to think about your answer.
+
+[34:01]
+The answer is D. Switchport trunk native VLAN 10. A encapsulation.1q10 is used on a router sub interface to specify which VLAN it belongs to. B and C are used to modify the VLANs allowed on the trunk. D is used to specify the native VLAN and traffic in the native VLAN is sent untagged over the trunk.
+
+[34:25]
+Next, let's go to question two. After modifying the VLANs allowed on a trunk interface, you want to return it to the default state. Which command will do this? A. Switchport trunk allowed VLAN default.
+
+[34:42]
+B. Switchport trunk allowed VLAN all C switchport trunk allowed VLAN none or D switchport trunk allowed VLAN 1 and 1001 to 105. Pause the video to think about your answer.
+
+[35:04]
+The answer is B. Switchport trunk allowed VLAN all. By default, all VLANs are allowed on a trunk port. So, switchport trunk allowed VLAN all will return it to the default state.
+
+[35:18]
+Answer D, by the way, lists the VLANs that exist on a Cisco switch by default, but that's different than the VLANs allowed on a trunk by default. Okay, let's go to question three.
+
+[35:30]
+You try to configure an interface on a Cisco switch as a trunk port with the command switchport mode trunk, but the command is rejected. Which command might fix this issue?
+
+[35:42]
+A. Switchport mode trunk. B. Switchport trunk encapsulation 802.1Q. C. Switchport trunk encapsulation.1q or D switchport trunk encapsulation auto. Pause the video to think about your answer.
+
+[36:07]
+The answer is C. Switchport trunk encapsulation.1q. On Cisco switches that support both 802.1Q and ISL encapsulations for trunk ports, if you want to manually configure the interface as a trunk, you have to manually specify the encapsulation type with switchport trunk encapsulation.1q.
+
+[36:28]
+You could use ISL instead, but ISL is almost never used. Okay, let's go to question four. Which field of the 802.1Q tag identifies the VLAN ID of the frame? A TP ID, B V I C TCI or D VLN.
+
+[36:53]
+Pause the video to think about your answer. The answer is B. Vid V stands for VLAN ID. It is 12 bits long and identifies the VLAN number. TP ID stands for tag protocol identifier and uses a hexadimal value of 8100 to identify the frame as 802.1Q tagged.
+
+[37:21]
+PCP stands for priority code point and is used for class of service not to tag the VLAN ID. D VLN is not a real field of the 802.1 Q tag. Let's go to the last question. Question five.
+
+[37:39]
+You configured switchport trunk allowed VLAN add 10 on an interface but VLAN 10 doesn't appear in the VLANs allowed and active in management domain section of the show interfaces trunk command output.
+
+[37:54]
+What might be the reason? A. VLAN 10 doesn't exist on the switch. B. The command is invalid. C. The command should be switchport trunk allowed VLAN 10. Or D. VLAN 10 is reserved and cannot be used.
+
+[38:14]
+Pause the video to think about your answer. The answer is A. VLAN 10 doesn't exist on the switch. If a VLAN doesn't exist on the switch, even if it is allowed on the trunk, it won't appear in the VLANs allowed and active in management domain section of the show interfaces trunk command output. That's all for the quiz.
+
+[38:40]
+Okay, so as always, there will be supplementary materials for this video. There will be flashcards to use with the software ANI to help you remember things learned in this video.
+
+[38:51]
+There will also be a packet tracer practice lab so you can practice the configurations learned in this video that will be in a separate video. Before finishing this video, I want to thank all of my JCNP level channel members.
+
+[39:08]
+Thank you to Charles Eetta, Leto, Yonatan, Mike, Alexander, Vance, Yousef, Samile, Bzon Software, CD, McGrathia, and Devon. Sorry if I pronounced your names incorrectly, but thank you so much for your support. Extra shout out to Bzon Software. I absolutely love their XSIM practice exams and NetSim network simulator. Check out the links in the video description for their products.
+
+[39:39]
+Thank you for watching. Please subscribe to the channel, like the video, leave a comment, and share the video with anyone else studying for the CCNA.
+
+[39:48]
+If you want to leave a tip, check the links in the description. I'm also a Brave verified publisher and accept BAT or basic attention token tips via the Brave browser. That's all for now.

@@ -1,0 +1,230 @@
+[0:05]
+Hello and welcome to Jeremy's IT Lab. In this video, we'll cover one more feature in the STP toolkit, Loop Guard, which basically acts as an extra line of defense against Layer 2 loops.
+
+[0:17]
+Now, the entire point of Spanning Tree Protocol is to prevent loops. That's why we use it. So, what's the role of Loop Guard? Well, that's what we'll cover in this video.
+
+[0:27]
+In the previous few videos, we covered these four features of the STP toolkit: PortFast, BPDU Guard, BPDU Filter, and Root Guard. Now, we're moving on to Loop Guard, which protects the network from loops by disabling a port if it unexpectedly stops receiving BPDUs, ensuring it does not mistakenly enter the forwarding state.
+
+[0:48]
+There are a few situations where this might happen, such as a software bug on one switch that stops it from sending BPDUs. But, in this video, we'll look at one specific scenario, a unidirectional link.
+
+[1:02]
+So, we've got these two switches, Switch 1 and Switch 2, and let's connect them together. Under normal circumstances, this is a bidirectional link, meaning Switch 1 can transmit data to Switch 2, and Switch 2 can transmit data to Switch 1.
+
+[1:18]
+But, a unidirectional link is a network link where data transmission occurs in only one direction. For example, Switch 1 can send frames to Switch 2, but Switch 2 can't send frames to Switch 1.
+
+[1:31]
+This is obviously not a desirable situation and is typically caused by a Layer 1 issue, some physical problem with the hardware preventing data from flowing in one direction.
+
+[1:42]
+For example, damaged cables could cause this, or faulty connectors or transceivers, such as the SFP, small form factor pluggable transceivers, used for fiber optic connections.
+
+[1:54]
+In fact, unidirectional links are more common with fiber optic cables than copper UTP cables. Why is that? Let's see. As we covered back in the beginning of the course, fiber optic connections typically use two separate fibers as I've changed the diagram above to show.
+
+[2:12]
+The TX transmission side of switch one connects to the RX reception side of switch two. And the TX side of switch two connects to the RX side of switch one.
+
+[2:23]
+Although they are separate fibers, these two fibers are considered one cable connecting one interface on switch one to one interface on switch two and allowing both of them to send and receive data.
+
+[2:35]
+The problem is that if one fiber is damaged, it can disrupt data flow in one direction while the other remains unaffected. And on top of that, fiber optic cables are simply more vulnerable to physical damage than copper UTP cables.
+
+[2:50]
+If you bend a fiber cable too far, you'll hear a small snap and then the cable is dead. You won't be able to use it. Now for a fiber optic interface to be up up, both fibers must be connected and functional.
+
+[3:04]
+For example, look at this connection between two switches. They're connected by a fiber optic cable and the two fibers are connected on both sides. So the link lights are green.
+
+[3:14]
+So that's what a functional fiber optic connection looks like. If there is a problem with either fiber, the devices should be able to detect it and disable their interfaces.
+
+[3:25]
+So if you disconnect or cut this fiber, switch one and switch two should detect it and disable their interfaces. This doesn't result in a unidirectional link. The link is disabled entirely.
+
+[3:38]
+Let's take a look at that connection again. With one fiber disconnected, the link lights are now off. And after damaging the fiber, even if I connect it, the link lights remain off.
+
+[3:49]
+But not all physical problems preventing communication will be detected. And if the devices fail to detect the physical problem, it could result in a unidirectional link.
+
+[4:00]
+If there is a problem on one of these fibers that prevents data transmission, but the devices don't detect it, their interfaces will remain up up, and now we have a unidirectional link.
+
+[4:12]
+Switch one can transmit data to switch two, but data that switch two transmits can't reach switch one. They both think the connection is up and running, but actually it only works one way.
+
+[4:25]
+So, what's the problem with a unidirectional link? Before we cover loop guard, let's see the problem it solves. Loop guard doesn't prevent unidirectional links, but it can protect against the negative effect that a unidirectional link has on STP.
+
+[4:41]
+As you know by now, BPDU's originate from the root bridge and are forwarded out of designated ports like this every 2 seconds. And these BPDU's are how the switches share information with each other to determine the STP topology, which interfaces should be forwarding and which interfaces should be blocking.
+
+[5:00]
+In this network, switch 3 G01 is a non-designated port because it receives superior BPDU's from switch two. To keep the diagram simple, I didn't include any details, but this is either because switch two has a superior root cost or bridge ID compared to switch three.
+
+[5:18]
+But if the switch two switch three link becomes unidirectional and switch two's BPDU's can't reach switch three, what will happen? Let's assume there's a physical issue that prevents switch two's frames from reaching switch three, but doesn't cause the switches to actually disable their G01 interfaces. The switches don't detect the underlying physical issue.
+
+[5:38]
+Switch three, which no longer receives BPDU's from switch two, will assume there is no more loop in the LAN. After the max age timer expires, switch 3 G01 will become a designated port and start forwarding BPDU's to switch two.
+
+[5:54]
+And because switch three's BPDU's are inferior to switch two's, switch two simply ignores switch three's BPDU's. So, switch 2 G01 and switch 3 G01 are both in the forwarding state, meaning we have a loop from switch one to switch three to switch two.
+
+[6:11]
+Let's see how that loop works. If switch one receives a broadcast frame on one of its other interfaces, it will flood the frame towards switch two and switch three.
+
+[6:21]
+The frame flooded to switch two won't loop because of the unidirectional link. Switch two's frames can't reach switch three. But the frame flooded to switch three will loop around the three switches like this.
+
+[6:33]
+Each switch that receives it will flood it repeatedly. So, that's the problem with a unidirectional link in a LAN using STP. Switch 3 G01 stops receiving BPDU's, thinks it should become a designated port, and start forwarding frames, and then causes a loop.
+
+[6:50]
+It would be better if the hardware issue caused the link to go down entirely. In that case, switch two and switch three would both disable their G01 ports, and there would be no loop.
+
+[7:01]
+But how can we deal with a situation like this, where a hardware issue causes a unidirectional link? You guessed it. The answer is loop guard. So, finally, let's see how loop guard solves this problem.
+
+[7:14]
+As I said before, loop guard doesn't prevent physical unidirectional links, but provides a mechanism to detect unidirectional links, and then prevent layer two loops.
+
+[7:25]
+When a loop guard enabled port's max age timer counts down to zero, it doesn't become a designated port and start transitioning to the forwarding state.
+
+[7:34]
+Instead, it enters the broken loop inconsistent state. That probably sounds familiar. Like the broken root inconsistent state triggered by a root guard violation, this blocks the port.
+
+[7:47]
+Note that in both cases, whether it's root guard or loop guard, the port remains up up. So, the port isn't actually shut down, it's just that STP blocks it.
+
+[7:57]
+So, let's say loop guard is enabled on switch 3 G01 and the switch 2 switch 3 link is unidirectional, preventing switch 2's frames from reaching switch 3.
+
+[8:08]
+The max age timer on switch 3 G01 starts counting down. Normally, when it reaches zero, it will become a designated port and start transitioning to the forwarding state.
+
+[8:19]
+But, when loop guard is enabled, it enters the broken state, preventing a layer 2 loop from occurring. And like root guard, recovery is automatic. If the physical issue is solved and the broken port starts receiving BPDU's again, it will be automatically re-enabled.
+
+[8:37]
+So, how can we configure loop guard? Like the other features in the STP toolkit, the actual configurations are simple. It can be enabled in two ways.
+
+[8:47]
+The first is per port with spanning-tree guard loop in interface config mode. The second is by default in global config mode with spanning-tree loop guard default.
+
+[8:58]
+This enables loop guard on all ports by default. And then, you can use spanning-tree guard none in interface config mode to disable it on specific ports if needed.
+
+[9:09]
+Loop guard should typically be activated on any ports that aren't designated, root and non-designated ports. In other words, ports that are supposed to receive BPDU's from designated ports.
+
+[9:21]
+Then, if they stop receiving BPDU's, loop guard will disable them to prevent loops. Now, let's take a look at loop guard in the CLI. I enabled loop guard on switch 3's G01 port with spanning-tree guard loop.
+
+[9:36]
+In the output of show spanning tree interface detail, it says loop guard is enabled on the port. So, that's it. It just takes that one command to enable loop guard on a port.
+
+[9:47]
+But, before we see it in action, let's also see how it looks when you enable it by default. So, this time, instead of enabling it in interface config mode, I used spanning tree loop guard default to enable it in global config mode.
+
+[10:01]
+Then, the output of this command is basically the same, but it says by default at the end. Okay, now let's see what happens when loop guard blocks a port.
+
+[10:10]
+Currently, all links are operational, and switch 3 G01 is receiving BPDU's from switch 2. But, what if the link connecting them becomes unidirectional?
+
+[10:21]
+Well, this message is shown in the CLI. Loop guard blocking port Gigabit Ethernet 01. And in the output of show spanning tree, G01 status is BKN, and it also says loop inc.
+
+[10:35]
+As you probably guessed, BKN means broken, and loop inc. means loop inconsistent. The port is blocked because it stopped receiving BPDU's. Maybe there's a sharp bend in one of the fibers that degraded the signal, preventing switch 2's BPDU's from reaching switch 3.
+
+[10:53]
+But then, perhaps someone adjust the cable, and the data starts flowing again, and loop guard automatically unblocks the port because it starts receiving BPDU's again from switch 2.
+
+[11:05]
+As you can see here, G01 status is now blocking, not a broken, and it doesn't say loop inconsistent anymore. So, like root guard, loop guard automatically re-enables a port if the problem is fixed. You don't have to issue any commands to re-enable the port.
+
+[11:23]
+I've added another switch to this LAN, one that is not your switch. You don't have direct control over its configuration. Before we wrap up this video, let me point out something about Loop Guard and Root Guard.
+
+[11:36]
+These two features are mutually exclusive. And by that, I mean they can't be enabled on the same port at the same time. And that's because they basically serve opposite purposes.
+
+[11:47]
+Root Guard is meant to prevent designated ports from becoming root ports. If a Root Guard enabled designated port starts receiving superior BPDUs, it will be blocked.
+
+[11:58]
+And Loop Guard is meant to prevent non-designated or root ports from becoming designated ports. If a Loop Guard enabled port stops receiving BPDUs, it will be blocked.
+
+[12:09]
+So, looking at switch three in the network above, G0/0 and G0/1 should use Loop Guard, and G0/2 should use Root Guard. It doesn't make sense to configure the opposite.
+
+[12:21]
+For example, switch three G0/0 and G0/1 are supposed to receive BPDUs from switch one and switch two. If you configure Root Guard on them, they'll both be blocked, cutting off communication in the LAN.
+
+[12:35]
+Okay, so just remember that you can't enable both on an interface at the same time. How does that affect the configurations? If Loop Guard is configured on a port with spanning-tree guard loop, and you then configure Root Guard with spanning-tree guard root, Loop Guard will be disabled on the port. The Root Guard command will replace it.
+
+[12:55]
+And vice versa. If Root Guard is enabled on a port, and you then configure Loop Guard, Root Guard will be disabled. And if Loop Guard is enabled by default in global config mode, and you then configure Root Guard on a port, Loop Guard will be disabled on the port.
+
+[13:12]
+In other words, the more specific configuration takes effect. The interface command applies only to one interface. It's more specific than the global command, so the interface command takes effect.
+
+[13:25]
+This is true for many features in iOS. For example, it's the same for PortFast, BPDU Guard, and BPDU Filter. If you enable PortFast by default in global config mode, but then disable it on a specific interface, the interface command takes effect.
+
+[13:42]
+Remember that about iOS commands. Usually, the more specific command takes effect over the less specific command. Okay, let's summarize Loop Guard. Its purpose is to protect the network by blocking a port if it unexpectedly stops receiving BPDUs.
+
+[13:59]
+This could happen if, for example, there is a software bug preventing a switch from sending BPDUs, or if there is a hardware issue causing a unidirectional link.
+
+[14:10]
+A unidirectional link is a network link where data transmission occurs in only one direction. A normal link should be bidirectional, allowing communication in both directions.
+
+[14:20]
+A unidirectional link is typically caused by layer one issues on fiber optic cables. That's the most common scenario. If the connected devices don't detect the issue and disable their interfaces, it can result in a unidirectional link.
+
+[14:35]
+This prevents BPDUs from reaching the neighboring switch. And if a root or non-designated port stops receiving BPDUs, it will become a designated port, potentially causing a layer two loop.
+
+[14:47]
+Loop Guard's role is to protect against this. If a Loop Guard enabled port stops receiving BPDUs, it enters the broken loop inconsistent state, effectively disabling the port.
+
+[14:59]
+But if it starts receiving BPDUs again, it will be automatically re-enabled. There are two ways to configure it. The first is per port with spanning-tree guard loop in interface config mode.
+
+[15:12]
+The second is by default with spanning-tree loop guard default in global config mode. This enables it on all ports, but you can then use spanning-tree guard none to disable it on specific ports if needed.
+
+[15:26]
+It's similar to enabling port fast, BPDU guard, or BPDU filter by default, and then disabling them on individual ports. Final point. Loop guard and root guard are mutually exclusive, so they can't be active on the same port at the same time.
+
+[15:44]
+So, if loop guard is configured on a port, and you then configure root guard, loop guard will be disabled, and vice versa. And if loop guard is enabled by default, and you configure root guard on a port, loop guard will be disabled on the port.
+
+[15:59]
+Only one can be active at a time on each port. Okay, that's all for this video on loop guard. I hope it was helpful. Thanks for watching. Before finishing this video, let me thank my JCNP level channel members who support me through YouTube channel membership.
+
+[16:15]
+To become a member, please click the join button under the video. Thanks to Yonatan Macara, Velva Jacam, George, Nasir Chaudhry, Gustavo Macedo, Marcel Lord, Dragos Hirnea, Zakeeb Shah, Meer Salman, Vitaus 194, Mark Jackson, Bold 1C1U, Gerald Guilliam, Fristus 1207, Hector Hernandez, Arpad Konives 5Feet, Owad Daniel Brown, Jose Alvarez, Hussein Yavuz, Samuel Tavares, Roger Bratseth, Kevin Hayes, Brian Grant, Georgi Gemidjev, Cats for Life, Allison Pereira, Farad 69, Mad Mark 50484, Alexandru Stratan, Thiago Bicalho, DMJ2, Lucian Stoichitoiu, Kurt Nell, Steve Cox, Jasper Yim, Pedro Hartman, TrickyMicky123456, Ivano Capuano, Jefferson SteelFlex, Toxic, Wilmer Romero, Sinan Sarisin Ar, Daniel Andrade, Dragos George, Jairo Francisco, Filip Jovanovic, Trevor Goldman, Sunny Idegwu, Jeffrey C, Edify
+
+[17:18]
+Care, Dimitris, Michal Czapski, Himanth Jabalpuri, Darius D, Juan Morales, Gonzalo Nicolas, Doomed Soul, Christine Schubert, Julio Maya, Aggresso, Komlan Kapedani, Hashem Rodolphe, Anand Abyankar, Adekola Ismail Salami, Clyde Mukorobindo, Orlando Flores, Adrian Martinez, MD Danielwitz, Prashant M, Ray Enriquez, GG7, Toba Hedin, Arturo Rey Mejia, Vic Brandon Byers, MDS Electron Arzedjian, Raymond Kirby, G Gant, Henrietta Sauer, Yusuf Tasatan, Pablo Gauto, Omar Abdelfattah, Yukshika, Furkan Yelson, Uma Shankar Sharma, Philip Craton, Vishal Bansal, and 12062 Alfred.
+
+[18:06]
+Sorry if I pronounced your name incorrectly, but thank you so much for your support. Thanks to you and my other supporters, I am able to make these videos and release them for free on YouTube. So, I really appreciate the support.
+
+[18:19]
+Another great way to support the channel is to like the video, leave a comment, subscribe, and most importantly, share this video with others. So, if this video was helpful, I'd appreciate it if you did any of those.
+
+[18:32]
+Thanks for watching.
