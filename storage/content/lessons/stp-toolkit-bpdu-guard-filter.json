@@ -1,227 +1,586 @@
 {
-    "slug": "stp-toolkit-bpdu-guard-filter",
-    "title": "STP Toolkit: BPDU Guard and BPDU Filter",
-    "summary": "How an unauthorised switch on a PortFast port can hijack the STP topology, how BPDU Guard err-disables such ports, how to recover them manually or with errdisable recovery, and how BPDU Filter stops BPDUs being sent at all.",
-    "source_ref": "transcript_21_part_2.txt",
-    "order": 25,
-    "sections": [
-        {
-            "type": "explanation",
-            "title": "PortFast does not disable STP",
-            "order": 1,
-            "content": {
-                "body": "PortFast makes a port start in the forwarding state — but it **does not disable STP on the port**. A PortFast-enabled port still sends BPDUs every 2 seconds, exactly like a regular STP port. The PC on the other end does not run STP, so it simply ignores them, but the switch keeps sending.\n\n`show spanning-tree interface g0/1 detail` confirms it: PortFast is enabled, and the counters show the port has *sent* 77 BPDUs and *received* zero.\n\nBecause end hosts do not run STP, a PortFast port **should** never receive a BPDU. But what if it does?\n\n**If a PortFast-enabled port receives an STP BPDU, it reverts to acting like a regular STP port without PortFast.** If the neighbour has a lower Bridge ID — say priority 4096 against the local 32768 — that neighbour becomes the root bridge and the local port becomes a root port."
+  "slug": "stp-toolkit-bpdu-guard-filter",
+  "title": "STP Toolkit: BPDU Guard and BPDU Filter",
+  "summary": "How an unauthorised switch on a PortFast port can hijack the STP topology, how BPDU Guard err-disables such ports, how to recover them manually or with errdisable recovery, and how BPDU Filter stops BPDUs being sent at all.",
+  "source_ref": "transcript_21_part_2.txt",
+  "order": 25,
+  "sections": [
+    {
+      "type": "explanation",
+      "title": "PortFast does not disable STP",
+      "order": 1,
+      "content": {
+        "body": "PortFast makes a port start in the forwarding state — but it **does not disable STP on the port**. A PortFast-enabled port still sends BPDUs every 2 seconds, exactly like a regular STP port. The PC on the other end does not run STP, so it simply ignores them, but the switch keeps sending.\n\n`show spanning-tree interface g0/1 detail` confirms it: PortFast is enabled, and the counters show the port has *sent* 77 BPDUs and *received* zero.\n\nBecause end hosts do not run STP, a PortFast port **should** never receive a BPDU. But what if it does?\n\n**If a PortFast-enabled port receives an STP BPDU, it reverts to acting like a regular STP port without PortFast.** If the neighbour has a lower Bridge ID — say priority 4096 against the local 32768 — that neighbour becomes the root bridge and the local port becomes a root port."
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "Bob from accounting",
+      "order": 2,
+      "content": {
+        "body": "A simple LAN of three switches: SW1 is the root bridge with all designated ports, SW2 and SW3 each have a root port toward SW1, and the SW2–SW3 link is blocked.\n\nUsers do not normally plug straight into a switch. There is a **wall jack** in the office; the switch connects to the jack, and so does the user's device.\n\nBob from accounting is tired of walking to the printer, so he brings his own printer to work. The Wi-Fi is slow, so he also wants his laptop on the wired network. But the wall jack has only one port.\n\nInstead of raising a ticket with IT, Bob brings an old switch from home and connects it to the jack, then plugs his devices into it. Problem solved — for Bob.\n\nBut Bob's switch and SW3 now exchange BPDUs. **What if Bob's switch has a lower Bridge ID and becomes the root bridge?** Every switch's root port now points toward Bob's switch, and the SW1–SW2 link is blocked.\n\nThis matters. SW1 may have been chosen as root precisely because it connects to the LAN's router — making every switch's path to the router efficient. Now SW2's best path is blocked and its hosts must detour via SW3. Not a disaster, but an unauthorised user device should never influence the network."
+      }
+    },
+    {
+      "type": "animation",
+      "title": "An unauthorised switch hijacks the root bridge",
+      "order": 3,
+      "content": {
+        "diagram_type": "topology",
+        "nodes": [
+          {
+            "id": "r1",
+            "label": "R1",
+            "icon": "router",
+            "x": 430,
+            "y": 60
+          },
+          {
+            "id": "sw1",
+            "label": "SW1\nroot",
+            "icon": "switch",
+            "x": 430,
+            "y": 200
+          },
+          {
+            "id": "sw2",
+            "label": "SW2",
+            "icon": "switch",
+            "x": 190,
+            "y": 350
+          },
+          {
+            "id": "sw3",
+            "label": "SW3",
+            "icon": "switch",
+            "x": 670,
+            "y": 350
+          },
+          {
+            "id": "bob",
+            "label": "Bob's switch\npriority 4096",
+            "icon": "switch",
+            "x": 900,
+            "y": 470
+          }
+        ],
+        "links": [
+          {
+            "from": "r1",
+            "to": "sw1",
+            "kind": "ethernet"
+          },
+          {
+            "from": "sw1",
+            "to": "sw2",
+            "kind": "ethernet"
+          },
+          {
+            "from": "sw1",
+            "to": "sw3",
+            "kind": "ethernet"
+          },
+          {
+            "from": "sw2",
+            "to": "sw3",
+            "kind": "ethernet"
+          },
+          {
+            "from": "sw3",
+            "to": "bob",
+            "kind": "ethernet"
+          }
+        ],
+        "steps": [
+          {
+            "narration": "Normal state: SW1 is the root bridge, chosen because it connects to the router. SW2 and SW3 point their root ports at SW1, and the SW2–SW3 link is blocked.",
+            "animate": {
+              "highlight": [
+                "sw1",
+                "r1"
+              ],
+              "status": "ok"
             }
-        },
-        {
-            "type": "explanation",
-            "title": "Bob from accounting",
-            "order": 2,
-            "content": {
-                "body": "A simple LAN of three switches: SW1 is the root bridge with all designated ports, SW2 and SW3 each have a root port toward SW1, and the SW2–SW3 link is blocked.\n\nUsers do not normally plug straight into a switch. There is a **wall jack** in the office; the switch connects to the jack, and so does the user's device.\n\nBob from accounting is tired of walking to the printer, so he brings his own printer to work. The Wi-Fi is slow, so he also wants his laptop on the wired network. But the wall jack has only one port.\n\nInstead of raising a ticket with IT, Bob brings an old switch from home and connects it to the jack, then plugs his devices into it. Problem solved — for Bob.\n\nBut Bob's switch and SW3 now exchange BPDUs. **What if Bob's switch has a lower Bridge ID and becomes the root bridge?** Every switch's root port now points toward Bob's switch, and the SW1–SW2 link is blocked.\n\nThis matters. SW1 may have been chosen as root precisely because it connects to the LAN's router — making every switch's path to the router efficient. Now SW2's best path is blocked and its hosts must detour via SW3. Not a disaster, but an unauthorised user device should never influence the network."
+          },
+          {
+            "narration": "Bob plugs his home switch into the wall jack on SW3's G0/1 — a PortFast access port meant for end hosts.",
+            "animate": {
+              "packet_from": "bob",
+              "packet_to": "sw3",
+              "label": "connect",
+              "highlight": [
+                "bob"
+              ]
             }
-        },
-        {
-            "type": "animation",
-            "title": "An unauthorised switch hijacks the root bridge",
-            "order": 3,
-            "content": {
-                "diagram_type": "topology",
-                "nodes": [
-                    {"id": "r1", "label": "R1", "icon": "router", "x": 430, "y": 60},
-                    {"id": "sw1", "label": "SW1\nroot", "icon": "switch", "x": 430, "y": 200},
-                    {"id": "sw2", "label": "SW2", "icon": "switch", "x": 190, "y": 350},
-                    {"id": "sw3", "label": "SW3", "icon": "switch", "x": 670, "y": 350},
-                    {"id": "bob", "label": "Bob's switch\npriority 4096", "icon": "switch", "x": 900, "y": 470}
-                ],
-                "links": [
-                    {"from": "r1", "to": "sw1", "kind": "ethernet"},
-                    {"from": "sw1", "to": "sw2", "kind": "ethernet"},
-                    {"from": "sw1", "to": "sw3", "kind": "ethernet"},
-                    {"from": "sw2", "to": "sw3", "kind": "ethernet"},
-                    {"from": "sw3", "to": "bob", "kind": "ethernet"}
-                ],
-                "steps": [
-                    {
-                        "narration": "Normal state: SW1 is the root bridge, chosen because it connects to the router. SW2 and SW3 point their root ports at SW1, and the SW2–SW3 link is blocked.",
-                        "animate": {"highlight": ["sw1", "r1"], "status": "ok"}
-                    },
-                    {
-                        "narration": "Bob plugs his home switch into the wall jack on SW3's G0/1 — a PortFast access port meant for end hosts.",
-                        "animate": {"packet_from": "bob", "packet_to": "sw3", "label": "connect", "highlight": ["bob"]}
-                    },
-                    {
-                        "narration": "Bob's switch assumes it is the root bridge and sends BPDUs. SW3's PortFast port receives one and immediately reverts to normal STP behaviour.",
-                        "animate": {"packet_from": "bob", "packet_to": "sw3", "label": "BPDU", "status": "fail", "highlight": ["sw3"]}
-                    },
-                    {
-                        "narration": "Bob's switch has priority 4096 — lower than everything else. It wins the election and becomes the root bridge for the whole LAN.",
-                        "animate": {"flood": true, "packet_from": "bob", "label": "superior", "status": "fail", "highlight": ["bob", "sw1", "sw2", "sw3"]}
-                    },
-                    {
-                        "narration": "Every root port now points toward Bob's switch and the SW1–SW2 link is blocked. SW2's traffic to the router must detour through SW3.",
-                        "animate": {"packet_from": "sw2", "packet_to": "sw3", "label": "detour", "status": "fail", "highlight": ["sw2", "sw3"]}
-                    },
-                    {
-                        "narration": "With BPDU Guard on SW3's G0/1, the first BPDU from Bob's switch instead puts the port straight into err-disabled. The topology is untouched — and Bob comes to complain that the internet is broken.",
-                        "animate": {"packet_from": "bob", "packet_to": "sw3", "label": "err-disable", "status": "fail", "highlight": ["sw3", "bob"]}
-                    }
-                ]
+          },
+          {
+            "narration": "Bob's switch assumes it is the root bridge and sends BPDUs. SW3's PortFast port receives one and immediately reverts to normal STP behaviour.",
+            "animate": {
+              "packet_from": "bob",
+              "packet_to": "sw3",
+              "label": "BPDU",
+              "status": "fail",
+              "highlight": [
+                "sw3"
+              ]
             }
-        },
-        {
-            "type": "explanation",
-            "title": "BPDU Guard",
-            "order": 4,
-            "content": {
-                "body": "**BPDU Guard protects the network from unauthorised switches being connected to ports intended for end hosts.**\n\nA BPDU Guard-enabled port **continues to send** BPDUs, but **if it receives one, the port enters the err-disabled state** — it can no longer send or receive data or BPDUs.\n\nIt can be configured separately from PortFast, but the two are normally used together since both enhance STP on host-facing ports.\n\n**Per port:**\n\n```\nSW3(config-if)# spanning-tree bpduguard enable\n```\n\n**Globally:**\n\n```\nSW3(config)# spanning-tree portfast bpduguard default\n```\n\nIn modern IOS you may optionally add the `edge` keyword; either way the device adds it to the configuration.\n\nTo turn it off on a specific port afterwards:\n\n```\nSW3(config-if)# spanning-tree bpduguard disable\n```\n\nVerify with `show spanning-tree interface g0/1 detail`, which reports BPDU Guard as enabled (or \"enabled by default\")."
+          },
+          {
+            "narration": "Bob's switch has priority 4096 — lower than everything else. It wins the election and becomes the root bridge for the whole LAN.",
+            "animate": {
+              "flood": true,
+              "packet_from": "bob",
+              "label": "superior",
+              "status": "fail",
+              "highlight": [
+                "bob",
+                "sw1",
+                "sw2",
+                "sw3"
+              ]
             }
-        },
-        {
-            "type": "callout",
-            "title": "Exam tip",
-            "order": 5,
-            "content": {
-                "body": "Note the difference carefully — it is very testable. `spanning-tree portfast default` activates PortFast on all ACCESS ports. `spanning-tree portfast bpduguard default` activates BPDU Guard on all PORTFAST-ENABLED ports, which is not necessarily the same set.",
-                "style": "exam_tip"
+          },
+          {
+            "narration": "Every root port now points toward Bob's switch and the SW1–SW2 link is blocked. SW2's traffic to the router must detour through SW3.",
+            "animate": {
+              "packet_from": "sw2",
+              "packet_to": "sw3",
+              "label": "detour",
+              "status": "fail",
+              "highlight": [
+                "sw2",
+                "sw3"
+              ]
             }
-        },
-        {
-            "type": "explanation",
-            "title": "Err-disabled and recovery",
-            "order": 6,
-            "content": {
-                "body": "When BPDU Guard fires, the CLI shows:\n\n```\n%SPANTREE-2-BLOCK_BPDUGUARD: Received BPDU on port GigabitEthernet0/1 with BPDU Guard enabled. Disabling port.\n%PM-4-ERR_DISABLE: bpduguard error detected on Gi0/1, putting Gi0/1 in err-disable state\n%LINK-3-UPDOWN: Interface GigabitEthernet0/1, changed state to down\n```\n\n`show interfaces g0/1` then reports the interface as **err-disabled**.\n\n**Err-disable** is a Cisco switch feature that disables a port under certain conditions. A BPDU Guard violation is one; later in the course you will meet power policing violations, **port security** violations, and **DAI** (Dynamic ARP Inspection) violations.\n\n**On real hardware:** the link light turns **solid amber** immediately on connecting. Even if you unplug the cable, the solid amber light stays on — normally the light goes off when a cable is removed, so a persistent amber light signals err-disabled.\n\n**Two ways to re-enable the port**\n\n1. **Manually** — `shutdown` then `no shutdown` on the interface.\n2. **Automatically** — **errdisable recovery**, which re-enables the port after a timer.\n\n```\nSW3# show errdisable recovery\nSW3(config)# errdisable recovery cause bpduguard\nSW3(config)# errdisable recovery interval 300\n```\n\n`show errdisable recovery` lists every err-disable reason and its status. Errdisable recovery is **disabled by default** for all causes, and the default timer is **300 seconds (5 minutes)**. Once enabled, the affected interface is listed at the bottom of the output with a countdown until it is re-enabled.\n\n**Either way, fix the underlying problem first.** If Bob's switch is still plugged in, the port will be err-disabled again the moment the next BPDU arrives."
+          },
+          {
+            "narration": "With BPDU Guard on SW3's G0/1, the first BPDU from Bob's switch instead puts the port straight into err-disabled. The topology is untouched — and Bob comes to complain that the internet is broken.",
+            "animate": {
+              "packet_from": "bob",
+              "packet_to": "sw3",
+              "label": "err-disable",
+              "status": "fail",
+              "highlight": [
+                "sw3",
+                "bob"
+              ]
             }
-        },
-        {
-            "type": "explanation",
-            "title": "BPDU Filter",
-            "order": 7,
-            "content": {
-                "body": "A switch port connected to an end host keeps sending BPDUs every 2 seconds regardless of whether PortFast and BPDU Guard are enabled. Bob's PC ignores them, but SW3 keeps sending.\n\nIf the port does not connect to a switch, sending BPDUs is both unnecessary and undesirable:\n\n- It uses a small amount of bandwidth and switch processing — minimal, but pointless.\n- BPDUs **contain information about the LAN's STP topology**. Where security matters, that information should not be sent to user devices.\n\n**BPDU Filter stops a port from sending BPDUs.** Unlike BPDU Guard, it does *not* err-disable the port when a BPDU arrives — and crucially, **what happens on receipt depends on how you configured it**.\n\n**Per port:**\n\n```\nSW3(config-if)# spanning-tree bpdufilter enable\n```\n\nThe port sends no BPDUs **and ignores any BPDUs it receives**. This effectively **disables STP on the port**.\n\n**Globally:**\n\n```\nSW3(config)# spanning-tree portfast bpdufilter default\n```\n\nActivated on all **PortFast-enabled** ports. The port sends no BPDUs — but **if it receives one, PortFast and BPDU Filter are both disabled and the port operates as a normal STP port.** This is the best of both worlds: quiet under normal conditions, but able to react properly to a real BPDU.\n\nDisable on specific ports with `spanning-tree bpdufilter disable`."
-            }
-        },
-        {
-            "type": "callout",
-            "title": "Warning",
-            "order": 8,
-            "content": {
-                "body": "PortFast on the wrong port can cause a TEMPORARY Layer 2 loop. BPDU Filter enabled per-port on the wrong port can cause a PERMANENT Layer 2 loop — a very effective way to trigger a broadcast storm and bring the network down. Only enable BPDU Filter globally in `spanning-tree portfast bpdufilter default` form unless you have a very good reason not to.",
-                "style": "warning"
-            }
-        },
-        {
-            "type": "table",
-            "title": "BPDU Guard and BPDU Filter together on one port",
-            "order": 9,
-            "content": {
-                "headers": ["BPDU Filter configured...", "Port receives a BPDU", "Result"],
-                "rows": [
-                    ["Globally (`spanning-tree portfast bpdufilter default`)", "BPDU Filter is disabled, BPDU Guard triggers", "The interface is **err-disabled** — the safe outcome"],
-                    ["Per port (`spanning-tree bpdufilter enable`)", "The BPDU is ignored, BPDU Guard never triggers", "**BPDU Guard has no effect at all** — another reason to prefer the global form"]
-                ]
-            }
-        },
-        {
-            "type": "table",
-            "title": "Command summary",
-            "order": 10,
-            "content": {
-                "headers": ["Command", "Mode", "Effect"],
-                "rows": [
-                    ["`spanning-tree bpduguard enable`", "Interface", "BPDU Guard on this port"],
-                    ["`spanning-tree portfast bpduguard default`", "Global", "BPDU Guard on all **PortFast-enabled** ports"],
-                    ["`spanning-tree bpduguard disable`", "Interface", "Turns it off on this port"],
-                    ["`spanning-tree bpdufilter enable`", "Interface", "No BPDUs sent, received BPDUs **ignored** — STP effectively off. Risky"],
-                    ["`spanning-tree portfast bpdufilter default`", "Global", "No BPDUs sent on PortFast ports; on receipt, reverts to normal STP"],
-                    ["`spanning-tree bpdufilter disable`", "Interface", "Turns it off on this port"],
-                    ["`show errdisable recovery`", "Exec", "Lists err-disable causes, their status and the recovery timer"],
-                    ["`errdisable recovery cause bpduguard`", "Global", "Auto re-enable ports disabled by BPDU Guard"],
-                    ["`errdisable recovery interval 300`", "Global", "Change the recovery timer (default 300 seconds)"]
-                ]
-            }
-        }
-    ],
-    "quiz": {
-        "questions": [
-            {
-                "order": 1,
-                "question": "What happens when a PortFast-enabled port (without BPDU Guard) receives a BPDU?",
-                "explanation": "PortFast does not disable STP. On receiving a BPDU the port reverts to acting like a normal STP port — which means an unauthorised switch can influence, or even take over, the STP topology.",
-                "options": [
-                    {"label": "A", "text": "The port is err-disabled", "is_correct": false},
-                    {"label": "B", "text": "The BPDU is silently ignored", "is_correct": false},
-                    {"label": "C", "text": "The port reverts to operating as a regular STP port", "is_correct": true},
-                    {"label": "D", "text": "The port shuts down until manually reset", "is_correct": false}
-                ]
-            },
-            {
-                "order": 2,
-                "question": "`spanning-tree portfast bpduguard default` is issued in global configuration mode. On which ports is BPDU Guard activated?",
-                "explanation": "Unlike `spanning-tree portfast default`, which covers all access ports, the BPDU Guard default command activates it on all PortFast-enabled ports.",
-                "options": [
-                    {"label": "A", "text": "All access ports", "is_correct": false},
-                    {"label": "B", "text": "All PortFast-enabled ports", "is_correct": true},
-                    {"label": "C", "text": "All ports, including trunks", "is_correct": false},
-                    {"label": "D", "text": "All trunk ports", "is_correct": false}
-                ]
-            },
-            {
-                "order": 3,
-                "question": "What are the TWO ways to re-enable a port that BPDU Guard has err-disabled?",
-                "explanation": "Either `shutdown` followed by `no shutdown` manually, or enable errdisable recovery for the bpduguard cause so the port is re-enabled automatically after the timer (300 seconds by default).",
-                "options": [
-                    {"label": "A", "text": "`shutdown` then `no shutdown` on the interface", "is_correct": true},
-                    {"label": "B", "text": "Disconnect and reconnect the cable", "is_correct": false},
-                    {"label": "C", "text": "`errdisable recovery cause bpduguard`", "is_correct": true},
-                    {"label": "D", "text": "`clear spanning-tree detected-protocols`", "is_correct": false}
-                ]
-            },
-            {
-                "order": 4,
-                "question": "Is errdisable recovery enabled by default, and what is the default timer?",
-                "explanation": "Errdisable recovery is disabled by default for every cause. When enabled, the default recovery interval is 300 seconds — 5 minutes.",
-                "options": [
-                    {"label": "A", "text": "Enabled by default, 30 seconds", "is_correct": false},
-                    {"label": "B", "text": "Disabled by default, 300 seconds when enabled", "is_correct": true},
-                    {"label": "C", "text": "Enabled by default, 300 seconds", "is_correct": false},
-                    {"label": "D", "text": "Disabled by default, 30 seconds when enabled", "is_correct": false}
-                ]
-            },
-            {
-                "order": 5,
-                "question": "You configure `spanning-tree bpdufilter enable` on an interface. What happens if that port receives a BPDU?",
-                "explanation": "The per-port form makes the port ignore received BPDUs entirely, which effectively disables STP on that port. If it is connected to a switch, a permanent Layer 2 loop can result.",
-                "options": [
-                    {"label": "A", "text": "The port is err-disabled", "is_correct": false},
-                    {"label": "B", "text": "The BPDU is ignored — STP is effectively disabled on the port", "is_correct": true},
-                    {"label": "C", "text": "PortFast is disabled and the port becomes a normal STP port", "is_correct": false},
-                    {"label": "D", "text": "The BPDU is forwarded to the neighbour switch", "is_correct": false}
-                ]
-            },
-            {
-                "order": 6,
-                "question": "BPDU Guard and a globally-configured BPDU Filter are both active on a port that receives a BPDU. What happens?",
-                "explanation": "With BPDU Filter enabled globally, receiving a BPDU disables BPDU Filter, which lets BPDU Guard trigger and err-disable the interface. Configured per port instead, the BPDU would be ignored and BPDU Guard would never fire.",
-                "options": [
-                    {"label": "A", "text": "The BPDU is ignored and nothing happens", "is_correct": false},
-                    {"label": "B", "text": "BPDU Filter is disabled and BPDU Guard err-disables the interface", "is_correct": true},
-                    {"label": "C", "text": "The port becomes a trunk", "is_correct": false},
-                    {"label": "D", "text": "The port enters the Listening state", "is_correct": false}
-                ]
-            },
-            {
-                "order": 7,
-                "question": "Why is sending BPDUs to end hosts undesirable, aside from the minor bandwidth cost?",
-                "explanation": "BPDUs contain information about the LAN's STP topology. Where security matters, that information should not be exposed to user devices. BPDU Filter stops the port sending them.",
-                "options": [
-                    {"label": "A", "text": "Hosts respond with their own BPDUs", "is_correct": false},
-                    {"label": "B", "text": "BPDUs reveal the LAN's STP topology to user devices", "is_correct": true},
-                    {"label": "C", "text": "They prevent the port from reaching the forwarding state", "is_correct": false},
-                    {"label": "D", "text": "They cause MAC address flapping", "is_correct": false}
-                ]
-            }
+          }
         ]
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "BPDU Guard",
+      "order": 4,
+      "content": {
+        "body": "**BPDU Guard protects the network from unauthorised switches being connected to ports intended for end hosts.**\n\nA BPDU Guard-enabled port **continues to send** BPDUs, but **if it receives one, the port enters the err-disabled state** — it can no longer send or receive data or BPDUs.\n\nIt can be configured separately from PortFast, but the two are normally used together since both enhance STP on host-facing ports.\n\n**Per port:**\n\n```\nSW3(config-if)# spanning-tree bpduguard enable\n```\n\n**Globally:**\n\n```\nSW3(config)# spanning-tree portfast bpduguard default\n```\n\nIn modern IOS you may optionally add the `edge` keyword; either way the device adds it to the configuration.\n\nTo turn it off on a specific port afterwards:\n\n```\nSW3(config-if)# spanning-tree bpduguard disable\n```\n\nVerify with `show spanning-tree interface g0/1 detail`, which reports BPDU Guard as enabled (or \"enabled by default\")."
+      }
+    },
+    {
+      "type": "callout",
+      "title": "Exam tip",
+      "order": 5,
+      "content": {
+        "body": "Note the difference carefully — it is very testable. `spanning-tree portfast default` activates PortFast on all ACCESS ports. `spanning-tree portfast bpduguard default` activates BPDU Guard on all PORTFAST-ENABLED ports, which is not necessarily the same set.",
+        "style": "exam_tip"
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "Err-disabled and recovery",
+      "order": 6,
+      "content": {
+        "body": "When BPDU Guard fires, the CLI shows:\n\n```\n%SPANTREE-2-BLOCK_BPDUGUARD: Received BPDU on port GigabitEthernet0/1 with BPDU Guard enabled. Disabling port.\n%PM-4-ERR_DISABLE: bpduguard error detected on Gi0/1, putting Gi0/1 in err-disable state\n%LINK-3-UPDOWN: Interface GigabitEthernet0/1, changed state to down\n```\n\n`show interfaces g0/1` then reports the interface as **err-disabled**.\n\n**Err-disable** is a Cisco switch feature that disables a port under certain conditions. A BPDU Guard violation is one; later in the course you will meet power policing violations, **port security** violations, and **DAI** (Dynamic ARP Inspection) violations.\n\n**On real hardware:** the link light turns **solid amber** immediately on connecting. Even if you unplug the cable, the solid amber light stays on — normally the light goes off when a cable is removed, so a persistent amber light signals err-disabled.\n\n**Two ways to re-enable the port**\n\n1. **Manually** — `shutdown` then `no shutdown` on the interface.\n2. **Automatically** — **errdisable recovery**, which re-enables the port after a timer.\n\n```\nSW3# show errdisable recovery\nSW3(config)# errdisable recovery cause bpduguard\nSW3(config)# errdisable recovery interval 300\n```\n\n`show errdisable recovery` lists every err-disable reason and its status. Errdisable recovery is **disabled by default** for all causes, and the default timer is **300 seconds (5 minutes)**. Once enabled, the affected interface is listed at the bottom of the output with a countdown until it is re-enabled.\n\n**Either way, fix the underlying problem first.** If Bob's switch is still plugged in, the port will be err-disabled again the moment the next BPDU arrives."
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "BPDU Filter",
+      "order": 7,
+      "content": {
+        "body": "A switch port connected to an end host keeps sending BPDUs every 2 seconds regardless of whether PortFast and BPDU Guard are enabled. Bob's PC ignores them, but SW3 keeps sending.\n\nIf the port does not connect to a switch, sending BPDUs is both unnecessary and undesirable:\n\n- It uses a small amount of bandwidth and switch processing — minimal, but pointless.\n- BPDUs **contain information about the LAN's STP topology**. Where security matters, that information should not be sent to user devices.\n\n**BPDU Filter stops a port from sending BPDUs.** Unlike BPDU Guard, it does *not* err-disable the port when a BPDU arrives — and crucially, **what happens on receipt depends on how you configured it**.\n\n**Per port:**\n\n```\nSW3(config-if)# spanning-tree bpdufilter enable\n```\n\nThe port sends no BPDUs **and ignores any BPDUs it receives**. This effectively **disables STP on the port**.\n\n**Globally:**\n\n```\nSW3(config)# spanning-tree portfast bpdufilter default\n```\n\nActivated on all **PortFast-enabled** ports. The port sends no BPDUs — but **if it receives one, PortFast and BPDU Filter are both disabled and the port operates as a normal STP port.** This is the best of both worlds: quiet under normal conditions, but able to react properly to a real BPDU.\n\nDisable on specific ports with `spanning-tree bpdufilter disable`."
+      }
+    },
+    {
+      "type": "callout",
+      "title": "Warning",
+      "order": 8,
+      "content": {
+        "body": "PortFast on the wrong port can cause a TEMPORARY Layer 2 loop. BPDU Filter enabled per-port on the wrong port can cause a PERMANENT Layer 2 loop — a very effective way to trigger a broadcast storm and bring the network down. Only enable BPDU Filter globally in `spanning-tree portfast bpdufilter default` form unless you have a very good reason not to.",
+        "style": "warning"
+      }
+    },
+    {
+      "type": "table",
+      "title": "BPDU Guard and BPDU Filter together on one port",
+      "order": 9,
+      "content": {
+        "headers": [
+          "BPDU Filter configured...",
+          "Port receives a BPDU",
+          "Result"
+        ],
+        "rows": [
+          [
+            "Globally (`spanning-tree portfast bpdufilter default`)",
+            "BPDU Filter is disabled, BPDU Guard triggers",
+            "The interface is **err-disabled** — the safe outcome"
+          ],
+          [
+            "Per port (`spanning-tree bpdufilter enable`)",
+            "The BPDU is ignored, BPDU Guard never triggers",
+            "**BPDU Guard has no effect at all** — another reason to prefer the global form"
+          ]
+        ]
+      }
+    },
+    {
+      "type": "table",
+      "title": "Command summary",
+      "order": 10,
+      "content": {
+        "headers": [
+          "Command",
+          "Mode",
+          "Effect"
+        ],
+        "rows": [
+          [
+            "`spanning-tree bpduguard enable`",
+            "Interface",
+            "BPDU Guard on this port"
+          ],
+          [
+            "`spanning-tree portfast bpduguard default`",
+            "Global",
+            "BPDU Guard on all **PortFast-enabled** ports"
+          ],
+          [
+            "`spanning-tree bpduguard disable`",
+            "Interface",
+            "Turns it off on this port"
+          ],
+          [
+            "`spanning-tree bpdufilter enable`",
+            "Interface",
+            "No BPDUs sent, received BPDUs **ignored** — STP effectively off. Risky"
+          ],
+          [
+            "`spanning-tree portfast bpdufilter default`",
+            "Global",
+            "No BPDUs sent on PortFast ports; on receipt, reverts to normal STP"
+          ],
+          [
+            "`spanning-tree bpdufilter disable`",
+            "Interface",
+            "Turns it off on this port"
+          ],
+          [
+            "`show errdisable recovery`",
+            "Exec",
+            "Lists err-disable causes, their status and the recovery timer"
+          ],
+          [
+            "`errdisable recovery cause bpduguard`",
+            "Global",
+            "Auto re-enable ports disabled by BPDU Guard"
+          ],
+          [
+            "`errdisable recovery interval 300`",
+            "Global",
+            "Change the recovery timer (default 300 seconds)"
+          ]
+        ]
+      }
+    },
+    {
+      "order": 11,
+      "type": "commands",
+      "title": "Command reference: BPDU Guard and BPDU Filter",
+      "content": {
+        "commands": [
+          {
+            "command": "spanning-tree bpduguard enable",
+            "mode": "interface config",
+            "syntax": "spanning-tree bpduguard enable",
+            "example": "SW3(config)# interface g0/1\nSW3(config-if)# spanning-tree bpduguard enable",
+            "description": "Enables BPDU Guard on one interface. If that port ever receives a BPDU, it is immediately put into the err-disabled state.",
+            "note": "This protects against someone plugging a rogue switch into a host port and hijacking the root bridge role.",
+            "group": "BPDU Guard"
+          },
+          {
+            "command": "spanning-tree portfast bpduguard default",
+            "mode": "global config",
+            "syntax": "spanning-tree portfast bpduguard default",
+            "example": "SW3(config)# spanning-tree portfast bpduguard default",
+            "description": "Enables BPDU Guard on all PortFast-enabled ports.",
+            "note": "Exam trap: this applies to PortFast-enabled ports, not to all access ports. Note the asymmetry — the interface command does not mention portfast, but the global one does.",
+            "group": "BPDU Guard"
+          },
+          {
+            "command": "spanning-tree bpduguard disable",
+            "mode": "interface config",
+            "syntax": "spanning-tree bpduguard disable",
+            "example": "SW3(config-if)# spanning-tree bpduguard disable",
+            "description": "Turns BPDU Guard off on one port after it has been enabled globally.",
+            "group": "BPDU Guard"
+          },
+          {
+            "command": "shutdown / no shutdown",
+            "mode": "interface config",
+            "syntax": "shutdown\nno shutdown",
+            "example": "SW3(config-if)# shutdown\nSW3(config-if)# no shutdown",
+            "description": "The manual way to recover a port from the err-disabled state, once the cause has been removed.",
+            "note": "On real hardware an err-disabled port shows a solid amber light that stays lit even after the cable is unplugged.",
+            "group": "Recovering an err-disabled port"
+          },
+          {
+            "command": "errdisable recovery cause",
+            "mode": "global config",
+            "syntax": "errdisable recovery cause <cause>",
+            "example": "SW3(config)# errdisable recovery cause bpduguard",
+            "description": "Enables automatic recovery for a given err-disable cause, so the port is re-enabled by itself after a timer.",
+            "note": "Automatic recovery is disabled by default for every cause. Other causes include power policing, port security and DAI violations.",
+            "group": "Recovering an err-disabled port"
+          },
+          {
+            "command": "errdisable recovery interval",
+            "mode": "global config",
+            "syntax": "errdisable recovery interval <seconds>",
+            "example": "SW3(config)# errdisable recovery interval 300",
+            "description": "Sets how long the switch waits before re-enabling an err-disabled port. The default is 300 seconds.",
+            "group": "Recovering an err-disabled port"
+          },
+          {
+            "command": "show errdisable recovery",
+            "mode": "privileged EXEC",
+            "syntax": "show errdisable recovery",
+            "example": "SW3# show errdisable recovery",
+            "description": "Lists every err-disable cause, whether automatic recovery is enabled for it, and the current recovery timer.",
+            "group": "Recovering an err-disabled port"
+          },
+          {
+            "command": "spanning-tree bpdufilter enable",
+            "mode": "interface config",
+            "syntax": "spanning-tree bpdufilter enable",
+            "example": "SW3(config-if)# spanning-tree bpdufilter enable",
+            "description": "Stops the port sending BPDUs and makes it ignore any BPDUs it receives — effectively disabling STP on that port.",
+            "note": "Dangerous: because received BPDUs are ignored, a switch plugged into this port can create a permanent Layer 2 loop. It also prevents BPDU Guard from ever firing.",
+            "group": "BPDU Filter"
+          },
+          {
+            "command": "spanning-tree portfast bpdufilter default",
+            "mode": "global config",
+            "syntax": "spanning-tree portfast bpdufilter default",
+            "example": "SW3(config)# spanning-tree portfast bpdufilter default",
+            "description": "Enables BPDU Filter on all PortFast ports, but with safer behaviour: if such a port receives a BPDU, PortFast and BPDU Filter are both switched off and the port reverts to being a normal STP port.",
+            "note": "This is the recommended form — quiet under normal conditions, but still able to react to a real switch.",
+            "group": "BPDU Filter"
+          },
+          {
+            "command": "spanning-tree bpdufilter disable",
+            "mode": "interface config",
+            "syntax": "spanning-tree bpdufilter disable",
+            "example": "SW3(config-if)# spanning-tree bpdufilter disable",
+            "description": "Turns BPDU Filter off on a specific port after enabling it globally.",
+            "group": "BPDU Filter"
+          }
+        ]
+      }
     }
+  ],
+  "quiz": {
+    "questions": [
+      {
+        "order": 1,
+        "question": "What happens when a PortFast-enabled port (without BPDU Guard) receives a BPDU?",
+        "explanation": "PortFast does not disable STP. On receiving a BPDU the port reverts to acting like a normal STP port — which means an unauthorised switch can influence, or even take over, the STP topology.",
+        "options": [
+          {
+            "label": "A",
+            "text": "The port is err-disabled",
+            "is_correct": false
+          },
+          {
+            "label": "B",
+            "text": "The BPDU is silently ignored",
+            "is_correct": false
+          },
+          {
+            "label": "C",
+            "text": "The port reverts to operating as a regular STP port",
+            "is_correct": true
+          },
+          {
+            "label": "D",
+            "text": "The port shuts down until manually reset",
+            "is_correct": false
+          }
+        ]
+      },
+      {
+        "order": 2,
+        "question": "`spanning-tree portfast bpduguard default` is issued in global configuration mode. On which ports is BPDU Guard activated?",
+        "explanation": "Unlike `spanning-tree portfast default`, which covers all access ports, the BPDU Guard default command activates it on all PortFast-enabled ports.",
+        "options": [
+          {
+            "label": "A",
+            "text": "All access ports",
+            "is_correct": false
+          },
+          {
+            "label": "B",
+            "text": "All PortFast-enabled ports",
+            "is_correct": true
+          },
+          {
+            "label": "C",
+            "text": "All ports, including trunks",
+            "is_correct": false
+          },
+          {
+            "label": "D",
+            "text": "All trunk ports",
+            "is_correct": false
+          }
+        ]
+      },
+      {
+        "order": 3,
+        "question": "What are the TWO ways to re-enable a port that BPDU Guard has err-disabled?",
+        "explanation": "Either `shutdown` followed by `no shutdown` manually, or enable errdisable recovery for the bpduguard cause so the port is re-enabled automatically after the timer (300 seconds by default).",
+        "options": [
+          {
+            "label": "A",
+            "text": "`shutdown` then `no shutdown` on the interface",
+            "is_correct": true
+          },
+          {
+            "label": "B",
+            "text": "Disconnect and reconnect the cable",
+            "is_correct": false
+          },
+          {
+            "label": "C",
+            "text": "`errdisable recovery cause bpduguard`",
+            "is_correct": true
+          },
+          {
+            "label": "D",
+            "text": "`clear spanning-tree detected-protocols`",
+            "is_correct": false
+          }
+        ]
+      },
+      {
+        "order": 4,
+        "question": "Is errdisable recovery enabled by default, and what is the default timer?",
+        "explanation": "Errdisable recovery is disabled by default for every cause. When enabled, the default recovery interval is 300 seconds — 5 minutes.",
+        "options": [
+          {
+            "label": "A",
+            "text": "Enabled by default, 30 seconds",
+            "is_correct": false
+          },
+          {
+            "label": "B",
+            "text": "Disabled by default, 300 seconds when enabled",
+            "is_correct": true
+          },
+          {
+            "label": "C",
+            "text": "Enabled by default, 300 seconds",
+            "is_correct": false
+          },
+          {
+            "label": "D",
+            "text": "Disabled by default, 30 seconds when enabled",
+            "is_correct": false
+          }
+        ]
+      },
+      {
+        "order": 5,
+        "question": "You configure `spanning-tree bpdufilter enable` on an interface. What happens if that port receives a BPDU?",
+        "explanation": "The per-port form makes the port ignore received BPDUs entirely, which effectively disables STP on that port. If it is connected to a switch, a permanent Layer 2 loop can result.",
+        "options": [
+          {
+            "label": "A",
+            "text": "The port is err-disabled",
+            "is_correct": false
+          },
+          {
+            "label": "B",
+            "text": "The BPDU is ignored — STP is effectively disabled on the port",
+            "is_correct": true
+          },
+          {
+            "label": "C",
+            "text": "PortFast is disabled and the port becomes a normal STP port",
+            "is_correct": false
+          },
+          {
+            "label": "D",
+            "text": "The BPDU is forwarded to the neighbour switch",
+            "is_correct": false
+          }
+        ]
+      },
+      {
+        "order": 6,
+        "question": "BPDU Guard and a globally-configured BPDU Filter are both active on a port that receives a BPDU. What happens?",
+        "explanation": "With BPDU Filter enabled globally, receiving a BPDU disables BPDU Filter, which lets BPDU Guard trigger and err-disable the interface. Configured per port instead, the BPDU would be ignored and BPDU Guard would never fire.",
+        "options": [
+          {
+            "label": "A",
+            "text": "The BPDU is ignored and nothing happens",
+            "is_correct": false
+          },
+          {
+            "label": "B",
+            "text": "BPDU Filter is disabled and BPDU Guard err-disables the interface",
+            "is_correct": true
+          },
+          {
+            "label": "C",
+            "text": "The port becomes a trunk",
+            "is_correct": false
+          },
+          {
+            "label": "D",
+            "text": "The port enters the Listening state",
+            "is_correct": false
+          }
+        ]
+      },
+      {
+        "order": 7,
+        "question": "Why is sending BPDUs to end hosts undesirable, aside from the minor bandwidth cost?",
+        "explanation": "BPDUs contain information about the LAN's STP topology. Where security matters, that information should not be exposed to user devices. BPDU Filter stops the port sending them.",
+        "options": [
+          {
+            "label": "A",
+            "text": "Hosts respond with their own BPDUs",
+            "is_correct": false
+          },
+          {
+            "label": "B",
+            "text": "BPDUs reveal the LAN's STP topology to user devices",
+            "is_correct": true
+          },
+          {
+            "label": "C",
+            "text": "They prevent the port from reaching the forwarding state",
+            "is_correct": false
+          },
+          {
+            "label": "D",
+            "text": "They cause MAC address flapping",
+            "is_correct": false
+          }
+        ]
+      }
+    ]
+  }
 }

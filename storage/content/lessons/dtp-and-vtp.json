@@ -1,242 +1,609 @@
 {
-    "slug": "dtp-and-vtp",
-    "title": "DTP and VTP",
-    "summary": "Two Cisco proprietary protocols: DTP, which negotiates whether a port becomes an access or trunk port, and VTP, which synchronises the VLAN database across switches — plus why both should usually be disabled.",
-    "source_ref": "transcript_19.txt",
-    "order": 21,
-    "sections": [
-        {
-            "type": "callout",
-            "title": "Note",
-            "order": 1,
-            "content": {
-                "body": "DTP and VTP were removed from the CCNA 200-301 exam topics list. You still need to understand what they do — questions about them can still appear — but a basic overview is enough. Do not study them to the depth of 802.1Q.",
-                "style": "note"
-            }
-        },
-        {
-            "type": "explanation",
-            "title": "DTP — Dynamic Trunking Protocol",
-            "order": 2,
-            "content": {
-                "body": "**DTP** is a Cisco proprietary protocol that lets Cisco switches dynamically determine whether an interface becomes an **access port** or a **trunk port**, without manual configuration.\n\nIn short: two Cisco switches connected together can negotiate a trunk; otherwise the interface becomes an access port.\n\n- DTP is **enabled by default** on all Cisco switch interfaces.\n- Because it is proprietary, it only works between Cisco switches.\n- Using DTP means you never have to type `switchport mode access` or `switchport mode trunk`.\n\n**But for security, DTP should be disabled on all switchports and ports configured manually.** DTP can be exploited by attackers.\n\nThe modes are configured with `switchport mode dynamic`, which offers two options:\n\n- **`dynamic desirable`** — *actively* tries to form a trunk with the neighbour.\n- **`dynamic auto`** — *passive*. It will not initiate, but says in effect \"if you want a trunk, I'll form one\"."
-            }
-        },
-        {
-            "type": "table",
-            "title": "DTP outcome matrix — resulting operational mode",
-            "order": 3,
-            "content": {
-                "headers": ["", "trunk", "dynamic desirable", "dynamic auto", "access"],
-                "rows": [
-                    ["**trunk**", "Trunk", "Trunk", "Trunk", "Mismatch — does not work"],
-                    ["**dynamic desirable**", "Trunk", "Trunk", "Trunk", "Access"],
-                    ["**dynamic auto**", "Trunk", "Trunk", "Access", "Access"],
-                    ["**access**", "Mismatch — does not work", "Access", "Access", "Access"]
-                ]
-            }
-        },
-        {
-            "type": "explanation",
-            "title": "Reading show interfaces switchport",
-            "order": 4,
-            "content": {
-                "body": "`show interfaces g0/0 switchport` is the command that reveals what DTP actually did:\n\n- **Switchport: Enabled** — this is a Layer 2 port. A routed port (`no switchport`) would show differently.\n- **Administrative Mode** — what you *configured*, e.g. `dynamic desirable`.\n- **Operational Mode** — what the port is *actually doing*, e.g. `trunk` or `static access`.\n- **Administrative Trunking Encapsulation** / **Operational Trunking Encapsulation** — configured vs negotiated encapsulation.\n- **Negotiation of Trunking** — whether DTP frames are being sent. `On` for dynamic desirable, dynamic auto and trunk modes; `Off` for access mode or after `switchport nonegotiate`.\n\n**`static access`** means an access port belonging to a single VLAN that does not change. (There are also *dynamic access* ports where a server assigns the VLAN by MAC address, but that is out of scope for the CCNA.)\n\nTwo important behaviours:\n\n- **DTP will never form a trunk with a router, PC or other non-Cisco-switch device** — the port stays in access mode. So for router on a stick you **must** manually configure the switch port as a trunk.\n- Manually configuring a trunk with `switchport mode trunk` does **not** stop DTP frames being sent. Only `switchport nonegotiate` (or `switchport mode access`) does that."
-            }
-        },
-        {
-            "type": "table",
-            "title": "DTP details worth remembering",
-            "order": 5,
-            "content": {
-                "headers": ["Point", "Detail"],
-                "rows": [
-                    ["Default on older switches", "`switchport mode dynamic desirable` — they actively try to trunk"],
-                    ["Default on newer switches", "`switchport mode dynamic auto` — passive"],
-                    ["Disable DTP", "`switchport nonegotiate` stops DTP frames being sent"],
-                    ["`switchport mode access`", "Also disables DTP negotiation and stops DTP frames"],
-                    ["`switchport mode trunk`", "Does NOT stop DTP frames — add `switchport nonegotiate` too"],
-                    ["Encapsulation negotiation", "Default is `switchport trunk encapsulation negotiate`. If both switches support it, **ISL is favoured** over dot1Q"],
-                    ["Where DTP frames travel", "VLAN 1 when using ISL; the native VLAN when using dot1Q (VLAN 1 by default)"]
-                ]
-            }
-        },
-        {
-            "type": "explanation",
-            "title": "VTP — VLAN Trunking Protocol",
-            "order": 6,
-            "content": {
-                "body": "**VTP** is another Cisco proprietary protocol. It lets you configure VLANs on a central **server** switch; other switches (**clients**) then synchronise their VLAN database to it, so you do not have to create every VLAN on every switch.\n\nIt is designed for large networks with many VLANs — but like DTP it is rarely used today, and the recommendation is **not** to use it.\n\nThere are three versions (1, 2, 3). Most modern Cisco switches support all three; older ones may only support 1 and 2.\n\n**Critically: VTP only synchronises the VLAN database.** It does *not* assign interfaces to VLANs. You still configure `switchport access vlan 10` on every switch individually."
-            }
-        },
-        {
-            "type": "table",
-            "title": "The three VTP modes",
-            "order": 7,
-            "content": {
-                "headers": ["Mode", "Can add/modify/delete VLANs?", "Stores VLAN DB in NVRAM?", "Syncs to the server?", "Forwards VTP advertisements?"],
-                "rows": [
-                    ["**Server** (default)", "Yes", "Yes", "Yes — servers also act as clients, syncing to a higher revision number", "Yes, on trunk ports"],
-                    ["**Client**", "No — the command is rejected", "No (except in VTPv3)", "Yes, to the highest revision number in its domain", "Yes, on trunk ports"],
-                    ["**Transparent**", "Yes, but only locally — never advertised", "Yes, its own independent database", "No — does not participate", "Yes, but only for its own domain"]
-                ]
-            }
-        },
-        {
-            "type": "explanation",
-            "title": "Revision numbers and the VTP danger",
-            "order": 8,
-            "content": {
-                "body": "The **configuration revision number** is the heart of VTP. Every time a VTP server adds, modifies or deletes a VLAN, it increments the revision number. **The highest revision number wins** — it is considered the newest, most accurate VLAN database, and every switch in the domain synchronises to it.\n\nOther rules:\n\n- VTP advertisements are sent on **trunk ports only**, never on access ports.\n- If a switch with **no VTP domain** (domain NULL) receives an advertisement carrying a domain name, it **automatically joins that domain**.\n- VTP servers also act as clients, so a server will happily overwrite its own database from another server with a higher revision number.\n\n**The danger.** Suppose your production domain `cisco` is at revision 5 with VLANs 1, 10, 20, 30 and 40. You plug in an old spare switch from storage that has the same domain name, revision **50**, and VLANs 1, 99 and 220. Its advertisements are forwarded across the whole domain, every switch synchronises to it, and **every host in VLANs 10, 20, 30 and 40 instantly loses connectivity.**\n\nThis is the main reason VTP is avoided in modern networks.\n\n**Two ways to reset the revision number to 0** before connecting an old switch:\n\n1. Change the VTP domain to an **unused domain name**.\n2. Change the VTP mode to **transparent**."
-            }
-        },
-        {
-            "type": "animation",
-            "title": "VTP synchronisation in action",
-            "order": 9,
-            "content": {
-                "diagram_type": "topology",
-                "nodes": [
-                    {"id": "sw1", "label": "SW1\nserver", "icon": "switch", "x": 120, "y": 170},
-                    {"id": "sw2", "label": "SW2\nclient", "icon": "switch", "x": 380, "y": 170},
-                    {"id": "sw3", "label": "SW3\ntransparent", "icon": "switch", "x": 640, "y": 170},
-                    {"id": "sw4", "label": "SW4\nclient", "icon": "switch", "x": 900, "y": 170}
-                ],
-                "links": [
-                    {"from": "sw1", "to": "sw2", "kind": "ethernet"},
-                    {"from": "sw2", "to": "sw3", "kind": "ethernet"},
-                    {"from": "sw3", "to": "sw4", "kind": "ethernet"}
-                ],
-                "steps": [
-                    {
-                        "narration": "All four switches start with default settings: VTP server mode, domain NULL, revision 0, five default VLANs.",
-                        "animate": {"highlight": ["sw1", "sw2", "sw3", "sw4"]}
-                    },
-                    {
-                        "narration": "On SW1: `vtp domain cisco`, then create VLAN 10 named ENGINEERING. The revision number increases to 1 and SW1 advertises out its trunks.",
-                        "animate": {"packet_from": "sw1", "packet_to": "sw2", "label": "rev 1", "highlight": ["sw1"]}
-                    },
-                    {
-                        "narration": "SW2 had domain NULL, so it automatically joins domain `cisco` and syncs its VLAN database. `show vlan brief` now lists VLAN 10 — with no configuration on SW2 at all.",
-                        "animate": {"highlight": ["sw2"], "status": "ok"}
-                    },
-                    {
-                        "narration": "SW3 is set to transparent mode with domain `juniper`. It does NOT sync, and because the domain differs it does not forward the advertisement either. Its revision resets to 0.",
-                        "animate": {"packet_from": "sw2", "packet_to": "sw3", "label": "blocked", "status": "fail", "highlight": ["sw3"]}
-                    },
-                    {
-                        "narration": "SW4 is left behind — no VLAN 20, still on the old revision number.",
-                        "animate": {"highlight": ["sw4"], "status": "fail"}
-                    },
-                    {
-                        "narration": "Change SW3's domain back to `cisco`. It still refuses to sync its own database, but it now forwards advertisements — and SW4 catches up with SW1 and SW2.",
-                        "animate": {"packet_from": "sw3", "packet_to": "sw4", "label": "forwarded", "status": "ok", "highlight": ["sw3", "sw4"]}
-                    }
-                ]
-            }
-        },
-        {
-            "type": "table",
-            "title": "Reading show vtp status",
-            "order": 10,
-            "content": {
-                "headers": ["Field", "Meaning"],
-                "rows": [
-                    ["VTP Version capable / running", "Which versions the switch supports vs which it is using (version 1 by default)"],
-                    ["VTP Domain Name", "NULL by default. All switches must share a domain name to synchronise"],
-                    ["VTP Operating Mode", "Server by default"],
-                    ["Maximum VLANs supported locally", "1005 with VTP v1/v2 — the extended range 1006–4094 requires **VTP version 3**"],
-                    ["Number of existing VLANs", "5 on a default switch: VLAN 1 plus 1002–1005"],
-                    ["Configuration Revision", "0 on a default switch; increments on every VLAN add/modify/delete. Highest wins"]
-                ]
-            }
-        },
-        {
-            "type": "explanation",
-            "title": "VTP versions",
-            "order": 11,
-            "content": {
-                "body": "Change the version with the `vtp version` command. Doing so increases the revision number, and other servers and clients then sync and switch to the new version too.\n\nCisco's own summary of the difference between v1 and v2: *\"VTP V2 is not much different than VTP V1. The major difference is that VTP V2 introduces support for Token Ring VLANs. If you use Token Ring VLANs, you must enable VTP V2. Otherwise, there is no reason to use VTP V2.\"*\n\nToken Ring is obsolete, so in practice there is no reason to use version 2. Version 3 has many more features — including extended VLAN range support — but is well beyond the scope of the CCNA."
-            }
-        },
-        {
-            "type": "callout",
-            "title": "Exam tip",
-            "order": 12,
-            "content": {
-                "body": "For VTP, know: its purpose, the difference between server / client / transparent mode, that switches are in server mode by default, that servers also act as clients, and how revision numbers decide which database wins. For DTP, know the mode matrix, that newer switches default to dynamic auto and older ones to dynamic desirable, and that DTP never forms a trunk with a router.",
-                "style": "exam_tip"
-            }
-        }
-    ],
-    "quiz": {
-        "questions": [
-            {
-                "order": 1,
-                "question": "SW1 and SW2 are both new switches whose connected interfaces operate as access ports. SW2 fails and is replaced with an old spare switch, reset before connecting. A trunk unexpectedly forms. Why?",
-                "explanation": "Older switches default to `dynamic desirable`, which actively tries to form a trunk. SW1, being new, defaults to `dynamic auto`, which will accept a trunk when the other side initiates. Desirable + auto = trunk.",
-                "options": [
-                    {"label": "A", "text": "Interfaces on old switches default to switchport mode trunk", "is_correct": false},
-                    {"label": "B", "text": "Interfaces on old switches default to switchport mode dynamic desirable", "is_correct": true},
-                    {"label": "C", "text": "Access ports are a feature of newer switches only", "is_correct": false},
-                    {"label": "D", "text": "The old switch had a higher VTP revision number", "is_correct": false}
-                ]
-            },
-            {
-                "order": 2,
-                "question": "SW1–SW2–SW3 are connected in a line. You want SW2 to forward SW1's VLAN database information to SW3, but you do not want SW2 to synchronise its own VLAN database to SW1. Which command should you use on SW2?",
-                "explanation": "A switch in VTP transparent mode forwards VTP advertisements within its own domain but does not synchronise its own VLAN database, and does not advertise its own database either.",
-                "options": [
-                    {"label": "A", "text": "vtp mode transparent", "is_correct": true},
-                    {"label": "B", "text": "vtp transparent mode", "is_correct": false},
-                    {"label": "C", "text": "vlan mode transparent", "is_correct": false},
-                    {"label": "D", "text": "vtp mode client", "is_correct": false}
-                ]
-            },
-            {
-                "order": 3,
-                "question": "What are TWO methods to reset a switch's VTP revision number to 0? (Each is a complete solution.)",
-                "explanation": "Changing the VTP domain to an unused name, or switching the device into VTP transparent mode, both reset the revision number to 0. This is essential before connecting an old switch to a VTP network.",
-                "options": [
-                    {"label": "A", "text": "Change the VTP domain to an unused domain name", "is_correct": true},
-                    {"label": "B", "text": "Change the switch to VTP server mode", "is_correct": false},
-                    {"label": "C", "text": "Change the switch to VTP transparent mode", "is_correct": true},
-                    {"label": "D", "text": "Use the `vtp reset` command", "is_correct": false}
-                ]
-            },
-            {
-                "order": 4,
-                "question": "Two switch ports are both left in `dynamic auto` mode. What is the resulting operational mode?",
-                "explanation": "Neither side actively initiates a trunk in dynamic auto mode, so no trunk forms and both ports operate as access ports in VLAN 1.",
-                "options": [
-                    {"label": "A", "text": "Trunk", "is_correct": false},
-                    {"label": "B", "text": "Access ports in VLAN 1", "is_correct": true},
-                    {"label": "C", "text": "The link is err-disabled", "is_correct": false},
-                    {"label": "D", "text": "One becomes a trunk and the other an access port", "is_correct": false}
-                ]
-            },
-            {
-                "order": 5,
-                "question": "You are configuring router on a stick. Can you leave the switch port facing the router in `dynamic desirable` mode?",
-                "explanation": "DTP never forms a trunk with a router, PC or other non-switch device — the port would simply become an access port. The trunk must be configured manually.",
-                "options": [
-                    {"label": "A", "text": "Yes — the router will negotiate a trunk via DTP", "is_correct": false},
-                    {"label": "B", "text": "No — DTP does not form trunks with routers, so the trunk must be configured manually", "is_correct": true},
-                    {"label": "C", "text": "Yes, but only if the router runs VTP", "is_correct": false},
-                    {"label": "D", "text": "No — the port must be in dynamic auto mode instead", "is_correct": false}
-                ]
-            },
-            {
-                "order": 6,
-                "question": "Which statement about VTP is correct?",
-                "explanation": "VTP synchronises only the VLAN database. Assigning interfaces to VLANs (`switchport access vlan 10`) is still done switch by switch.",
-                "options": [
-                    {"label": "A", "text": "VTP also assigns switch interfaces to their VLANs automatically", "is_correct": false},
-                    {"label": "B", "text": "VTP synchronises only the VLAN database; interface assignment is still manual on each switch", "is_correct": true},
-                    {"label": "C", "text": "VTP advertisements are sent on access ports as well as trunk ports", "is_correct": false},
-                    {"label": "D", "text": "VTP clients can create VLANs as long as they are in the same domain", "is_correct": false}
-                ]
-            }
+  "slug": "dtp-and-vtp",
+  "title": "DTP and VTP",
+  "summary": "Two Cisco proprietary protocols: DTP, which negotiates whether a port becomes an access or trunk port, and VTP, which synchronises the VLAN database across switches — plus why both should usually be disabled.",
+  "source_ref": "transcript_19.txt",
+  "order": 21,
+  "sections": [
+    {
+      "type": "callout",
+      "title": "Note",
+      "order": 1,
+      "content": {
+        "body": "DTP and VTP were removed from the CCNA 200-301 exam topics list. You still need to understand what they do — questions about them can still appear — but a basic overview is enough. Do not study them to the depth of 802.1Q.",
+        "style": "note"
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "DTP — Dynamic Trunking Protocol",
+      "order": 2,
+      "content": {
+        "body": "**DTP** is a Cisco proprietary protocol that lets Cisco switches dynamically determine whether an interface becomes an **access port** or a **trunk port**, without manual configuration.\n\nIn short: two Cisco switches connected together can negotiate a trunk; otherwise the interface becomes an access port.\n\n- DTP is **enabled by default** on all Cisco switch interfaces.\n- Because it is proprietary, it only works between Cisco switches.\n- Using DTP means you never have to type `switchport mode access` or `switchport mode trunk`.\n\n**But for security, DTP should be disabled on all switchports and ports configured manually.** DTP can be exploited by attackers.\n\nThe modes are configured with `switchport mode dynamic`, which offers two options:\n\n- **`dynamic desirable`** — *actively* tries to form a trunk with the neighbour.\n- **`dynamic auto`** — *passive*. It will not initiate, but says in effect \"if you want a trunk, I'll form one\"."
+      }
+    },
+    {
+      "type": "table",
+      "title": "DTP outcome matrix — resulting operational mode",
+      "order": 3,
+      "content": {
+        "headers": [
+          "",
+          "trunk",
+          "dynamic desirable",
+          "dynamic auto",
+          "access"
+        ],
+        "rows": [
+          [
+            "**trunk**",
+            "Trunk",
+            "Trunk",
+            "Trunk",
+            "Mismatch — does not work"
+          ],
+          [
+            "**dynamic desirable**",
+            "Trunk",
+            "Trunk",
+            "Trunk",
+            "Access"
+          ],
+          [
+            "**dynamic auto**",
+            "Trunk",
+            "Trunk",
+            "Access",
+            "Access"
+          ],
+          [
+            "**access**",
+            "Mismatch — does not work",
+            "Access",
+            "Access",
+            "Access"
+          ]
         ]
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "Reading show interfaces switchport",
+      "order": 4,
+      "content": {
+        "body": "`show interfaces g0/0 switchport` is the command that reveals what DTP actually did:\n\n- **Switchport: Enabled** — this is a Layer 2 port. A routed port (`no switchport`) would show differently.\n- **Administrative Mode** — what you *configured*, e.g. `dynamic desirable`.\n- **Operational Mode** — what the port is *actually doing*, e.g. `trunk` or `static access`.\n- **Administrative Trunking Encapsulation** / **Operational Trunking Encapsulation** — configured vs negotiated encapsulation.\n- **Negotiation of Trunking** — whether DTP frames are being sent. `On` for dynamic desirable, dynamic auto and trunk modes; `Off` for access mode or after `switchport nonegotiate`.\n\n**`static access`** means an access port belonging to a single VLAN that does not change. (There are also *dynamic access* ports where a server assigns the VLAN by MAC address, but that is out of scope for the CCNA.)\n\nTwo important behaviours:\n\n- **DTP will never form a trunk with a router, PC or other non-Cisco-switch device** — the port stays in access mode. So for router on a stick you **must** manually configure the switch port as a trunk.\n- Manually configuring a trunk with `switchport mode trunk` does **not** stop DTP frames being sent. Only `switchport nonegotiate` (or `switchport mode access`) does that."
+      }
+    },
+    {
+      "type": "table",
+      "title": "DTP details worth remembering",
+      "order": 5,
+      "content": {
+        "headers": [
+          "Point",
+          "Detail"
+        ],
+        "rows": [
+          [
+            "Default on older switches",
+            "`switchport mode dynamic desirable` — they actively try to trunk"
+          ],
+          [
+            "Default on newer switches",
+            "`switchport mode dynamic auto` — passive"
+          ],
+          [
+            "Disable DTP",
+            "`switchport nonegotiate` stops DTP frames being sent"
+          ],
+          [
+            "`switchport mode access`",
+            "Also disables DTP negotiation and stops DTP frames"
+          ],
+          [
+            "`switchport mode trunk`",
+            "Does NOT stop DTP frames — add `switchport nonegotiate` too"
+          ],
+          [
+            "Encapsulation negotiation",
+            "Default is `switchport trunk encapsulation negotiate`. If both switches support it, **ISL is favoured** over dot1Q"
+          ],
+          [
+            "Where DTP frames travel",
+            "VLAN 1 when using ISL; the native VLAN when using dot1Q (VLAN 1 by default)"
+          ]
+        ]
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "VTP — VLAN Trunking Protocol",
+      "order": 6,
+      "content": {
+        "body": "**VTP** is another Cisco proprietary protocol. It lets you configure VLANs on a central **server** switch; other switches (**clients**) then synchronise their VLAN database to it, so you do not have to create every VLAN on every switch.\n\nIt is designed for large networks with many VLANs — but like DTP it is rarely used today, and the recommendation is **not** to use it.\n\nThere are three versions (1, 2, 3). Most modern Cisco switches support all three; older ones may only support 1 and 2.\n\n**Critically: VTP only synchronises the VLAN database.** It does *not* assign interfaces to VLANs. You still configure `switchport access vlan 10` on every switch individually."
+      }
+    },
+    {
+      "type": "table",
+      "title": "The three VTP modes",
+      "order": 7,
+      "content": {
+        "headers": [
+          "Mode",
+          "Can add/modify/delete VLANs?",
+          "Stores VLAN DB in NVRAM?",
+          "Syncs to the server?",
+          "Forwards VTP advertisements?"
+        ],
+        "rows": [
+          [
+            "**Server** (default)",
+            "Yes",
+            "Yes",
+            "Yes — servers also act as clients, syncing to a higher revision number",
+            "Yes, on trunk ports"
+          ],
+          [
+            "**Client**",
+            "No — the command is rejected",
+            "No (except in VTPv3)",
+            "Yes, to the highest revision number in its domain",
+            "Yes, on trunk ports"
+          ],
+          [
+            "**Transparent**",
+            "Yes, but only locally — never advertised",
+            "Yes, its own independent database",
+            "No — does not participate",
+            "Yes, but only for its own domain"
+          ]
+        ]
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "Revision numbers and the VTP danger",
+      "order": 8,
+      "content": {
+        "body": "The **configuration revision number** is the heart of VTP. Every time a VTP server adds, modifies or deletes a VLAN, it increments the revision number. **The highest revision number wins** — it is considered the newest, most accurate VLAN database, and every switch in the domain synchronises to it.\n\nOther rules:\n\n- VTP advertisements are sent on **trunk ports only**, never on access ports.\n- If a switch with **no VTP domain** (domain NULL) receives an advertisement carrying a domain name, it **automatically joins that domain**.\n- VTP servers also act as clients, so a server will happily overwrite its own database from another server with a higher revision number.\n\n**The danger.** Suppose your production domain `cisco` is at revision 5 with VLANs 1, 10, 20, 30 and 40. You plug in an old spare switch from storage that has the same domain name, revision **50**, and VLANs 1, 99 and 220. Its advertisements are forwarded across the whole domain, every switch synchronises to it, and **every host in VLANs 10, 20, 30 and 40 instantly loses connectivity.**\n\nThis is the main reason VTP is avoided in modern networks.\n\n**Two ways to reset the revision number to 0** before connecting an old switch:\n\n1. Change the VTP domain to an **unused domain name**.\n2. Change the VTP mode to **transparent**."
+      }
+    },
+    {
+      "type": "animation",
+      "title": "VTP synchronisation in action",
+      "order": 9,
+      "content": {
+        "diagram_type": "topology",
+        "nodes": [
+          {
+            "id": "sw1",
+            "label": "SW1\nserver",
+            "icon": "switch",
+            "x": 120,
+            "y": 170
+          },
+          {
+            "id": "sw2",
+            "label": "SW2\nclient",
+            "icon": "switch",
+            "x": 380,
+            "y": 170
+          },
+          {
+            "id": "sw3",
+            "label": "SW3\ntransparent",
+            "icon": "switch",
+            "x": 640,
+            "y": 170
+          },
+          {
+            "id": "sw4",
+            "label": "SW4\nclient",
+            "icon": "switch",
+            "x": 900,
+            "y": 170
+          }
+        ],
+        "links": [
+          {
+            "from": "sw1",
+            "to": "sw2",
+            "kind": "ethernet"
+          },
+          {
+            "from": "sw2",
+            "to": "sw3",
+            "kind": "ethernet"
+          },
+          {
+            "from": "sw3",
+            "to": "sw4",
+            "kind": "ethernet"
+          }
+        ],
+        "steps": [
+          {
+            "narration": "All four switches start with default settings: VTP server mode, domain NULL, revision 0, five default VLANs.",
+            "animate": {
+              "highlight": [
+                "sw1",
+                "sw2",
+                "sw3",
+                "sw4"
+              ]
+            }
+          },
+          {
+            "narration": "On SW1: `vtp domain cisco`, then create VLAN 10 named ENGINEERING. The revision number increases to 1 and SW1 advertises out its trunks.",
+            "animate": {
+              "packet_from": "sw1",
+              "packet_to": "sw2",
+              "label": "rev 1",
+              "highlight": [
+                "sw1"
+              ]
+            }
+          },
+          {
+            "narration": "SW2 had domain NULL, so it automatically joins domain `cisco` and syncs its VLAN database. `show vlan brief` now lists VLAN 10 — with no configuration on SW2 at all.",
+            "animate": {
+              "highlight": [
+                "sw2"
+              ],
+              "status": "ok"
+            }
+          },
+          {
+            "narration": "SW3 is set to transparent mode with domain `juniper`. It does NOT sync, and because the domain differs it does not forward the advertisement either. Its revision resets to 0.",
+            "animate": {
+              "packet_from": "sw2",
+              "packet_to": "sw3",
+              "label": "blocked",
+              "status": "fail",
+              "highlight": [
+                "sw3"
+              ]
+            }
+          },
+          {
+            "narration": "SW4 is left behind — no VLAN 20, still on the old revision number.",
+            "animate": {
+              "highlight": [
+                "sw4"
+              ],
+              "status": "fail"
+            }
+          },
+          {
+            "narration": "Change SW3's domain back to `cisco`. It still refuses to sync its own database, but it now forwards advertisements — and SW4 catches up with SW1 and SW2.",
+            "animate": {
+              "packet_from": "sw3",
+              "packet_to": "sw4",
+              "label": "forwarded",
+              "status": "ok",
+              "highlight": [
+                "sw3",
+                "sw4"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "table",
+      "title": "Reading show vtp status",
+      "order": 10,
+      "content": {
+        "headers": [
+          "Field",
+          "Meaning"
+        ],
+        "rows": [
+          [
+            "VTP Version capable / running",
+            "Which versions the switch supports vs which it is using (version 1 by default)"
+          ],
+          [
+            "VTP Domain Name",
+            "NULL by default. All switches must share a domain name to synchronise"
+          ],
+          [
+            "VTP Operating Mode",
+            "Server by default"
+          ],
+          [
+            "Maximum VLANs supported locally",
+            "1005 with VTP v1/v2 — the extended range 1006–4094 requires **VTP version 3**"
+          ],
+          [
+            "Number of existing VLANs",
+            "5 on a default switch: VLAN 1 plus 1002–1005"
+          ],
+          [
+            "Configuration Revision",
+            "0 on a default switch; increments on every VLAN add/modify/delete. Highest wins"
+          ]
+        ]
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "VTP versions",
+      "order": 11,
+      "content": {
+        "body": "Change the version with the `vtp version` command. Doing so increases the revision number, and other servers and clients then sync and switch to the new version too.\n\nCisco's own summary of the difference between v1 and v2: *\"VTP V2 is not much different than VTP V1. The major difference is that VTP V2 introduces support for Token Ring VLANs. If you use Token Ring VLANs, you must enable VTP V2. Otherwise, there is no reason to use VTP V2.\"*\n\nToken Ring is obsolete, so in practice there is no reason to use version 2. Version 3 has many more features — including extended VLAN range support — but is well beyond the scope of the CCNA."
+      }
+    },
+    {
+      "type": "callout",
+      "title": "Exam tip",
+      "order": 12,
+      "content": {
+        "body": "For VTP, know: its purpose, the difference between server / client / transparent mode, that switches are in server mode by default, that servers also act as clients, and how revision numbers decide which database wins. For DTP, know the mode matrix, that newer switches default to dynamic auto and older ones to dynamic desirable, and that DTP never forms a trunk with a router.",
+        "style": "exam_tip"
+      }
+    },
+    {
+      "order": 13,
+      "type": "commands",
+      "title": "Command reference: DTP and VTP",
+      "content": {
+        "commands": [
+          {
+            "command": "switchport mode dynamic desirable",
+            "mode": "interface config",
+            "syntax": "switchport mode dynamic desirable",
+            "example": "SW1(config-if)# switchport mode dynamic desirable",
+            "description": "Sets the port to actively negotiate a trunk using DTP. It forms a trunk with a neighbour set to trunk, dynamic desirable or dynamic auto.",
+            "note": "This was the default mode on older Cisco switches.",
+            "group": "DTP"
+          },
+          {
+            "command": "switchport mode dynamic auto",
+            "mode": "interface config",
+            "syntax": "switchport mode dynamic auto",
+            "example": "SW1(config-if)# switchport mode dynamic auto",
+            "description": "Sets the port to passively wait for DTP negotiation. It forms a trunk only if the neighbour is trunk or dynamic desirable; two auto ports stay as access ports.",
+            "note": "This is the default mode on most modern Cisco switches.",
+            "group": "DTP"
+          },
+          {
+            "command": "switchport nonegotiate",
+            "mode": "interface config",
+            "syntax": "switchport nonegotiate",
+            "example": "SW1(config-if)# switchport nonegotiate",
+            "description": "Disables DTP on the port so it stops sending negotiation frames. The port keeps whatever static mode it was given.",
+            "note": "Recommended practice: configure trunks and access ports statically and turn DTP off. Note that a router never negotiates a trunk.",
+            "group": "DTP"
+          },
+          {
+            "command": "switchport trunk encapsulation negotiate",
+            "mode": "interface config",
+            "syntax": "switchport trunk encapsulation negotiate",
+            "example": "SW1(config-if)# switchport trunk encapsulation negotiate",
+            "description": "Lets the two switches agree on the trunk encapsulation automatically. If both support ISL, ISL is chosen in preference to 802.1Q.",
+            "group": "DTP"
+          },
+          {
+            "command": "show interfaces switchport",
+            "mode": "privileged EXEC",
+            "syntax": "show interfaces <interface> switchport",
+            "example": "SW1# show interfaces g0/0 switchport\nAdministrative Mode: dynamic auto\nOperational Mode: static access",
+            "description": "Reveals both the configured (administrative) mode and the resulting negotiated (operational) mode — the way to confirm what DTP actually decided.",
+            "group": "DTP"
+          },
+          {
+            "command": "vtp mode",
+            "mode": "global config",
+            "syntax": "vtp mode {server | client | transparent | off}",
+            "example": "SW1(config)# vtp mode client",
+            "description": "Sets the switch's VTP role. Servers can create and modify VLANs and advertise them; clients accept advertisements but cannot edit VLANs; transparent switches keep their own local VLAN database and simply forward advertisements.",
+            "note": "The default is server mode.",
+            "group": "VTP"
+          },
+          {
+            "command": "vtp domain",
+            "mode": "global config",
+            "syntax": "vtp domain <name>",
+            "example": "SW1(config)# vtp domain cisco",
+            "description": "Sets the VTP domain name. Switches only exchange VTP information when their domain names match.",
+            "note": "A switch with a NULL (unset) domain automatically joins the first domain it hears an advertisement from.",
+            "group": "VTP"
+          },
+          {
+            "command": "vtp password",
+            "mode": "global config",
+            "syntax": "vtp password <password>",
+            "example": "SW1(config)# vtp password CCNA",
+            "description": "Protects the VTP domain so only switches with the matching password accept its advertisements.",
+            "group": "VTP"
+          },
+          {
+            "command": "vtp version",
+            "mode": "global config",
+            "syntax": "vtp version {1 | 2 | 3}",
+            "example": "SW1(config)# vtp version 3",
+            "description": "Selects the VTP version. Version 3 is required to advertise extended-range VLANs (1006-4094).",
+            "group": "VTP"
+          },
+          {
+            "command": "show vtp status",
+            "mode": "privileged EXEC",
+            "syntax": "show vtp status",
+            "example": "SW1# show vtp status\nVTP Operating Mode: Server\nConfiguration Revision: 4",
+            "description": "Displays the VTP mode, domain, version and — critically — the configuration revision number.",
+            "note": "The switch with the highest configuration revision number wins. Adding an old switch with a high revision number can wipe the VLAN database of the entire domain.",
+            "group": "VTP"
+          }
+        ]
+      }
     }
+  ],
+  "quiz": {
+    "questions": [
+      {
+        "order": 1,
+        "question": "SW1 and SW2 are both new switches whose connected interfaces operate as access ports. SW2 fails and is replaced with an old spare switch, reset before connecting. A trunk unexpectedly forms. Why?",
+        "explanation": "Older switches default to `dynamic desirable`, which actively tries to form a trunk. SW1, being new, defaults to `dynamic auto`, which will accept a trunk when the other side initiates. Desirable + auto = trunk.",
+        "options": [
+          {
+            "label": "A",
+            "text": "Interfaces on old switches default to switchport mode trunk",
+            "is_correct": false
+          },
+          {
+            "label": "B",
+            "text": "Interfaces on old switches default to switchport mode dynamic desirable",
+            "is_correct": true
+          },
+          {
+            "label": "C",
+            "text": "Access ports are a feature of newer switches only",
+            "is_correct": false
+          },
+          {
+            "label": "D",
+            "text": "The old switch had a higher VTP revision number",
+            "is_correct": false
+          }
+        ]
+      },
+      {
+        "order": 2,
+        "question": "SW1–SW2–SW3 are connected in a line. You want SW2 to forward SW1's VLAN database information to SW3, but you do not want SW2 to synchronise its own VLAN database to SW1. Which command should you use on SW2?",
+        "explanation": "A switch in VTP transparent mode forwards VTP advertisements within its own domain but does not synchronise its own VLAN database, and does not advertise its own database either.",
+        "options": [
+          {
+            "label": "A",
+            "text": "vtp mode transparent",
+            "is_correct": true
+          },
+          {
+            "label": "B",
+            "text": "vtp transparent mode",
+            "is_correct": false
+          },
+          {
+            "label": "C",
+            "text": "vlan mode transparent",
+            "is_correct": false
+          },
+          {
+            "label": "D",
+            "text": "vtp mode client",
+            "is_correct": false
+          }
+        ]
+      },
+      {
+        "order": 3,
+        "question": "What are TWO methods to reset a switch's VTP revision number to 0? (Each is a complete solution.)",
+        "explanation": "Changing the VTP domain to an unused name, or switching the device into VTP transparent mode, both reset the revision number to 0. This is essential before connecting an old switch to a VTP network.",
+        "options": [
+          {
+            "label": "A",
+            "text": "Change the VTP domain to an unused domain name",
+            "is_correct": true
+          },
+          {
+            "label": "B",
+            "text": "Change the switch to VTP server mode",
+            "is_correct": false
+          },
+          {
+            "label": "C",
+            "text": "Change the switch to VTP transparent mode",
+            "is_correct": true
+          },
+          {
+            "label": "D",
+            "text": "Use the `vtp reset` command",
+            "is_correct": false
+          }
+        ]
+      },
+      {
+        "order": 4,
+        "question": "Two switch ports are both left in `dynamic auto` mode. What is the resulting operational mode?",
+        "explanation": "Neither side actively initiates a trunk in dynamic auto mode, so no trunk forms and both ports operate as access ports in VLAN 1.",
+        "options": [
+          {
+            "label": "A",
+            "text": "Trunk",
+            "is_correct": false
+          },
+          {
+            "label": "B",
+            "text": "Access ports in VLAN 1",
+            "is_correct": true
+          },
+          {
+            "label": "C",
+            "text": "The link is err-disabled",
+            "is_correct": false
+          },
+          {
+            "label": "D",
+            "text": "One becomes a trunk and the other an access port",
+            "is_correct": false
+          }
+        ]
+      },
+      {
+        "order": 5,
+        "question": "You are configuring router on a stick. Can you leave the switch port facing the router in `dynamic desirable` mode?",
+        "explanation": "DTP never forms a trunk with a router, PC or other non-switch device — the port would simply become an access port. The trunk must be configured manually.",
+        "options": [
+          {
+            "label": "A",
+            "text": "Yes — the router will negotiate a trunk via DTP",
+            "is_correct": false
+          },
+          {
+            "label": "B",
+            "text": "No — DTP does not form trunks with routers, so the trunk must be configured manually",
+            "is_correct": true
+          },
+          {
+            "label": "C",
+            "text": "Yes, but only if the router runs VTP",
+            "is_correct": false
+          },
+          {
+            "label": "D",
+            "text": "No — the port must be in dynamic auto mode instead",
+            "is_correct": false
+          }
+        ]
+      },
+      {
+        "order": 6,
+        "question": "Which statement about VTP is correct?",
+        "explanation": "VTP synchronises only the VLAN database. Assigning interfaces to VLANs (`switchport access vlan 10`) is still done switch by switch.",
+        "options": [
+          {
+            "label": "A",
+            "text": "VTP also assigns switch interfaces to their VLANs automatically",
+            "is_correct": false
+          },
+          {
+            "label": "B",
+            "text": "VTP synchronises only the VLAN database; interface assignment is still manual on each switch",
+            "is_correct": true
+          },
+          {
+            "label": "C",
+            "text": "VTP advertisements are sent on access ports as well as trunk ports",
+            "is_correct": false
+          },
+          {
+            "label": "D",
+            "text": "VTP clients can create VLANs as long as they are in the same domain",
+            "is_correct": false
+          }
+        ]
+      }
+    ]
+  }
 }

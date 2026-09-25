@@ -1,209 +1,578 @@
 {
-    "slug": "vlans-part-3",
-    "title": "VLANs: Native VLAN on a Router and Layer 3 Switching",
-    "summary": "Two ways to configure the native VLAN on a router, what a dot1Q tag looks like in a Wireshark capture, and the third method of inter-VLAN routing — SVIs and routed ports on a multilayer switch.",
-    "source_ref": "transcript_18.txt",
-    "order": 19,
-    "sections": [
-        {
-            "type": "explanation",
-            "title": "The native VLAN on a router",
-            "order": 1,
-            "content": {
-                "body": "Best practice is to set the native VLAN to an **unused VLAN**, because the native VLAN feature carries some security risks. But the feature does have one benefit: because native-VLAN frames are **not tagged**, each frame is 4 bytes smaller, so the device can push more frames per second.\n\nIf you do want to use it in a router-on-a-stick design, there are **two** ways to configure the native VLAN on the router — each is a complete solution:\n\n**Option 1 — `native` keyword on a sub-interface**\n\n```\nR1(config)# interface g0/0.10\nR1(config-subif)# encapsulation dot1q 10 native\nR1(config-subif)# ip address 192.168.1.62 255.255.255.192\n```\n\nThe router now behaves like a switch does for the native VLAN: untagged frames arriving are assumed to be VLAN 10, and frames leaving this sub-interface are sent untagged.\n\n**Option 2 — no sub-interface at all**\n\n```\nR1(config)# no interface g0/0.10\nR1(config)# interface g0/0\nR1(config-if)# ip address 192.168.1.62 255.255.255.192\n```\n\nConfigure the native VLAN's IP address directly on the **physical** interface. The `encapsulation dot1q` command is not needed. The other VLANs keep using their own sub-interfaces as normal."
-            }
-        },
-        {
-            "type": "explanation",
-            "title": "Seeing the dot1Q tag in Wireshark",
-            "order": 2,
-            "content": {
-                "body": "Capture the link between SW2 and R1 while a PC in VLAN 20 (`192.168.1.65`) pings a PC in VLAN 10 (`192.168.1.1`), with VLAN 10 configured as the native VLAN on both devices.\n\n**ICMP echo request, SW2 → R1 (VLAN 20 — tagged):**\n\n- `Type: 802.1Q Virtual LAN` with hexadecimal value **0x8100** — this is the **TPID**, sitting exactly where the Type field normally goes, right after the source MAC.\n- **PCP** = 0, so no special priority.\n- **DEI** = 0, so the frame is not drop-eligible during congestion.\n- **VLAN ID** = 20, as expected.\n- Then the *real* Type field, showing that an IPv4 packet is encapsulated.\n\n**The same echo request, R1 → SW2 (VLAN 10 — native):**\n\nIdentical Layer 3 packet, new Ethernet header — but **no dot1Q tag at all**. Both R1 and SW2 understand that untagged frames on this trunk belong to VLAN 10, so there is no need to tag them. The request travels untagged all the way to the destination; when the reply comes back, it stays untagged until R1, which then tags it as VLAN 20."
-            }
-        },
-        {
-            "type": "explanation",
-            "title": "Layer 3 switches (multilayer switches)",
-            "order": 3,
-            "content": {
-                "body": "Up to now every switch in this course has been a **Layer 2 switch** — not Layer 3 aware, caring only about MAC addresses. Many modern switches are also Layer 3 capable. These are called **Layer 3 switches** or **multilayer switches** (know both terms).\n\nA multilayer switch can do both switching **and** routing:\n\n- You can assign **IP addresses** to its interfaces, like a router.\n- You can configure **routed ports** — physical interfaces that behave like router interfaces instead of switchports.\n- You can create **SVIs** (Switch Virtual Interfaces) — virtual interfaces, one per VLAN, each with an IP address.\n- You can configure **routes**, such as static routes, exactly like on a router.\n- It can perform **inter-VLAN routing** without any router involved."
-            }
-        },
-        {
-            "type": "table",
-            "title": "The three methods of inter-VLAN routing",
-            "order": 4,
-            "content": {
-                "headers": ["Method", "How it works", "Trade-off"],
-                "rows": [
-                    ["Separate interface per VLAN", "One physical router interface and one cable per VLAN", "Simple, but wastes interfaces — routers rarely have enough ports"],
-                    ["Router on a stick (ROAS)", "One trunk link carrying all VLANs, with a router sub-interface per VLAN", "Efficient on interfaces, but all inter-VLAN traffic goes to the router and back, which can congest the link in a busy network"],
-                    ["Layer 3 / multilayer switch", "SVIs on the switch route between VLANs locally", "Preferred in large networks — traffic never leaves the switch"]
-                ]
-            }
-        },
-        {
-            "type": "animation",
-            "title": "Inter-VLAN routing with SVIs",
-            "order": 5,
-            "content": {
-                "diagram_type": "topology",
-                "nodes": [
-                    {"id": "pc2", "label": "PC2\nVLAN 20", "icon": "pc", "x": 110, "y": 320},
-                    {"id": "sw2", "label": "SW2\nLayer 3", "icon": "switch", "x": 360, "y": 190},
-                    {"id": "sw1", "label": "SW1\nLayer 2", "icon": "switch", "x": 620, "y": 190},
-                    {"id": "pc1", "label": "PC1\nVLAN 10", "icon": "pc", "x": 860, "y": 90},
-                    {"id": "r1", "label": "R1", "icon": "router", "x": 360, "y": 50},
-                    {"id": "net", "label": "Internet", "icon": "cloud", "x": 110, "y": 50}
-                ],
-                "links": [
-                    {"from": "pc2", "to": "sw2", "kind": "ethernet"},
-                    {"from": "sw2", "to": "sw1", "kind": "ethernet"},
-                    {"from": "sw1", "to": "pc1", "kind": "ethernet"},
-                    {"from": "sw2", "to": "r1", "kind": "ethernet"},
-                    {"from": "r1", "to": "net", "kind": "wan"}
-                ],
-                "steps": [
-                    {
-                        "narration": "PC2 in VLAN 20 pings PC1 in VLAN 10. Its default gateway is no longer R1 — it is SW2's VLAN 20 SVI. The frame goes to SW2.",
-                        "animate": {"packet_from": "pc2", "packet_to": "sw2", "label": "to SVI 20", "highlight": ["pc2"]}
-                    },
-                    {
-                        "narration": "SW2 has its own routing table. It looks up 192.168.1.0/26 and finds it directly connected to the VLAN 10 SVI. The packet is routed into VLAN 10 — no router needed.",
-                        "animate": {"highlight": ["sw2"], "status": "ok"}
-                    },
-                    {
-                        "narration": "SW2 forwards the frame to SW1 over the trunk, tagged VLAN 10. (If the destination MAC were unknown, it would flood it out all VLAN 10 interfaces.)",
-                        "animate": {"packet_from": "sw2", "packet_to": "sw1", "label": "VLAN 10", "highlight": ["sw1"]}
-                    },
-                    {
-                        "narration": "SW1 delivers the frame to PC1. With ROAS this traffic would have made an extra round trip to R1 and back.",
-                        "animate": {"packet_from": "sw1", "packet_to": "pc1", "label": "untagged", "status": "ok", "highlight": ["pc1"]}
-                    },
-                    {
-                        "narration": "For destinations outside the LAN, SW2 uses its default route out of the routed port G0/1 to R1 — a plain point-to-point Layer 3 link, no VLANs on it.",
-                        "animate": {"packet_from": "sw2", "packet_to": "r1", "label": "0.0.0.0/0", "highlight": ["r1", "net"]}
-                    }
-                ]
-            }
-        },
-        {
-            "type": "animation",
-            "title": "Configuring a routed port and SVIs",
-            "order": 6,
-            "content": {
-                "diagram_type": "cli_walkthrough",
-                "steps": [
-                    {"narration": "On R1, remove the old router-on-a-stick sub-interfaces.", "command": "R1(config)#", "input": "no interface g0/0.10"},
-                    {"narration": "Reset the physical interface to its default settings. (Deleted sub-interfaces still show as `deleted` in show ip interface brief until a reload — harmless.)", "command": "R1(config)#", "input": "default interface g0/0"},
-                    {"narration": "Give R1 its end of the new point-to-point /30 link.", "command": "R1(config-if)#", "input": "ip address 192.168.1.194 255.255.255.252"},
-                    {"narration": "On SW2, reset the port that used to be the ROAS trunk.", "command": "SW2(config)#", "input": "default interface g0/1"},
-                    {"narration": "The command you must not forget. This enables Layer 3 routing so the switch can build its own routing table. Without it, inter-VLAN routing will not work.", "command": "SW2(config)#", "input": "ip routing"},
-                    {"narration": "Enter the interface facing R1.", "command": "SW2(config)#", "input": "interface g0/1"},
-                    {"narration": "Convert it from a Layer 2 switchport to a Layer 3 routed port. Now it can take an IP address.", "command": "SW2(config-if)#", "input": "no switchport"},
-                    {"narration": "Assign the switch's end of the /30 link.", "command": "SW2(config-if)#", "input": "ip address 192.168.1.193 255.255.255.252"},
-                    {"narration": "Add a default route pointing at R1 so traffic leaving the LAN is sent there.", "command": "SW2(config)#", "input": "ip route 0.0.0.0 0.0.0.0 192.168.1.194"},
-                    {"narration": "Create the SVI for VLAN 10. This is the PCs' new default gateway.", "command": "SW2(config)#", "input": "interface vlan 10"},
-                    {"narration": "Same address R1 used for ROAS — the last usable address of the subnet — so no PC needs reconfiguring.", "command": "SW2(config-if)#", "input": "ip address 192.168.1.62 255.255.255.192"},
-                    {"narration": "SVIs are shut down by default. Never forget this command.", "command": "SW2(config-if)#", "input": "no shutdown"},
-                    {"narration": "Repeat for VLAN 20 and VLAN 30 the same way.", "command": "SW2(config)#", "input": "interface vlan 20"},
-                    {"narration": "In the VLAN column, G0/1 now shows `routed` instead of a VLAN number.", "command": "SW2#", "input": "show interfaces status"},
-                    {"narration": "The switch now has a real routing table — connected and local routes per SVI, plus the default route to R1.", "command": "SW2#", "input": "show ip route"}
-                ]
-            }
-        },
-        {
-            "type": "table",
-            "title": "Four conditions for an SVI to be up/up",
-            "order": 7,
-            "content": {
-                "headers": ["#", "Condition", "Notes"],
-                "rows": [
-                    ["1", "The VLAN must exist on the switch", "Unlike `switchport access vlan`, creating an SVI does NOT auto-create the VLAN"],
-                    ["2", "At least one up/up access port in the VLAN, and/or one up/up trunk port that allows the VLAN", "A VLAN with no hosts can still come up if a trunk allows it"],
-                    ["3", "The VLAN itself must not be shut down", "This is the VLAN, not the SVI — `vlan 10` then `shutdown` disables it"],
-                    ["4", "The SVI itself must not be shut down", "SVIs are shut down by default, so `no shutdown` is required"]
-                ]
-            }
-        },
-        {
-            "type": "callout",
-            "title": "Exam tip",
-            "order": 8,
-            "content": {
-                "body": "Two commands are commonly confused. `ip routing` enables Layer 3 routing on the whole switch. `no switchport` converts one individual interface into a routed port so it can take an IP address. You need both for a Layer 3 switch uplink — and neither of them creates an SVI.",
-                "style": "exam_tip"
-            }
-        }
-    ],
-    "quiz": {
-        "questions": [
-            {
-                "order": 1,
-                "question": "Which TWO options are valid ways to configure the native VLAN on a router in a router-on-a-stick configuration? (Each is a complete solution.)",
-                "explanation": "You can either add the `native` keyword to `encapsulation dot1q` on the sub-interface, or skip the sub-interface entirely and configure the native VLAN's IP address on the physical interface — in which case `encapsulation dot1q` is not needed.",
-                "options": [
-                    {"label": "A", "text": "`interface g0/0.10` then `encapsulation dot1q 10` then `ip address ...`", "is_correct": false},
-                    {"label": "B", "text": "`interface g0/0.10` then `encapsulation dot1q 10 native` then `ip address ...`", "is_correct": true},
-                    {"label": "C", "text": "`interface g0/0` then `ip address ...` (no sub-interface, no encapsulation command)", "is_correct": true},
-                    {"label": "D", "text": "`interface g0/0` then `switchport trunk native vlan 10`", "is_correct": false}
-                ]
-            },
-            {
-                "order": 2,
-                "question": "You create an SVI for VLAN 225 on SW1, assign an IP address and issue `no shutdown`, but the interface stays down/down. Which TWO options might be the cause?",
-                "explanation": "An SVI needs the VLAN to exist on the switch, and needs at least one up/up access port in that VLAN or an up/up trunk allowing it. `switchport` commands are not valid on an SVI at all.",
-                "options": [
-                    {"label": "A", "text": "VLAN 225 does not exist on the switch", "is_correct": true},
-                    {"label": "B", "text": "You didn't issue `switchport mode trunk` on the SVI", "is_correct": false},
-                    {"label": "C", "text": "You didn't issue `switchport access vlan 225` on the SVI", "is_correct": false},
-                    {"label": "D", "text": "No interfaces in VLAN 225 are up/up", "is_correct": true}
-                ]
-            },
-            {
-                "order": 3,
-                "question": "Which command configures a switch interface as a routed port?",
-                "explanation": "`no switchport` turns the interface from a Layer 2 switchport into a Layer 3 routed port, allowing an IP address to be assigned. `ip routing` enables routing on the switch as a whole, but does not change an individual interface.",
-                "options": [
-                    {"label": "A", "text": "no switchport", "is_correct": true},
-                    {"label": "B", "text": "ip address <address> <mask>", "is_correct": false},
-                    {"label": "C", "text": "ip routing", "is_correct": false},
-                    {"label": "D", "text": "switchport mode route", "is_correct": false}
-                ]
-            },
-            {
-                "order": 4,
-                "question": "On a Catalyst switch you issue: `interface fa0/7`, `switchport trunk encapsulation dot1q`, `switchport mode trunk`, `switchport trunk native vlan 44`. What is true of VLAN traffic sent over Fa0/7?",
-                "explanation": "Traffic in the native VLAN is sent untagged over a trunk. The native VLAN was changed to 44, so VLAN 44 traffic is untagged. By default it would have been VLAN 1.",
-                "options": [
-                    {"label": "A", "text": "VLAN 1 traffic will be untagged", "is_correct": false},
-                    {"label": "B", "text": "VLAN 44 traffic will be untagged", "is_correct": true},
-                    {"label": "C", "text": "All VLAN traffic will be tagged", "is_correct": false},
-                    {"label": "D", "text": "All VLAN traffic will be untagged", "is_correct": false}
-                ]
-            },
-            {
-                "order": 5,
-                "question": "In a Wireshark capture of a tagged frame, which value identifies it as 802.1Q tagged?",
-                "explanation": "The TPID field, located where the Type field normally sits (right after the source MAC), always carries 0x8100 to mark the frame as 802.1Q tagged.",
-                "options": [
-                    {"label": "A", "text": "0x0800 in the Type field", "is_correct": false},
-                    {"label": "B", "text": "0x8100 in the TPID field", "is_correct": true},
-                    {"label": "C", "text": "A VLAN ID of 1 in the VID field", "is_correct": false},
-                    {"label": "D", "text": "A PCP value of 1", "is_correct": false}
-                ]
-            },
-            {
-                "order": 6,
-                "question": "Why is a multilayer switch preferred over router on a stick in large networks?",
-                "explanation": "With ROAS every inter-VLAN packet travels to the router and back over the same link, which can congest it. A multilayer switch routes between VLANs internally using SVIs.",
-                "options": [
-                    {"label": "A", "text": "It uses fewer VLANs", "is_correct": false},
-                    {"label": "B", "text": "It avoids sending all inter-VLAN traffic to the router and back over one link", "is_correct": true},
-                    {"label": "C", "text": "It does not require 802.1Q tagging anywhere in the network", "is_correct": false},
-                    {"label": "D", "text": "It allows more than 4094 VLANs", "is_correct": false}
-                ]
-            }
+  "slug": "vlans-part-3",
+  "title": "VLANs: Native VLAN on a Router and Layer 3 Switching",
+  "summary": "Two ways to configure the native VLAN on a router, what a dot1Q tag looks like in a Wireshark capture, and the third method of inter-VLAN routing — SVIs and routed ports on a multilayer switch.",
+  "source_ref": "transcript_18.txt",
+  "order": 19,
+  "sections": [
+    {
+      "type": "explanation",
+      "title": "The native VLAN on a router",
+      "order": 1,
+      "content": {
+        "body": "Best practice is to set the native VLAN to an **unused VLAN**, because the native VLAN feature carries some security risks. But the feature does have one benefit: because native-VLAN frames are **not tagged**, each frame is 4 bytes smaller, so the device can push more frames per second.\n\nIf you do want to use it in a router-on-a-stick design, there are **two** ways to configure the native VLAN on the router — each is a complete solution:\n\n**Option 1 — `native` keyword on a sub-interface**\n\n```\nR1(config)# interface g0/0.10\nR1(config-subif)# encapsulation dot1q 10 native\nR1(config-subif)# ip address 192.168.1.62 255.255.255.192\n```\n\nThe router now behaves like a switch does for the native VLAN: untagged frames arriving are assumed to be VLAN 10, and frames leaving this sub-interface are sent untagged.\n\n**Option 2 — no sub-interface at all**\n\n```\nR1(config)# no interface g0/0.10\nR1(config)# interface g0/0\nR1(config-if)# ip address 192.168.1.62 255.255.255.192\n```\n\nConfigure the native VLAN's IP address directly on the **physical** interface. The `encapsulation dot1q` command is not needed. The other VLANs keep using their own sub-interfaces as normal."
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "Seeing the dot1Q tag in Wireshark",
+      "order": 2,
+      "content": {
+        "body": "Capture the link between SW2 and R1 while a PC in VLAN 20 (`192.168.1.65`) pings a PC in VLAN 10 (`192.168.1.1`), with VLAN 10 configured as the native VLAN on both devices.\n\n**ICMP echo request, SW2 → R1 (VLAN 20 — tagged):**\n\n- `Type: 802.1Q Virtual LAN` with hexadecimal value **0x8100** — this is the **TPID**, sitting exactly where the Type field normally goes, right after the source MAC.\n- **PCP** = 0, so no special priority.\n- **DEI** = 0, so the frame is not drop-eligible during congestion.\n- **VLAN ID** = 20, as expected.\n- Then the *real* Type field, showing that an IPv4 packet is encapsulated.\n\n**The same echo request, R1 → SW2 (VLAN 10 — native):**\n\nIdentical Layer 3 packet, new Ethernet header — but **no dot1Q tag at all**. Both R1 and SW2 understand that untagged frames on this trunk belong to VLAN 10, so there is no need to tag them. The request travels untagged all the way to the destination; when the reply comes back, it stays untagged until R1, which then tags it as VLAN 20."
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "Layer 3 switches (multilayer switches)",
+      "order": 3,
+      "content": {
+        "body": "Up to now every switch in this course has been a **Layer 2 switch** — not Layer 3 aware, caring only about MAC addresses. Many modern switches are also Layer 3 capable. These are called **Layer 3 switches** or **multilayer switches** (know both terms).\n\nA multilayer switch can do both switching **and** routing:\n\n- You can assign **IP addresses** to its interfaces, like a router.\n- You can configure **routed ports** — physical interfaces that behave like router interfaces instead of switchports.\n- You can create **SVIs** (Switch Virtual Interfaces) — virtual interfaces, one per VLAN, each with an IP address.\n- You can configure **routes**, such as static routes, exactly like on a router.\n- It can perform **inter-VLAN routing** without any router involved."
+      }
+    },
+    {
+      "type": "table",
+      "title": "The three methods of inter-VLAN routing",
+      "order": 4,
+      "content": {
+        "headers": [
+          "Method",
+          "How it works",
+          "Trade-off"
+        ],
+        "rows": [
+          [
+            "Separate interface per VLAN",
+            "One physical router interface and one cable per VLAN",
+            "Simple, but wastes interfaces — routers rarely have enough ports"
+          ],
+          [
+            "Router on a stick (ROAS)",
+            "One trunk link carrying all VLANs, with a router sub-interface per VLAN",
+            "Efficient on interfaces, but all inter-VLAN traffic goes to the router and back, which can congest the link in a busy network"
+          ],
+          [
+            "Layer 3 / multilayer switch",
+            "SVIs on the switch route between VLANs locally",
+            "Preferred in large networks — traffic never leaves the switch"
+          ]
         ]
+      }
+    },
+    {
+      "type": "animation",
+      "title": "Inter-VLAN routing with SVIs",
+      "order": 5,
+      "content": {
+        "diagram_type": "topology",
+        "nodes": [
+          {
+            "id": "pc2",
+            "label": "PC2\nVLAN 20",
+            "icon": "pc",
+            "x": 110,
+            "y": 320
+          },
+          {
+            "id": "sw2",
+            "label": "SW2\nLayer 3",
+            "icon": "switch",
+            "x": 360,
+            "y": 190
+          },
+          {
+            "id": "sw1",
+            "label": "SW1\nLayer 2",
+            "icon": "switch",
+            "x": 620,
+            "y": 190
+          },
+          {
+            "id": "pc1",
+            "label": "PC1\nVLAN 10",
+            "icon": "pc",
+            "x": 860,
+            "y": 90
+          },
+          {
+            "id": "r1",
+            "label": "R1",
+            "icon": "router",
+            "x": 360,
+            "y": 50
+          },
+          {
+            "id": "net",
+            "label": "Internet",
+            "icon": "cloud",
+            "x": 110,
+            "y": 50
+          }
+        ],
+        "links": [
+          {
+            "from": "pc2",
+            "to": "sw2",
+            "kind": "ethernet"
+          },
+          {
+            "from": "sw2",
+            "to": "sw1",
+            "kind": "ethernet"
+          },
+          {
+            "from": "sw1",
+            "to": "pc1",
+            "kind": "ethernet"
+          },
+          {
+            "from": "sw2",
+            "to": "r1",
+            "kind": "ethernet"
+          },
+          {
+            "from": "r1",
+            "to": "net",
+            "kind": "wan"
+          }
+        ],
+        "steps": [
+          {
+            "narration": "PC2 in VLAN 20 pings PC1 in VLAN 10. Its default gateway is no longer R1 — it is SW2's VLAN 20 SVI. The frame goes to SW2.",
+            "animate": {
+              "packet_from": "pc2",
+              "packet_to": "sw2",
+              "label": "to SVI 20",
+              "highlight": [
+                "pc2"
+              ]
+            }
+          },
+          {
+            "narration": "SW2 has its own routing table. It looks up 192.168.1.0/26 and finds it directly connected to the VLAN 10 SVI. The packet is routed into VLAN 10 — no router needed.",
+            "animate": {
+              "highlight": [
+                "sw2"
+              ],
+              "status": "ok"
+            }
+          },
+          {
+            "narration": "SW2 forwards the frame to SW1 over the trunk, tagged VLAN 10. (If the destination MAC were unknown, it would flood it out all VLAN 10 interfaces.)",
+            "animate": {
+              "packet_from": "sw2",
+              "packet_to": "sw1",
+              "label": "VLAN 10",
+              "highlight": [
+                "sw1"
+              ]
+            }
+          },
+          {
+            "narration": "SW1 delivers the frame to PC1. With ROAS this traffic would have made an extra round trip to R1 and back.",
+            "animate": {
+              "packet_from": "sw1",
+              "packet_to": "pc1",
+              "label": "untagged",
+              "status": "ok",
+              "highlight": [
+                "pc1"
+              ]
+            }
+          },
+          {
+            "narration": "For destinations outside the LAN, SW2 uses its default route out of the routed port G0/1 to R1 — a plain point-to-point Layer 3 link, no VLANs on it.",
+            "animate": {
+              "packet_from": "sw2",
+              "packet_to": "r1",
+              "label": "0.0.0.0/0",
+              "highlight": [
+                "r1",
+                "net"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "animation",
+      "title": "Configuring a routed port and SVIs",
+      "order": 6,
+      "content": {
+        "diagram_type": "cli_walkthrough",
+        "steps": [
+          {
+            "narration": "On R1, remove the old router-on-a-stick sub-interfaces.",
+            "command": "R1(config)#",
+            "input": "no interface g0/0.10"
+          },
+          {
+            "narration": "Reset the physical interface to its default settings. (Deleted sub-interfaces still show as `deleted` in show ip interface brief until a reload — harmless.)",
+            "command": "R1(config)#",
+            "input": "default interface g0/0"
+          },
+          {
+            "narration": "Give R1 its end of the new point-to-point /30 link.",
+            "command": "R1(config-if)#",
+            "input": "ip address 192.168.1.194 255.255.255.252"
+          },
+          {
+            "narration": "On SW2, reset the port that used to be the ROAS trunk.",
+            "command": "SW2(config)#",
+            "input": "default interface g0/1"
+          },
+          {
+            "narration": "The command you must not forget. This enables Layer 3 routing so the switch can build its own routing table. Without it, inter-VLAN routing will not work.",
+            "command": "SW2(config)#",
+            "input": "ip routing"
+          },
+          {
+            "narration": "Enter the interface facing R1.",
+            "command": "SW2(config)#",
+            "input": "interface g0/1"
+          },
+          {
+            "narration": "Convert it from a Layer 2 switchport to a Layer 3 routed port. Now it can take an IP address.",
+            "command": "SW2(config-if)#",
+            "input": "no switchport"
+          },
+          {
+            "narration": "Assign the switch's end of the /30 link.",
+            "command": "SW2(config-if)#",
+            "input": "ip address 192.168.1.193 255.255.255.252"
+          },
+          {
+            "narration": "Add a default route pointing at R1 so traffic leaving the LAN is sent there.",
+            "command": "SW2(config)#",
+            "input": "ip route 0.0.0.0 0.0.0.0 192.168.1.194"
+          },
+          {
+            "narration": "Create the SVI for VLAN 10. This is the PCs' new default gateway.",
+            "command": "SW2(config)#",
+            "input": "interface vlan 10"
+          },
+          {
+            "narration": "Same address R1 used for ROAS — the last usable address of the subnet — so no PC needs reconfiguring.",
+            "command": "SW2(config-if)#",
+            "input": "ip address 192.168.1.62 255.255.255.192"
+          },
+          {
+            "narration": "SVIs are shut down by default. Never forget this command.",
+            "command": "SW2(config-if)#",
+            "input": "no shutdown"
+          },
+          {
+            "narration": "Repeat for VLAN 20 and VLAN 30 the same way.",
+            "command": "SW2(config)#",
+            "input": "interface vlan 20"
+          },
+          {
+            "narration": "In the VLAN column, G0/1 now shows `routed` instead of a VLAN number.",
+            "command": "SW2#",
+            "input": "show interfaces status"
+          },
+          {
+            "narration": "The switch now has a real routing table — connected and local routes per SVI, plus the default route to R1.",
+            "command": "SW2#",
+            "input": "show ip route"
+          }
+        ]
+      }
+    },
+    {
+      "type": "table",
+      "title": "Four conditions for an SVI to be up/up",
+      "order": 7,
+      "content": {
+        "headers": [
+          "#",
+          "Condition",
+          "Notes"
+        ],
+        "rows": [
+          [
+            "1",
+            "The VLAN must exist on the switch",
+            "Unlike `switchport access vlan`, creating an SVI does NOT auto-create the VLAN"
+          ],
+          [
+            "2",
+            "At least one up/up access port in the VLAN, and/or one up/up trunk port that allows the VLAN",
+            "A VLAN with no hosts can still come up if a trunk allows it"
+          ],
+          [
+            "3",
+            "The VLAN itself must not be shut down",
+            "This is the VLAN, not the SVI — `vlan 10` then `shutdown` disables it"
+          ],
+          [
+            "4",
+            "The SVI itself must not be shut down",
+            "SVIs are shut down by default, so `no shutdown` is required"
+          ]
+        ]
+      }
+    },
+    {
+      "type": "callout",
+      "title": "Exam tip",
+      "order": 8,
+      "content": {
+        "body": "Two commands are commonly confused. `ip routing` enables Layer 3 routing on the whole switch. `no switchport` converts one individual interface into a routed port so it can take an IP address. You need both for a Layer 3 switch uplink — and neither of them creates an SVI.",
+        "style": "exam_tip"
+      }
+    },
+    {
+      "order": 9,
+      "type": "commands",
+      "title": "Command reference: the native VLAN and Layer 3 switching",
+      "content": {
+        "commands": [
+          {
+            "command": "encapsulation dot1q ... native",
+            "mode": "sub-interface config",
+            "syntax": "encapsulation dot1q <vlan-id> native",
+            "example": "R1(config-subif)# encapsulation dot1q 10 native",
+            "description": "Marks the sub-interface as handling the trunk's native VLAN, so it expects untagged frames in and sends untagged frames out.",
+            "note": "Alternative approach: configure the native VLAN's IP address directly on the physical interface and use no sub-interface at all.",
+            "group": "Native VLAN on a router"
+          },
+          {
+            "command": "no interface",
+            "mode": "global config",
+            "syntax": "no interface <type><slot>/<port>.<sub-interface>",
+            "example": "R1(config)# no interface g0/0.10",
+            "description": "Deletes a sub-interface and all of its configuration.",
+            "group": "Native VLAN on a router"
+          },
+          {
+            "command": "default interface",
+            "mode": "global config",
+            "syntax": "default interface <interface>",
+            "example": "SW2(config)# default interface g1/0/2",
+            "description": "Resets an interface to its factory default configuration, wiping everything previously configured on it.",
+            "note": "Useful when repurposing a port. In Packet Tracer this sometimes has to be issued twice to fully take effect.",
+            "group": "Layer 3 switching"
+          },
+          {
+            "command": "no switchport",
+            "mode": "interface config",
+            "syntax": "no switchport",
+            "example": "SW2(config-if)# no switchport",
+            "description": "Converts a switch port from a Layer 2 port into a routed (Layer 3) port, so it can be given its own IP address like a router interface.",
+            "note": "Only available on multilayer (Layer 3) switches.",
+            "group": "Layer 3 switching"
+          },
+          {
+            "command": "ip routing",
+            "mode": "global config",
+            "syntax": "ip routing",
+            "example": "SW2(config)# ip routing",
+            "description": "Enables IPv4 routing on a multilayer switch. Without it the switch will not route between VLANs, no matter how the interfaces are configured.",
+            "note": "This is the single most commonly forgotten step when configuring inter-VLAN routing on a Layer 3 switch.",
+            "group": "Layer 3 switching"
+          },
+          {
+            "command": "interface vlan",
+            "mode": "global config",
+            "syntax": "interface vlan <vlan-id>",
+            "example": "SW2(config)# interface vlan 10\nSW2(config-if)#",
+            "description": "Creates a switched virtual interface (SVI) — a logical Layer 3 interface for the VLAN, acting as the default gateway for hosts in it.",
+            "note": "An SVI reaches up/up only when: the VLAN exists, the VLAN is not shut down, the SVI is not shut down, and at least one up/up access port or a trunk carries the VLAN.",
+            "group": "Layer 3 switching"
+          },
+          {
+            "command": "ip route (default)",
+            "mode": "global config",
+            "syntax": "ip route 0.0.0.0 0.0.0.0 <next-hop>",
+            "example": "SW2(config)# ip route 0.0.0.0 0.0.0.0 192.168.1.194",
+            "description": "Gives the Layer 3 switch a default route so it can forward traffic destined outside the local VLANs toward the router.",
+            "group": "Layer 3 switching"
+          },
+          {
+            "command": "show interfaces status",
+            "mode": "privileged EXEC",
+            "syntax": "show interfaces status",
+            "example": "SW2# show interfaces status",
+            "description": "Confirms interface roles. A port converted with no switchport shows as routed in the VLAN column.",
+            "group": "Verification"
+          },
+          {
+            "command": "show ip route",
+            "mode": "privileged EXEC",
+            "syntax": "show ip route",
+            "example": "SW2# show ip route",
+            "description": "On a Layer 3 switch with ip routing enabled, each SVI with an address contributes connected and local routes.",
+            "group": "Verification"
+          }
+        ]
+      }
     }
+  ],
+  "quiz": {
+    "questions": [
+      {
+        "order": 1,
+        "question": "Which TWO options are valid ways to configure the native VLAN on a router in a router-on-a-stick configuration? (Each is a complete solution.)",
+        "explanation": "You can either add the `native` keyword to `encapsulation dot1q` on the sub-interface, or skip the sub-interface entirely and configure the native VLAN's IP address on the physical interface — in which case `encapsulation dot1q` is not needed.",
+        "options": [
+          {
+            "label": "A",
+            "text": "`interface g0/0.10` then `encapsulation dot1q 10` then `ip address ...`",
+            "is_correct": false
+          },
+          {
+            "label": "B",
+            "text": "`interface g0/0.10` then `encapsulation dot1q 10 native` then `ip address ...`",
+            "is_correct": true
+          },
+          {
+            "label": "C",
+            "text": "`interface g0/0` then `ip address ...` (no sub-interface, no encapsulation command)",
+            "is_correct": true
+          },
+          {
+            "label": "D",
+            "text": "`interface g0/0` then `switchport trunk native vlan 10`",
+            "is_correct": false
+          }
+        ]
+      },
+      {
+        "order": 2,
+        "question": "You create an SVI for VLAN 225 on SW1, assign an IP address and issue `no shutdown`, but the interface stays down/down. Which TWO options might be the cause?",
+        "explanation": "An SVI needs the VLAN to exist on the switch, and needs at least one up/up access port in that VLAN or an up/up trunk allowing it. `switchport` commands are not valid on an SVI at all.",
+        "options": [
+          {
+            "label": "A",
+            "text": "VLAN 225 does not exist on the switch",
+            "is_correct": true
+          },
+          {
+            "label": "B",
+            "text": "You didn't issue `switchport mode trunk` on the SVI",
+            "is_correct": false
+          },
+          {
+            "label": "C",
+            "text": "You didn't issue `switchport access vlan 225` on the SVI",
+            "is_correct": false
+          },
+          {
+            "label": "D",
+            "text": "No interfaces in VLAN 225 are up/up",
+            "is_correct": true
+          }
+        ]
+      },
+      {
+        "order": 3,
+        "question": "Which command configures a switch interface as a routed port?",
+        "explanation": "`no switchport` turns the interface from a Layer 2 switchport into a Layer 3 routed port, allowing an IP address to be assigned. `ip routing` enables routing on the switch as a whole, but does not change an individual interface.",
+        "options": [
+          {
+            "label": "A",
+            "text": "no switchport",
+            "is_correct": true
+          },
+          {
+            "label": "B",
+            "text": "ip address <address> <mask>",
+            "is_correct": false
+          },
+          {
+            "label": "C",
+            "text": "ip routing",
+            "is_correct": false
+          },
+          {
+            "label": "D",
+            "text": "switchport mode route",
+            "is_correct": false
+          }
+        ]
+      },
+      {
+        "order": 4,
+        "question": "On a Catalyst switch you issue: `interface fa0/7`, `switchport trunk encapsulation dot1q`, `switchport mode trunk`, `switchport trunk native vlan 44`. What is true of VLAN traffic sent over Fa0/7?",
+        "explanation": "Traffic in the native VLAN is sent untagged over a trunk. The native VLAN was changed to 44, so VLAN 44 traffic is untagged. By default it would have been VLAN 1.",
+        "options": [
+          {
+            "label": "A",
+            "text": "VLAN 1 traffic will be untagged",
+            "is_correct": false
+          },
+          {
+            "label": "B",
+            "text": "VLAN 44 traffic will be untagged",
+            "is_correct": true
+          },
+          {
+            "label": "C",
+            "text": "All VLAN traffic will be tagged",
+            "is_correct": false
+          },
+          {
+            "label": "D",
+            "text": "All VLAN traffic will be untagged",
+            "is_correct": false
+          }
+        ]
+      },
+      {
+        "order": 5,
+        "question": "In a Wireshark capture of a tagged frame, which value identifies it as 802.1Q tagged?",
+        "explanation": "The TPID field, located where the Type field normally sits (right after the source MAC), always carries 0x8100 to mark the frame as 802.1Q tagged.",
+        "options": [
+          {
+            "label": "A",
+            "text": "0x0800 in the Type field",
+            "is_correct": false
+          },
+          {
+            "label": "B",
+            "text": "0x8100 in the TPID field",
+            "is_correct": true
+          },
+          {
+            "label": "C",
+            "text": "A VLAN ID of 1 in the VID field",
+            "is_correct": false
+          },
+          {
+            "label": "D",
+            "text": "A PCP value of 1",
+            "is_correct": false
+          }
+        ]
+      },
+      {
+        "order": 6,
+        "question": "Why is a multilayer switch preferred over router on a stick in large networks?",
+        "explanation": "With ROAS every inter-VLAN packet travels to the router and back over the same link, which can congest it. A multilayer switch routes between VLANs internally using SVIs.",
+        "options": [
+          {
+            "label": "A",
+            "text": "It uses fewer VLANs",
+            "is_correct": false
+          },
+          {
+            "label": "B",
+            "text": "It avoids sending all inter-VLAN traffic to the router and back over one link",
+            "is_correct": true
+          },
+          {
+            "label": "C",
+            "text": "It does not require 802.1Q tagging anywhere in the network",
+            "is_correct": false
+          },
+          {
+            "label": "D",
+            "text": "It allows more than 4094 VLANs",
+            "is_correct": false
+          }
+        ]
+      }
+    ]
+  }
 }

@@ -150,6 +150,50 @@
                         </ol>
                     @endif
 
+                @elseif ($section->type === 'commands')
+                    @if (! empty($content['intro']))
+                        <div class="notes-p">{{ $content['intro'] }}</div>
+                    @endif
+                    @php
+                        $noteGroups = [];
+                        foreach ($content['commands'] ?? [] as $noteCmd) {
+                            $noteGroups[$noteCmd['group'] ?? ''][] = $noteCmd;
+                        }
+                    @endphp
+                    @foreach ($noteGroups as $noteGroupLabel => $noteGroupCmds)
+                        @if ($noteGroupLabel !== '')
+                            <div class="notes-h3">{{ $noteGroupLabel }}</div>
+                        @endif
+                        <table class="notes-table">
+                            <thead>
+                                <tr>
+                                    <th style="width:34%">Syntax</th>
+                                    <th style="width:33%">Example</th>
+                                    <th style="width:33%">What it does</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($noteGroupCmds as $noteCmd)
+                                    <tr>
+                                        <td>
+                                            <span class="notes-cmd">{{ $noteCmd['syntax'] ?? $noteCmd['command'] }}</span>
+                                            @if (! empty($noteCmd['mode']))
+                                                <div class="notes-mode">{{ $noteCmd['mode'] }}</div>
+                                            @endif
+                                        </td>
+                                        <td><span class="notes-cmd">{{ $noteCmd['example'] ?? '' }}</span></td>
+                                        <td>
+                                            {{ $noteCmd['description'] ?? '' }}
+                                            @if (! empty($noteCmd['note']))
+                                                <div class="notes-mode">{{ $noteCmd['note'] }}</div>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    @endforeach
+
                 {{-- Interactive / anything else --}}
                 @else
                     <div class="notes-callout">

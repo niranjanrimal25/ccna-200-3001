@@ -1,180 +1,427 @@
 {
-    "slug": "stp-toolkit-portfast",
-    "title": "STP Toolkit: PortFast",
-    "summary": "The 30-second delay every host suffers when connecting to a switch, how PortFast eliminates it by skipping the Listening and Learning states, the three ways to configure it, and why it must never be used on ports facing other switches.",
-    "source_ref": "transcript_21_part_1.txt",
-    "order": 24,
-    "sections": [
-        {
-            "type": "explanation",
-            "title": "The problem PortFast solves",
-            "order": 1,
-            "content": {
-                "body": "When an end host connects to a switch port, the port goes **up/up** — you can see it in `show ip interface brief` — but it still cannot send or receive data. Any frame the PC sends is discarded by the switch.\n\nWhy? It is an STP **designated port**, and it takes **30 seconds** to reach the forwarding state: 15 seconds Listening + 15 seconds Learning.\n\nThis is a poor user experience. The user expects the network to work immediately. They probably do not even know STP exists, and have no reason to. All they know is that \"the internet doesn't work\" for 30 seconds after plugging in — and that is frustrating.\n\nWorst of all, **the wait is completely unnecessary.** There is no risk of a Layer 2 loop between a switch and a PC. Loops occur between switches because of how switches flood frames; PCs do not flood.\n\n**On real hardware:** plug a cable into port 1 of a Catalyst switch and the **link light blinks amber**. The port is up and receiving data from the PC, but STP is blocking it. After 30 seconds the light turns **green** — the port is Forwarding and ready."
+  "slug": "stp-toolkit-portfast",
+  "title": "STP Toolkit: PortFast",
+  "summary": "The 30-second delay every host suffers when connecting to a switch, how PortFast eliminates it by skipping the Listening and Learning states, the three ways to configure it, and why it must never be used on ports facing other switches.",
+  "source_ref": "transcript_21_part_1.txt",
+  "order": 24,
+  "sections": [
+    {
+      "type": "explanation",
+      "title": "The problem PortFast solves",
+      "order": 1,
+      "content": {
+        "body": "When an end host connects to a switch port, the port goes **up/up** — you can see it in `show ip interface brief` — but it still cannot send or receive data. Any frame the PC sends is discarded by the switch.\n\nWhy? It is an STP **designated port**, and it takes **30 seconds** to reach the forwarding state: 15 seconds Listening + 15 seconds Learning.\n\nThis is a poor user experience. The user expects the network to work immediately. They probably do not even know STP exists, and have no reason to. All they know is that \"the internet doesn't work\" for 30 seconds after plugging in — and that is frustrating.\n\nWorst of all, **the wait is completely unnecessary.** There is no risk of a Layer 2 loop between a switch and a PC. Loops occur between switches because of how switches flood frames; PCs do not flood.\n\n**On real hardware:** plug a cable into port 1 of a Catalyst switch and the **link light blinks amber**. The port is up and receiving data from the PC, but STP is blocking it. After 30 seconds the light turns **green** — the port is Forwarding and ready."
+      }
+    },
+    {
+      "type": "animation",
+      "title": "With and without PortFast",
+      "order": 2,
+      "content": {
+        "diagram_type": "topology",
+        "nodes": [
+          {
+            "id": "pc1",
+            "label": "PC1",
+            "icon": "pc",
+            "x": 120,
+            "y": 170
+          },
+          {
+            "id": "sw1",
+            "label": "SW1\nG0/1",
+            "icon": "switch",
+            "x": 430,
+            "y": 170
+          },
+          {
+            "id": "net",
+            "label": "Network",
+            "icon": "cloud",
+            "x": 740,
+            "y": 170
+          }
+        ],
+        "links": [
+          {
+            "from": "pc1",
+            "to": "sw1",
+            "kind": "ethernet"
+          },
+          {
+            "from": "sw1",
+            "to": "net",
+            "kind": "ethernet"
+          }
+        ],
+        "steps": [
+          {
+            "narration": "The cable is plugged in. G0/1 goes up/up immediately — but STP puts it in the Listening state for 15 seconds. The link light is amber.",
+            "animate": {
+              "packet_from": "pc1",
+              "packet_to": "sw1",
+              "label": "dropped",
+              "status": "fail",
+              "highlight": [
+                "sw1"
+              ]
             }
-        },
-        {
-            "type": "animation",
-            "title": "With and without PortFast",
-            "order": 2,
-            "content": {
-                "diagram_type": "topology",
-                "nodes": [
-                    {"id": "pc1", "label": "PC1", "icon": "pc", "x": 120, "y": 170},
-                    {"id": "sw1", "label": "SW1\nG0/1", "icon": "switch", "x": 430, "y": 170},
-                    {"id": "net", "label": "Network", "icon": "cloud", "x": 740, "y": 170}
-                ],
-                "links": [
-                    {"from": "pc1", "to": "sw1", "kind": "ethernet"},
-                    {"from": "sw1", "to": "net", "kind": "ethernet"}
-                ],
-                "steps": [
-                    {
-                        "narration": "The cable is plugged in. G0/1 goes up/up immediately — but STP puts it in the Listening state for 15 seconds. The link light is amber.",
-                        "animate": {"packet_from": "pc1", "packet_to": "sw1", "label": "dropped", "status": "fail", "highlight": ["sw1"]}
-                    },
-                    {
-                        "narration": "Listening ends, Learning begins — another 15 seconds. The switch now learns MAC addresses, but user traffic is still discarded.",
-                        "animate": {"packet_from": "pc1", "packet_to": "sw1", "label": "dropped", "status": "fail", "highlight": ["sw1"]}
-                    },
-                    {
-                        "narration": "After a total of 30 seconds the port finally reaches Forwarding. The link light turns green and PC1 can reach the network.",
-                        "animate": {"packet_from": "pc1", "packet_to": "net", "label": "traffic", "status": "ok", "highlight": ["pc1", "net"]}
-                    },
-                    {
-                        "narration": "Now with PortFast enabled on G0/1. The instant the port is enabled it enters Forwarding, bypassing Listening and Learning entirely — green light straight away.",
-                        "animate": {"packet_from": "pc1", "packet_to": "net", "label": "immediate", "status": "ok", "highlight": ["pc1", "sw1", "net"]}
-                    }
-                ]
+          },
+          {
+            "narration": "Listening ends, Learning begins — another 15 seconds. The switch now learns MAC addresses, but user traffic is still discarded.",
+            "animate": {
+              "packet_from": "pc1",
+              "packet_to": "sw1",
+              "label": "dropped",
+              "status": "fail",
+              "highlight": [
+                "sw1"
+              ]
             }
-        },
-        {
-            "type": "explanation",
-            "title": "Configuring PortFast",
-            "order": 3,
-            "content": {
-                "body": "**Method 1 — per interface**\n\n```\nSW1(config)# interface g0/1\nSW1(config-if)# spanning-tree portfast\n```\n\nEnables PortFast only on that one interface.\n\n**Method 2 — globally**\n\n```\nSW1(config)# spanning-tree portfast default\n```\n\nEnables PortFast on **all access ports**. In most networks this covers exactly the ports facing end hosts and none of the ports facing switches — because inter-switch links are almost always trunks (most modern LANs use multiple VLANs), while host links are almost always access ports (most hosts do not need traffic in multiple VLANs).\n\nTo turn it off again on one specific port after enabling it globally:\n\n```\nSW1(config-if)# spanning-tree portfast disable\n```\n\nYou would only need this if two switches are connected with an *access* link — rare, but possible.\n\n**Verifying**\n\n```\nSW1# show spanning-tree interface g0/1 detail\n```\n\nLook for the line *\"The port is in the portfast edge mode\"*. On a globally-enabled access port it reads *\"portfast edge mode by default\"*. On a trunk port PortFast is not mentioned at all."
+          },
+          {
+            "narration": "After a total of 30 seconds the port finally reaches Forwarding. The link light turns green and PC1 can reach the network.",
+            "animate": {
+              "packet_from": "pc1",
+              "packet_to": "net",
+              "label": "traffic",
+              "status": "ok",
+              "highlight": [
+                "pc1",
+                "net"
+              ]
             }
-        },
-        {
-            "type": "callout",
-            "title": "Warning",
-            "order": 4,
-            "content": {
-                "body": "IOS prints: \"PortFast should only be enabled on ports connected to a single host. Connecting hubs, concentrators, switches, bridges, etc... to this interface when portfast is enabled, can cause temporary bridging loops. Use with CAUTION.\" The entire point of Listening and Learning is to be 100% sure there is no loop before forwarding. PortFast skips that check — so on a switch-to-switch link it can create a temporary Layer 2 loop.",
-                "style": "warning"
+          },
+          {
+            "narration": "Now with PortFast enabled on G0/1. The instant the port is enabled it enters Forwarding, bypassing Listening and Learning entirely — green light straight away.",
+            "animate": {
+              "packet_from": "pc1",
+              "packet_to": "net",
+              "label": "immediate",
+              "status": "ok",
+              "highlight": [
+                "pc1",
+                "sw1",
+                "net"
+              ]
             }
-        },
-        {
-            "type": "explanation",
-            "title": "PortFast on trunk ports",
-            "order": 5,
-            "content": {
-                "body": "The standard commands only activate PortFast on **access** ports. If you configure `spanning-tree portfast` on a trunk, IOS warns: *\"Portfast has been configured on GigabitEthernet0/1 but will only have effect when the interface is in a non-trunking mode.\"*\n\nBut there are legitimate reasons to want PortFast on a trunk:\n\n- A **virtualization server** hosting VMs in different VLANs. Such servers often connect over trunk links rather than access links.\n- A **router using router on a stick**, which is effectively a trunk link to a router. A router does not flood frames like a switch and will not cause Layer 2 loops.\n\nFor these, use the per-interface trunk form:\n\n```\nSW1(config-if)# spanning-tree portfast trunk\n```\n\nThere is no global equivalent — it can only be configured per port. `show spanning-tree interface ... detail` then reports *\"The port is in portfast edge trunk mode\"*."
-            }
-        },
-        {
-            "type": "explanation",
-            "title": "PortFast edge vs network, and the EDGE keyword",
-            "order": 6,
-            "content": {
-                "body": "There are two kinds of PortFast:\n\n- **PortFast edge** — what this lesson covers, and the only kind on the CCNA.\n- **PortFast network** — used for a feature called Bridge Assurance. Not a CCNA topic.\n\nOn modern Cisco switches, the commands in this lesson **automatically gain the `edge` keyword** in the running configuration:\n\n| What you type | What appears in running-config |\n|---|---|\n| `spanning-tree portfast` | `spanning-tree portfast edge` |\n| `spanning-tree portfast trunk` | `spanning-tree portfast edge trunk` |\n| `spanning-tree portfast default` | `spanning-tree portfast edge default` |\n| `spanning-tree portfast disable` | `spanning-tree portfast disable` (the exception — no `edge`) |\n\nYou can type either version; the result is identical. To configure PortFast *network* instead, you must specify the keyword explicitly: `spanning-tree portfast network`.\n\n`show running-config interface g0/1` is a handy way to see just one interface's configuration rather than the whole device — though it does not work in Packet Tracer."
-            }
-        },
-        {
-            "type": "callout",
-            "title": "Exam tip",
-            "order": 7,
-            "content": {
-                "body": "Be ready to recognise both forms of these commands, with and without EDGE — their effect is the same. And note that the current version of Packet Tracer does not support the EDGE keyword, so do not be confused if labbing it there fails.",
-                "style": "exam_tip"
-            }
-        },
-        {
-            "type": "table",
-            "title": "PortFast command summary",
-            "order": 8,
-            "content": {
-                "headers": ["Command", "Mode", "Effect"],
-                "rows": [
-                    ["`spanning-tree portfast`", "Interface", "PortFast on this interface — active only when it is an access port"],
-                    ["`spanning-tree portfast default`", "Global", "PortFast on **all access ports**, not trunk ports"],
-                    ["`spanning-tree portfast disable`", "Interface", "Turns PortFast off on this port after it was enabled globally"],
-                    ["`spanning-tree portfast trunk`", "Interface", "PortFast on a trunk port — for virtualization servers and router-on-a-stick links"],
-                    ["`show spanning-tree interface g0/1 detail`", "Exec", "Confirms `portfast edge mode` / `portfast edge trunk mode`"],
-                    ["`show running-config interface g0/1`", "Exec", "Shows the config of one interface (not supported in Packet Tracer)"]
-                ]
-            }
-        }
-    ],
-    "quiz": {
-        "questions": [
-            {
-                "order": 1,
-                "question": "A PC is connected to a switch port and the port shows up/up, but traffic is discarded for 30 seconds. Why?",
-                "explanation": "The port is an STP designated port and must pass through Listening (15 s) and Learning (15 s) before it can forward. It is up/up the whole time, which is why the fault is confusing to users.",
-                "options": [
-                    {"label": "A", "text": "The switch is learning the PC's IP address", "is_correct": false},
-                    {"label": "B", "text": "STP holds the port in Listening then Learning for 15 seconds each", "is_correct": true},
-                    {"label": "C", "text": "The port is negotiating duplex and speed", "is_correct": false},
-                    {"label": "D", "text": "DTP is negotiating the port type", "is_correct": false}
-                ]
-            },
-            {
-                "order": 2,
-                "question": "Which command enables PortFast on all access ports?",
-                "explanation": "`spanning-tree portfast default` in global configuration mode enables PortFast on all access ports — not on trunk ports, despite the warning message saying \"all interfaces\".",
-                "options": [
-                    {"label": "A", "text": "spanning-tree portfast (interface mode)", "is_correct": false},
-                    {"label": "B", "text": "spanning-tree portfast default (global mode)", "is_correct": true},
-                    {"label": "C", "text": "spanning-tree portfast trunk (interface mode)", "is_correct": false},
-                    {"label": "D", "text": "spanning-tree portfast all (global mode)", "is_correct": false}
-                ]
-            },
-            {
-                "order": 3,
-                "question": "Why must PortFast never be enabled on a port connected to another switch?",
-                "explanation": "Listening and Learning exist to guarantee no loop is formed before forwarding. Bypassing them on a switch-to-switch link can create a temporary Layer 2 bridging loop.",
-                "options": [
-                    {"label": "A", "text": "It would disable the trunk", "is_correct": false},
-                    {"label": "B", "text": "It can cause a temporary Layer 2 loop", "is_correct": true},
-                    {"label": "C", "text": "BPDUs would no longer be sent", "is_correct": false},
-                    {"label": "D", "text": "The port would never leave the Learning state", "is_correct": false}
-                ]
-            },
-            {
-                "order": 4,
-                "question": "Which TWO situations justify enabling PortFast on a trunk port?",
-                "explanation": "A virtualization server hosting VMs in several VLANs connects over a trunk, and a router-on-a-stick link is a trunk to a router. Neither device floods frames like a switch, so neither can cause a Layer 2 loop.",
-                "options": [
-                    {"label": "A", "text": "A trunk to a virtualization server with VMs in different VLANs", "is_correct": true},
-                    {"label": "B", "text": "A trunk between two access switches", "is_correct": false},
-                    {"label": "C", "text": "A router-on-a-stick link to a router", "is_correct": true},
-                    {"label": "D", "text": "An uplink to the distribution layer switch", "is_correct": false}
-                ]
-            },
-            {
-                "order": 5,
-                "question": "You configure `spanning-tree portfast` on a modern Cisco switch. What appears in the running configuration?",
-                "explanation": "Modern switches automatically append the `edge` keyword, producing `spanning-tree portfast edge`. Typing either form gives the same result. `spanning-tree portfast disable` is the exception and gains no keyword.",
-                "options": [
-                    {"label": "A", "text": "spanning-tree portfast", "is_correct": false},
-                    {"label": "B", "text": "spanning-tree portfast edge", "is_correct": true},
-                    {"label": "C", "text": "spanning-tree portfast network", "is_correct": false},
-                    {"label": "D", "text": "spanning-tree portfast default", "is_correct": false}
-                ]
-            },
-            {
-                "order": 6,
-                "question": "Which command confirms that a port is operating in PortFast edge mode?",
-                "explanation": "`show spanning-tree interface <interface> detail` includes the line \"The port is in the portfast edge mode\".",
-                "options": [
-                    {"label": "A", "text": "show spanning-tree interface g0/1 detail", "is_correct": true},
-                    {"label": "B", "text": "show interfaces g0/1 switchport", "is_correct": false},
-                    {"label": "C", "text": "show vlan brief", "is_correct": false},
-                    {"label": "D", "text": "show interfaces trunk", "is_correct": false}
-                ]
-            }
+          }
         ]
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "Configuring PortFast",
+      "order": 3,
+      "content": {
+        "body": "**Method 1 — per interface**\n\n```\nSW1(config)# interface g0/1\nSW1(config-if)# spanning-tree portfast\n```\n\nEnables PortFast only on that one interface.\n\n**Method 2 — globally**\n\n```\nSW1(config)# spanning-tree portfast default\n```\n\nEnables PortFast on **all access ports**. In most networks this covers exactly the ports facing end hosts and none of the ports facing switches — because inter-switch links are almost always trunks (most modern LANs use multiple VLANs), while host links are almost always access ports (most hosts do not need traffic in multiple VLANs).\n\nTo turn it off again on one specific port after enabling it globally:\n\n```\nSW1(config-if)# spanning-tree portfast disable\n```\n\nYou would only need this if two switches are connected with an *access* link — rare, but possible.\n\n**Verifying**\n\n```\nSW1# show spanning-tree interface g0/1 detail\n```\n\nLook for the line *\"The port is in the portfast edge mode\"*. On a globally-enabled access port it reads *\"portfast edge mode by default\"*. On a trunk port PortFast is not mentioned at all."
+      }
+    },
+    {
+      "type": "callout",
+      "title": "Warning",
+      "order": 4,
+      "content": {
+        "body": "IOS prints: \"PortFast should only be enabled on ports connected to a single host. Connecting hubs, concentrators, switches, bridges, etc... to this interface when portfast is enabled, can cause temporary bridging loops. Use with CAUTION.\" The entire point of Listening and Learning is to be 100% sure there is no loop before forwarding. PortFast skips that check — so on a switch-to-switch link it can create a temporary Layer 2 loop.",
+        "style": "warning"
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "PortFast on trunk ports",
+      "order": 5,
+      "content": {
+        "body": "The standard commands only activate PortFast on **access** ports. If you configure `spanning-tree portfast` on a trunk, IOS warns: *\"Portfast has been configured on GigabitEthernet0/1 but will only have effect when the interface is in a non-trunking mode.\"*\n\nBut there are legitimate reasons to want PortFast on a trunk:\n\n- A **virtualization server** hosting VMs in different VLANs. Such servers often connect over trunk links rather than access links.\n- A **router using router on a stick**, which is effectively a trunk link to a router. A router does not flood frames like a switch and will not cause Layer 2 loops.\n\nFor these, use the per-interface trunk form:\n\n```\nSW1(config-if)# spanning-tree portfast trunk\n```\n\nThere is no global equivalent — it can only be configured per port. `show spanning-tree interface ... detail` then reports *\"The port is in portfast edge trunk mode\"*."
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "PortFast edge vs network, and the EDGE keyword",
+      "order": 6,
+      "content": {
+        "body": "There are two kinds of PortFast:\n\n- **PortFast edge** — what this lesson covers, and the only kind on the CCNA.\n- **PortFast network** — used for a feature called Bridge Assurance. Not a CCNA topic.\n\nOn modern Cisco switches, the commands in this lesson **automatically gain the `edge` keyword** in the running configuration:\n\n| What you type | What appears in running-config |\n|---|---|\n| `spanning-tree portfast` | `spanning-tree portfast edge` |\n| `spanning-tree portfast trunk` | `spanning-tree portfast edge trunk` |\n| `spanning-tree portfast default` | `spanning-tree portfast edge default` |\n| `spanning-tree portfast disable` | `spanning-tree portfast disable` (the exception — no `edge`) |\n\nYou can type either version; the result is identical. To configure PortFast *network* instead, you must specify the keyword explicitly: `spanning-tree portfast network`.\n\n`show running-config interface g0/1` is a handy way to see just one interface's configuration rather than the whole device — though it does not work in Packet Tracer."
+      }
+    },
+    {
+      "type": "callout",
+      "title": "Exam tip",
+      "order": 7,
+      "content": {
+        "body": "Be ready to recognise both forms of these commands, with and without EDGE — their effect is the same. And note that the current version of Packet Tracer does not support the EDGE keyword, so do not be confused if labbing it there fails.",
+        "style": "exam_tip"
+      }
+    },
+    {
+      "type": "table",
+      "title": "PortFast command summary",
+      "order": 8,
+      "content": {
+        "headers": [
+          "Command",
+          "Mode",
+          "Effect"
+        ],
+        "rows": [
+          [
+            "`spanning-tree portfast`",
+            "Interface",
+            "PortFast on this interface — active only when it is an access port"
+          ],
+          [
+            "`spanning-tree portfast default`",
+            "Global",
+            "PortFast on **all access ports**, not trunk ports"
+          ],
+          [
+            "`spanning-tree portfast disable`",
+            "Interface",
+            "Turns PortFast off on this port after it was enabled globally"
+          ],
+          [
+            "`spanning-tree portfast trunk`",
+            "Interface",
+            "PortFast on a trunk port — for virtualization servers and router-on-a-stick links"
+          ],
+          [
+            "`show spanning-tree interface g0/1 detail`",
+            "Exec",
+            "Confirms `portfast edge mode` / `portfast edge trunk mode`"
+          ],
+          [
+            "`show running-config interface g0/1`",
+            "Exec",
+            "Shows the config of one interface (not supported in Packet Tracer)"
+          ]
+        ]
+      }
+    },
+    {
+      "order": 9,
+      "type": "commands",
+      "title": "Command reference: PortFast",
+      "content": {
+        "commands": [
+          {
+            "command": "spanning-tree portfast",
+            "mode": "interface config",
+            "syntax": "spanning-tree portfast",
+            "example": "SW1(config)# interface g0/1\nSW1(config-if)# spanning-tree portfast",
+            "description": "Enables PortFast on one interface, so it skips the listening and learning states and moves straight to forwarding when it comes up.",
+            "note": "IOS prints a warning: only enable this on ports connected to end hosts. On a switch-to-switch link it can cause a temporary loop. Modern IOS automatically appends the edge keyword.",
+            "group": "Enabling PortFast"
+          },
+          {
+            "command": "spanning-tree portfast default",
+            "mode": "global config",
+            "syntax": "spanning-tree portfast default",
+            "example": "SW1(config)# spanning-tree portfast default",
+            "description": "Enables PortFast on all access ports at once.",
+            "note": "This usually hits exactly the right ports, because inter-switch links are almost always trunks while host links are almost always access ports. Modern IOS writes it as spanning-tree portfast edge default.",
+            "group": "Enabling PortFast"
+          },
+          {
+            "command": "spanning-tree portfast disable",
+            "mode": "interface config",
+            "syntax": "spanning-tree portfast disable",
+            "example": "SW1(config-if)# spanning-tree portfast disable",
+            "description": "Turns PortFast off on one specific port after it has been enabled globally.",
+            "note": "Interface-level configuration always overrides the global default. Only needed if two switches are joined by an access link — rare, but possible.",
+            "group": "Enabling PortFast"
+          },
+          {
+            "command": "spanning-tree portfast trunk",
+            "mode": "interface config",
+            "syntax": "spanning-tree portfast trunk",
+            "example": "SW1(config-if)# spanning-tree portfast trunk",
+            "description": "Enables PortFast on a trunk port — needed when a trunk connects to a router or server rather than another switch.",
+            "note": "There is no global equivalent; this can only be configured per port. Modern IOS writes it as spanning-tree portfast edge trunk.",
+            "group": "Enabling PortFast"
+          },
+          {
+            "command": "show spanning-tree interface ... detail",
+            "mode": "privileged EXEC",
+            "syntax": "show spanning-tree interface <interface> detail",
+            "example": "SW1# show spanning-tree interface g0/1 detail\n  The port is in the portfast edge mode",
+            "description": "Confirms whether PortFast is active on an interface. Look for the phrase portfast edge mode (or portfast edge trunk mode).",
+            "group": "Verification"
+          },
+          {
+            "command": "show running-config interface",
+            "mode": "privileged EXEC",
+            "syntax": "show running-config interface <interface>",
+            "example": "SW1# show running-config interface g0/1",
+            "description": "Displays only the configuration of the named interface — a quick way to see whether the PortFast command is present.",
+            "note": "Not available in Packet Tracer; use show spanning-tree interface detail there instead.",
+            "group": "Verification"
+          }
+        ]
+      }
     }
+  ],
+  "quiz": {
+    "questions": [
+      {
+        "order": 1,
+        "question": "A PC is connected to a switch port and the port shows up/up, but traffic is discarded for 30 seconds. Why?",
+        "explanation": "The port is an STP designated port and must pass through Listening (15 s) and Learning (15 s) before it can forward. It is up/up the whole time, which is why the fault is confusing to users.",
+        "options": [
+          {
+            "label": "A",
+            "text": "The switch is learning the PC's IP address",
+            "is_correct": false
+          },
+          {
+            "label": "B",
+            "text": "STP holds the port in Listening then Learning for 15 seconds each",
+            "is_correct": true
+          },
+          {
+            "label": "C",
+            "text": "The port is negotiating duplex and speed",
+            "is_correct": false
+          },
+          {
+            "label": "D",
+            "text": "DTP is negotiating the port type",
+            "is_correct": false
+          }
+        ]
+      },
+      {
+        "order": 2,
+        "question": "Which command enables PortFast on all access ports?",
+        "explanation": "`spanning-tree portfast default` in global configuration mode enables PortFast on all access ports — not on trunk ports, despite the warning message saying \"all interfaces\".",
+        "options": [
+          {
+            "label": "A",
+            "text": "spanning-tree portfast (interface mode)",
+            "is_correct": false
+          },
+          {
+            "label": "B",
+            "text": "spanning-tree portfast default (global mode)",
+            "is_correct": true
+          },
+          {
+            "label": "C",
+            "text": "spanning-tree portfast trunk (interface mode)",
+            "is_correct": false
+          },
+          {
+            "label": "D",
+            "text": "spanning-tree portfast all (global mode)",
+            "is_correct": false
+          }
+        ]
+      },
+      {
+        "order": 3,
+        "question": "Why must PortFast never be enabled on a port connected to another switch?",
+        "explanation": "Listening and Learning exist to guarantee no loop is formed before forwarding. Bypassing them on a switch-to-switch link can create a temporary Layer 2 bridging loop.",
+        "options": [
+          {
+            "label": "A",
+            "text": "It would disable the trunk",
+            "is_correct": false
+          },
+          {
+            "label": "B",
+            "text": "It can cause a temporary Layer 2 loop",
+            "is_correct": true
+          },
+          {
+            "label": "C",
+            "text": "BPDUs would no longer be sent",
+            "is_correct": false
+          },
+          {
+            "label": "D",
+            "text": "The port would never leave the Learning state",
+            "is_correct": false
+          }
+        ]
+      },
+      {
+        "order": 4,
+        "question": "Which TWO situations justify enabling PortFast on a trunk port?",
+        "explanation": "A virtualization server hosting VMs in several VLANs connects over a trunk, and a router-on-a-stick link is a trunk to a router. Neither device floods frames like a switch, so neither can cause a Layer 2 loop.",
+        "options": [
+          {
+            "label": "A",
+            "text": "A trunk to a virtualization server with VMs in different VLANs",
+            "is_correct": true
+          },
+          {
+            "label": "B",
+            "text": "A trunk between two access switches",
+            "is_correct": false
+          },
+          {
+            "label": "C",
+            "text": "A router-on-a-stick link to a router",
+            "is_correct": true
+          },
+          {
+            "label": "D",
+            "text": "An uplink to the distribution layer switch",
+            "is_correct": false
+          }
+        ]
+      },
+      {
+        "order": 5,
+        "question": "You configure `spanning-tree portfast` on a modern Cisco switch. What appears in the running configuration?",
+        "explanation": "Modern switches automatically append the `edge` keyword, producing `spanning-tree portfast edge`. Typing either form gives the same result. `spanning-tree portfast disable` is the exception and gains no keyword.",
+        "options": [
+          {
+            "label": "A",
+            "text": "spanning-tree portfast",
+            "is_correct": false
+          },
+          {
+            "label": "B",
+            "text": "spanning-tree portfast edge",
+            "is_correct": true
+          },
+          {
+            "label": "C",
+            "text": "spanning-tree portfast network",
+            "is_correct": false
+          },
+          {
+            "label": "D",
+            "text": "spanning-tree portfast default",
+            "is_correct": false
+          }
+        ]
+      },
+      {
+        "order": 6,
+        "question": "Which command confirms that a port is operating in PortFast edge mode?",
+        "explanation": "`show spanning-tree interface <interface> detail` includes the line \"The port is in the portfast edge mode\".",
+        "options": [
+          {
+            "label": "A",
+            "text": "show spanning-tree interface g0/1 detail",
+            "is_correct": true
+          },
+          {
+            "label": "B",
+            "text": "show interfaces g0/1 switchport",
+            "is_correct": false
+          },
+          {
+            "label": "C",
+            "text": "show vlan brief",
+            "is_correct": false
+          },
+          {
+            "label": "D",
+            "text": "show interfaces trunk",
+            "is_correct": false
+          }
+        ]
+      }
+    ]
+  }
 }

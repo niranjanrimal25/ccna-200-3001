@@ -1,305 +1,685 @@
 {
-    "slug": "spanning-tree-part-1",
-    "title": "Spanning Tree Protocol: Root Bridge and Port Roles",
-    "summary": "Why redundant Layer 2 networks cause broadcast storms and MAC address flapping, and how classic STP (802.1D) elects a root bridge and chooses root, designated and non-designated ports to build a loop-free topology.",
-    "source_ref": "transcript_20.txt",
-    "order": 22,
-    "sections": [
-        {
-            "type": "explanation",
-            "title": "Redundancy in networks",
-            "order": 1,
-            "content": {
-                "body": "Redundancy is an essential part of network design — a network that is not redundant is simply not acceptable. Modern networks are expected to run 24 hours a day, 7 days a week, 365 days a year. Even short downtime can be disastrous for a business; imagine Amazon's network going down for an hour.\n\nThe principles:\n\n- If one network component fails, others must take over with **little or no downtime**.\n- Implement redundancy at **every possible point** in the network.\n\nIn a poorly designed network a single cut cable can isolate the whole LAN from the Internet. In a redundant design, if a router or switch fails completely, an alternate path is available.\n\nOne limit remains: most PCs have only a **single NIC**, so they can only plug into one switch — if that access switch dies, those PCs lose connectivity. Important **servers** typically have multiple NICs so they can connect to multiple switches.\n\n**Spanning Tree Protocol is a Layer 2 redundancy protocol** — it operates inside the LAN, not for Layer 3 routing between networks."
+  "slug": "spanning-tree-part-1",
+  "title": "Spanning Tree Protocol: Root Bridge and Port Roles",
+  "summary": "Why redundant Layer 2 networks cause broadcast storms and MAC address flapping, and how classic STP (802.1D) elects a root bridge and chooses root, designated and non-designated ports to build a loop-free topology.",
+  "source_ref": "transcript_20.txt",
+  "order": 22,
+  "sections": [
+    {
+      "type": "explanation",
+      "title": "Redundancy in networks",
+      "order": 1,
+      "content": {
+        "body": "Redundancy is an essential part of network design — a network that is not redundant is simply not acceptable. Modern networks are expected to run 24 hours a day, 7 days a week, 365 days a year. Even short downtime can be disastrous for a business; imagine Amazon's network going down for an hour.\n\nThe principles:\n\n- If one network component fails, others must take over with **little or no downtime**.\n- Implement redundancy at **every possible point** in the network.\n\nIn a poorly designed network a single cut cable can isolate the whole LAN from the Internet. In a redundant design, if a router or switch fails completely, an alternate path is available.\n\nOne limit remains: most PCs have only a **single NIC**, so they can only plug into one switch — if that access switch dies, those PCs lose connectivity. Important **servers** typically have multiple NICs so they can connect to multiple switches.\n\n**Spanning Tree Protocol is a Layer 2 redundancy protocol** — it operates inside the LAN, not for Layer 3 routing between networks."
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "Broadcast storms and MAC address flapping",
+      "order": 2,
+      "content": {
+        "body": "Redundant Layer 2 links create a **major** problem without STP.\n\nTake three switches connected in a triangle. PC1 sends an ARP request — a **broadcast** frame with destination MAC of all Fs.\n\n1. SW1 floods it out of every interface except the one it arrived on, so SW2 and SW3 both get a copy.\n2. SW2 and SW3 each flood their copy out of every other interface — including the link to each other.\n3. SW1 now receives two broadcast frames, on two different interfaces, and floods them again.\n4. This continues **forever**.\n\nThe IP header has a **TTL** field to prevent infinite Layer 3 loops. **The Ethernet header has no TTL field.** Nothing stops these frames looping. Frames circulate clockwise *and* counter-clockwise, accumulating until the network is too congested for legitimate traffic. That is a **broadcast storm**.\n\nCongestion is not the only damage. Every time a frame arrives, the switch learns the **source MAC** and updates its MAC address table. When frames with the same source MAC keep arriving on *different* interfaces, the switch continuously rewrites that entry. This is **MAC address flapping**."
+      }
+    },
+    {
+      "type": "animation",
+      "title": "A broadcast storm forming",
+      "order": 3,
+      "content": {
+        "diagram_type": "topology",
+        "nodes": [
+          {
+            "id": "pc1",
+            "label": "PC1\n10.0.0.1",
+            "icon": "pc",
+            "x": 100,
+            "y": 90
+          },
+          {
+            "id": "sw1",
+            "label": "SW1",
+            "icon": "switch",
+            "x": 420,
+            "y": 90
+          },
+          {
+            "id": "sw2",
+            "label": "SW2",
+            "icon": "switch",
+            "x": 250,
+            "y": 320
+          },
+          {
+            "id": "sw3",
+            "label": "SW3",
+            "icon": "switch",
+            "x": 600,
+            "y": 320
+          },
+          {
+            "id": "pc2",
+            "label": "PC2\n10.0.0.2",
+            "icon": "pc",
+            "x": 100,
+            "y": 420
+          },
+          {
+            "id": "pc3",
+            "label": "PC3\n10.0.0.3",
+            "icon": "pc",
+            "x": 780,
+            "y": 420
+          }
+        ],
+        "links": [
+          {
+            "from": "pc1",
+            "to": "sw1",
+            "kind": "ethernet"
+          },
+          {
+            "from": "sw1",
+            "to": "sw2",
+            "kind": "ethernet"
+          },
+          {
+            "from": "sw1",
+            "to": "sw3",
+            "kind": "ethernet"
+          },
+          {
+            "from": "sw2",
+            "to": "sw3",
+            "kind": "ethernet"
+          },
+          {
+            "from": "sw2",
+            "to": "pc2",
+            "kind": "ethernet"
+          },
+          {
+            "from": "sw3",
+            "to": "pc3",
+            "kind": "ethernet"
+          }
+        ],
+        "steps": [
+          {
+            "narration": "PC1 wants to reach PC2 but does not know its MAC address, so it sends an ARP request — a broadcast frame to FFFF.FFFF.FFFF.",
+            "animate": {
+              "packet_from": "pc1",
+              "packet_to": "sw1",
+              "label": "ARP req",
+              "highlight": [
+                "pc1"
+              ]
             }
-        },
-        {
-            "type": "explanation",
-            "title": "Broadcast storms and MAC address flapping",
-            "order": 2,
-            "content": {
-                "body": "Redundant Layer 2 links create a **major** problem without STP.\n\nTake three switches connected in a triangle. PC1 sends an ARP request — a **broadcast** frame with destination MAC of all Fs.\n\n1. SW1 floods it out of every interface except the one it arrived on, so SW2 and SW3 both get a copy.\n2. SW2 and SW3 each flood their copy out of every other interface — including the link to each other.\n3. SW1 now receives two broadcast frames, on two different interfaces, and floods them again.\n4. This continues **forever**.\n\nThe IP header has a **TTL** field to prevent infinite Layer 3 loops. **The Ethernet header has no TTL field.** Nothing stops these frames looping. Frames circulate clockwise *and* counter-clockwise, accumulating until the network is too congested for legitimate traffic. That is a **broadcast storm**.\n\nCongestion is not the only damage. Every time a frame arrives, the switch learns the **source MAC** and updates its MAC address table. When frames with the same source MAC keep arriving on *different* interfaces, the switch continuously rewrites that entry. This is **MAC address flapping**."
+          },
+          {
+            "narration": "SW1 floods the broadcast out of every interface except the one it arrived on. SW2 and SW3 each receive a copy.",
+            "animate": {
+              "flood": true,
+              "packet_from": "sw1",
+              "label": "flood",
+              "highlight": [
+                "sw2",
+                "sw3"
+              ]
             }
-        },
-        {
-            "type": "animation",
-            "title": "A broadcast storm forming",
-            "order": 3,
-            "content": {
-                "diagram_type": "topology",
-                "nodes": [
-                    {"id": "pc1", "label": "PC1\n10.0.0.1", "icon": "pc", "x": 100, "y": 90},
-                    {"id": "sw1", "label": "SW1", "icon": "switch", "x": 420, "y": 90},
-                    {"id": "sw2", "label": "SW2", "icon": "switch", "x": 250, "y": 320},
-                    {"id": "sw3", "label": "SW3", "icon": "switch", "x": 600, "y": 320},
-                    {"id": "pc2", "label": "PC2\n10.0.0.2", "icon": "pc", "x": 100, "y": 420},
-                    {"id": "pc3", "label": "PC3\n10.0.0.3", "icon": "pc", "x": 780, "y": 420}
-                ],
-                "links": [
-                    {"from": "pc1", "to": "sw1", "kind": "ethernet"},
-                    {"from": "sw1", "to": "sw2", "kind": "ethernet"},
-                    {"from": "sw1", "to": "sw3", "kind": "ethernet"},
-                    {"from": "sw2", "to": "sw3", "kind": "ethernet"},
-                    {"from": "sw2", "to": "pc2", "kind": "ethernet"},
-                    {"from": "sw3", "to": "pc3", "kind": "ethernet"}
-                ],
-                "steps": [
-                    {
-                        "narration": "PC1 wants to reach PC2 but does not know its MAC address, so it sends an ARP request — a broadcast frame to FFFF.FFFF.FFFF.",
-                        "animate": {"packet_from": "pc1", "packet_to": "sw1", "label": "ARP req", "highlight": ["pc1"]}
-                    },
-                    {
-                        "narration": "SW1 floods the broadcast out of every interface except the one it arrived on. SW2 and SW3 each receive a copy.",
-                        "animate": {"flood": true, "packet_from": "sw1", "label": "flood", "highlight": ["sw2", "sw3"]}
-                    },
-                    {
-                        "narration": "PC2 receives the request and sends a unicast ARP reply. Job done — but the broadcast frames are still in the network.",
-                        "animate": {"packet_from": "pc2", "packet_to": "sw2", "label": "ARP reply", "status": "ok", "highlight": ["pc2"]}
-                    },
-                    {
-                        "narration": "SW2 and SW3 flood their copies out of every other interface — including the link between them, and back toward SW1.",
-                        "animate": {"flood": true, "packet_from": "sw2", "label": "flood", "highlight": ["sw1", "sw3"]}
-                    },
-                    {
-                        "narration": "SW1 has now received two broadcasts on two different interfaces. It floods them again. There is no TTL in an Ethernet header, so this never stops.",
-                        "animate": {"flood": true, "packet_from": "sw1", "label": "loop", "status": "fail", "highlight": ["sw1", "sw2", "sw3"]}
-                    },
-                    {
-                        "narration": "Frames now circle clockwise and counter-clockwise forever. The network becomes too congested for real traffic — a broadcast storm — and the switches' MAC tables flap as the same source MAC keeps arriving on different ports.",
-                        "animate": {"flood": true, "packet_from": "sw3", "label": "storm", "status": "fail", "highlight": ["sw1", "sw2", "sw3"]}
-                    }
-                ]
+          },
+          {
+            "narration": "PC2 receives the request and sends a unicast ARP reply. Job done — but the broadcast frames are still in the network.",
+            "animate": {
+              "packet_from": "pc2",
+              "packet_to": "sw2",
+              "label": "ARP reply",
+              "status": "ok",
+              "highlight": [
+                "pc2"
+              ]
             }
-        },
-        {
-            "type": "explanation",
-            "title": "What STP does",
-            "order": 4,
-            "content": {
-                "body": "Classic **Spanning Tree Protocol** is an industry standard — **IEEE 802.1D**. Because preventing Layer 2 loops is so important, switches from **all vendors run STP by default**, not just Cisco.\n\nSTP prevents Layer 2 loops by placing redundant ports in a **blocking state**, essentially disabling them. Those interfaces act as backups that can move to a **forwarding state** if an active interface fails.\n\n- **Forwarding** ports behave normally — they send and receive all traffic.\n- **Blocking** ports only send and receive STP messages, called **BPDUs** (Bridge Protocol Data Units), plus a few other specific frames.\n\nBy choosing which ports forward and which block, STP creates a **single path** to and from each point in the network.\n\n**A word about \"bridge\".** Before switches there were *bridges* — a transitional device between the hub and the switch. Bridges are obsolete and are not on the CCNA, but STP terminology still uses the word. Whenever you read \"bridge\" in an STP context, read it as **switch**."
+          },
+          {
+            "narration": "SW2 and SW3 flood their copies out of every other interface — including the link between them, and back toward SW1.",
+            "animate": {
+              "flood": true,
+              "packet_from": "sw2",
+              "label": "flood",
+              "highlight": [
+                "sw1",
+                "sw3"
+              ]
             }
-        },
-        {
-            "type": "explanation",
-            "title": "BPDUs and the Bridge ID",
-            "order": 5,
-            "content": {
-                "body": "STP-enabled switches send **Hello BPDUs** out of all interfaces every **2 seconds** by default. If a switch receives a Hello BPDU on an interface, it knows another switch is on the other end — routers and PCs do not run STP and never send BPDUs.\n\nThe key field in the BPDU is the **Bridge ID**. **The switch with the lowest Bridge ID becomes the root bridge.**\n\n**Traditional Bridge ID:**\n\n| Field | Length |\n|---|---|\n| Bridge priority | 16 bits |\n| Switch MAC address | 48 bits |\n\nThe default bridge priority is **32768** on all switches, so by default the **lowest MAC address** wins the election.\n\n**Modern Bridge ID.** The 16-bit priority was split in two:\n\n| Field | Length |\n|---|---|\n| Bridge priority | 4 bits |\n| Extended System ID (= the VLAN ID) | 12 bits |\n| Switch MAC address | 48 bits |\n\nWhy embed the VLAN ID? Because Cisco switches run **PVST** — *Per-VLAN Spanning Tree* — a separate STP instance in each VLAN. One interface can be forwarding in VLAN 1 and blocking in VLAN 2. Embedding the VLAN ID gives the switch a different Bridge ID in every VLAN.\n\nThis is also why the default priority in VLAN 1 is actually **32769** — 32768 + the VLAN ID of 1."
+          },
+          {
+            "narration": "SW1 has now received two broadcasts on two different interfaces. It floods them again. There is no TTL in an Ethernet header, so this never stops.",
+            "animate": {
+              "flood": true,
+              "packet_from": "sw1",
+              "label": "loop",
+              "status": "fail",
+              "highlight": [
+                "sw1",
+                "sw2",
+                "sw3"
+              ]
             }
-        },
-        {
-            "type": "callout",
-            "title": "Exam tip",
-            "order": 6,
-            "content": {
-                "body": "Because the extended system ID occupies the lower 12 bits and is fixed by the VLAN number, the bridge priority can only be changed in increments of 4096 — the value of the least significant bit of the 4-bit priority portion. Valid values are 0, 4096, 8192, 12288, 16384, 20480, 24576, 28672, 32768, ... 61440. The extended system ID is then added on top.",
-                "style": "exam_tip"
+          },
+          {
+            "narration": "Frames now circle clockwise and counter-clockwise forever. The network becomes too congested for real traffic — a broadcast storm — and the switches' MAC tables flap as the same source MAC keeps arriving on different ports.",
+            "animate": {
+              "flood": true,
+              "packet_from": "sw3",
+              "label": "storm",
+              "status": "fail",
+              "highlight": [
+                "sw1",
+                "sw2",
+                "sw3"
+              ]
             }
-        },
-        {
-            "type": "explanation",
-            "title": "Step 1 — elect the root bridge",
-            "order": 7,
-            "content": {
-                "body": "**The switch with the lowest Bridge ID is elected root bridge.** This must happen first, because every later step depends on knowing where the root is.\n\n- **All ports on the root bridge are designated ports, in a forwarding state.**\n- Every other switch must have a path to reach the root bridge.\n\nWhen a switch is powered on it **assumes it is the root bridge**. It only gives up that claim when it receives a **superior BPDU** — one from a switch with a lower Bridge ID.\n\nOnce the topology has converged and all switches agree, **only the root bridge generates BPDUs**. Other switches forward the root's BPDUs but do not originate their own. (They all send BPDUs at the start only because they all initially believe they are the root.)\n\nPorts connected to PCs receive no BPDUs, so the switch knows there is no loop risk and puts them in a forwarding state."
-            }
-        },
-        {
-            "type": "table",
-            "title": "STP port costs — memorise these",
-            "order": 8,
-            "content": {
-                "headers": ["Interface type", "Speed", "STP cost"],
-                "rows": [
-                    ["Ethernet", "10 Mbps", "100"],
-                    ["FastEthernet", "100 Mbps", "19"],
-                    ["GigabitEthernet", "1 Gbps", "4"],
-                    ["10 GigabitEthernet", "10 Gbps", "2"]
-                ]
-            }
-        },
-        {
-            "type": "explanation",
-            "title": "Step 2 — each non-root switch selects a root port",
-            "order": 9,
-            "content": {
-                "body": "Every switch **except the root bridge** selects exactly **one root port**, and root ports are in a **forwarding state**.\n\nThe **root cost** is the total cost of the **outgoing** interfaces along the path to the root bridge. You do not count the cost of the receiving interface — only the sending one.\n\nHow it accumulates: the root bridge advertises a root cost of **0**. A neighbour receives that BPDU and, when it floods the BPDU onward, adds the cost of its own outgoing interface.\n\n**Example.** SW1 is the root. SW2 receives a cost of 0 on G0/1 directly from SW1; its own interface costs 4, so the total root cost via G0/1 is **4**. On G0/0 it receives a cost of 4 from SW3; adding its own 4 gives **8**. SW2 therefore selects **G0/1** as its root port.\n\n**Root port tie-breakers, in order:**\n\n1. Lowest **root cost**.\n2. Lowest **neighbour Bridge ID**.\n3. Lowest **port ID on the neighbour switch**.\n\nAnd an important rule: **the port across from a root port must be a designated port.** The root port is that switch's path to the root bridge, so the neighbour must not block it."
-            }
-        },
-        {
-            "type": "explanation",
-            "title": "Port ID",
-            "order": 10,
-            "content": {
-                "body": "`show spanning-tree` lists a **Prio.Nbr** column — that is the STP **port ID**.\n\n**Port ID = port priority + port number.** Each port has a default priority of **128** and a unique port number (1 for G0/0, 2 for G0/1, and so on).\n\nJust as the MAC address breaks a tie when bridge priorities match, the **port number** breaks a tie when port priorities match. So `G0/0` is lower than `G1/0`, and `G0/3` is lower than `G1/2`.\n\n**Critical detail:** the tie-break uses the **neighbour switch's** port ID, not the local switch's. If SW3 has two links to SW1, SW3 selects whichever of its ports connects to the *lower-numbered port on SW1*."
-            }
-        },
-        {
-            "type": "explanation",
-            "title": "Step 3 — designated and non-designated ports",
-            "order": 11,
-            "content": {
-                "body": "So far both root ports and designated ports are forwarding — nothing is blocked yet. The remaining links need resolving.\n\n**The key rule: every collision domain has exactly one STP designated port.** With switches, each link is its own collision domain.\n\n- The SW1–SW2 link already has a designated port (SW1's, because SW1 is the root).\n- The SW1–SW3 link likewise.\n- PC links are all designated and forwarding, since PCs do not run STP.\n\nThat leaves the SW2–SW3 link, which has no designated port yet.\n\n**Designated port tie-breakers, in order:**\n\n1. The port on the switch with the lowest **root cost**.\n2. If tied, the port on the switch with the lowest **Bridge ID**.\n\nThe loser's port becomes **non-designated** and goes into a **blocking state** — and that is what breaks the Layer 2 loop."
-            }
-        },
-        {
-            "type": "table",
-            "title": "The complete classic STP process",
-            "order": 12,
-            "content": {
-                "headers": ["Step", "What is selected", "Criteria, in order"],
-                "rows": [
-                    ["1", "**Root bridge** — all its ports become designated / forwarding", "Lowest Bridge ID (priority + extended system ID, then MAC address)"],
-                    ["2", "**Root port** — one per non-root switch, forwarding", "1. Lowest root cost  2. Lowest neighbour Bridge ID  3. Lowest neighbour port ID"],
-                    ["3", "**Designated port** — one per collision domain, forwarding", "1. Port on the switch with the lowest root cost  2. Port on the switch with the lowest Bridge ID"],
-                    ["4", "**Non-designated port** — blocking", "Every remaining port; this is what prevents the loop"]
-                ]
-            }
-        },
-        {
-            "type": "animation",
-            "title": "Building the loop-free topology",
-            "order": 13,
-            "content": {
-                "diagram_type": "topology",
-                "nodes": [
-                    {"id": "sw1", "label": "SW1\n32769 / AAA", "icon": "switch", "x": 420, "y": 90},
-                    {"id": "sw2", "label": "SW2\n32769 / BBB", "icon": "switch", "x": 230, "y": 330},
-                    {"id": "sw3", "label": "SW3\n32769 / CCC", "icon": "switch", "x": 620, "y": 330}
-                ],
-                "links": [
-                    {"from": "sw1", "to": "sw2", "kind": "ethernet"},
-                    {"from": "sw1", "to": "sw3", "kind": "ethernet"},
-                    {"from": "sw2", "to": "sw3", "kind": "ethernet"}
-                ],
-                "steps": [
-                    {
-                        "narration": "All three switches have the default priority 32769, so the MAC address decides. Hex A = 10, B = 11, C = 12, so SW1 has the lowest MAC — SW1 is the root bridge.",
-                        "animate": {"highlight": ["sw1"], "status": "ok"}
-                    },
-                    {
-                        "narration": "All ports on the root bridge become designated ports, in a forwarding state. SW1 advertises a root cost of 0.",
-                        "animate": {"flood": true, "packet_from": "sw1", "label": "cost 0", "highlight": ["sw1"]}
-                    },
-                    {
-                        "narration": "SW2 compares: via G0/1 direct to SW1 the cost is 0 + 4 = 4; via G0/0 through SW3 it is 4 + 4 = 8. G0/1 wins and becomes SW2's root port.",
-                        "animate": {"packet_from": "sw2", "packet_to": "sw1", "label": "root port", "highlight": ["sw2"]}
-                    },
-                    {
-                        "narration": "SW3 applies the same logic: cost 4 direct to SW1, cost 8 via SW2. Its G0/0 becomes the root port.",
-                        "animate": {"packet_from": "sw3", "packet_to": "sw1", "label": "root port", "highlight": ["sw3"]}
-                    },
-                    {
-                        "narration": "The SW2–SW3 link still needs one designated port. Root costs tie at 4, so the lower Bridge ID wins: SW2 (BBB) beats SW3 (CCC), so SW2's port is designated.",
-                        "animate": {"highlight": ["sw2"], "status": "ok"}
-                    },
-                    {
-                        "narration": "SW3's port on that link becomes non-designated and goes into a blocking state. The loop is broken — and if another link fails, STP re-converges and unblocks it.",
-                        "animate": {"packet_from": "sw3", "packet_to": "sw2", "label": "blocked", "status": "fail", "highlight": ["sw3"]}
-                    }
-                ]
-            }
-        },
-        {
-            "type": "callout",
-            "title": "Worked example to check yourself",
-            "order": 14,
-            "content": {
-                "body": "Given four switches where SW1 and SW3 both have priority 12289 and MAC addresses 014A.38F0.0000 and 014A.3820.0000, SW3 wins the root election — the first digits match, then F (15) is higher than 2. If instead one switch has priority 4097 and the others 32769, that switch wins outright: priority is always compared before the MAC address.",
-                "style": "note"
-            }
-        }
-    ],
-    "quiz": {
-        "questions": [
-            {
-                "order": 1,
-                "question": "Why do looping Layer 2 broadcast frames never stop on their own?",
-                "explanation": "The IP header has a TTL field that kills looping packets at Layer 3, but the Ethernet header has no TTL field. Nothing decrements or expires a looping frame, so it circulates until the network is saturated.",
-                "options": [
-                    {"label": "A", "text": "Switches do not learn MAC addresses from broadcast frames", "is_correct": false},
-                    {"label": "B", "text": "The Ethernet header has no TTL field", "is_correct": true},
-                    {"label": "C", "text": "Broadcast frames have a destination MAC of all Fs", "is_correct": false},
-                    {"label": "D", "text": "ARP replies are unicast", "is_correct": false}
-                ]
-            },
-            {
-                "order": 2,
-                "question": "Four switches all have the default configuration. Which becomes the root bridge?",
-                "explanation": "With identical bridge priorities (32769 in VLAN 1), the Bridge ID tie is broken by the MAC address. The switch with the lowest MAC address wins.",
-                "options": [
-                    {"label": "A", "text": "The switch with the highest MAC address", "is_correct": false},
-                    {"label": "B", "text": "The switch with the lowest MAC address", "is_correct": true},
-                    {"label": "C", "text": "The switch that boots first", "is_correct": false},
-                    {"label": "D", "text": "The switch with the most interfaces", "is_correct": false}
-                ]
-            },
-            {
-                "order": 3,
-                "question": "What is the STP cost of a FastEthernet interface?",
-                "explanation": "The classic STP costs are: 10 Mbps Ethernet = 100, 100 Mbps FastEthernet = 19, 1 Gbps = 4, 10 Gbps = 2.",
-                "options": [
-                    {"label": "A", "text": "100", "is_correct": false},
-                    {"label": "B", "text": "19", "is_correct": true},
-                    {"label": "C", "text": "4", "is_correct": false},
-                    {"label": "D", "text": "2", "is_correct": false}
-                ]
-            },
-            {
-                "order": 4,
-                "question": "SW3 has two links to SW1 and the root cost and neighbour Bridge ID are identical on both. How does SW3 choose its root port?",
-                "explanation": "The final tie-breaker is the port ID on the NEIGHBOUR switch, not the local switch. SW3 picks whichever of its ports connects to the lower-numbered port on SW1.",
-                "options": [
-                    {"label": "A", "text": "It uses its own lowest local port ID", "is_correct": false},
-                    {"label": "B", "text": "It uses the lowest port ID on the neighbour switch", "is_correct": true},
-                    {"label": "C", "text": "It selects both as root ports", "is_correct": false},
-                    {"label": "D", "text": "It blocks both ports", "is_correct": false}
-                ]
-            },
-            {
-                "order": 5,
-                "question": "Why is the default bridge priority 32769 rather than 32768 in VLAN 1?",
-                "explanation": "The 16-bit priority field is now split into a 4-bit priority and a 12-bit extended system ID holding the VLAN ID. The total is 32768 + 1 = 32769 in VLAN 1.",
-                "options": [
-                    {"label": "A", "text": "The extended system ID adds the VLAN ID to the priority", "is_correct": true},
-                    {"label": "B", "text": "The priority always increments by one after boot", "is_correct": false},
-                    {"label": "C", "text": "32769 is the lowest valid priority", "is_correct": false},
-                    {"label": "D", "text": "It includes the STP port priority", "is_correct": false}
-                ]
-            },
-            {
-                "order": 6,
-                "question": "In what increments can the STP bridge priority be configured?",
-                "explanation": "The extended system ID occupies the lower 12 bits and cannot be changed, so only the 4-bit priority portion is configurable — giving increments of 4096.",
-                "options": [
-                    {"label": "A", "text": "1", "is_correct": false},
-                    {"label": "B", "text": "128", "is_correct": false},
-                    {"label": "C", "text": "4096", "is_correct": true},
-                    {"label": "D", "text": "32768", "is_correct": false}
-                ]
-            },
-            {
-                "order": 7,
-                "question": "After STP converges, which switches generate BPDUs?",
-                "explanation": "Only the root bridge originates BPDUs after convergence. Other switches forward the root's BPDUs but do not generate their own. Every switch sends them initially because each one assumes it is the root.",
-                "options": [
-                    {"label": "A", "text": "All switches, every 2 seconds", "is_correct": false},
-                    {"label": "B", "text": "Only the root bridge; other switches forward its BPDUs", "is_correct": true},
-                    {"label": "C", "text": "Only switches with blocking ports", "is_correct": false},
-                    {"label": "D", "text": "Only switches with designated ports", "is_correct": false}
-                ]
-            },
-            {
-                "order": 8,
-                "question": "Two switches are connected by a link, both with an equal root cost. Which port becomes designated?",
-                "explanation": "Every collision domain must have exactly one designated port. The first criterion is the lowest root cost; when that ties, the port on the switch with the lower Bridge ID becomes designated and the other becomes non-designated (blocking).",
-                "options": [
-                    {"label": "A", "text": "The port on the switch with the lower Bridge ID", "is_correct": true},
-                    {"label": "B", "text": "The port with the lower local port number", "is_correct": false},
-                    {"label": "C", "text": "Both ports become designated", "is_correct": false},
-                    {"label": "D", "text": "Both ports are blocked", "is_correct": false}
-                ]
-            }
+          }
         ]
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "What STP does",
+      "order": 4,
+      "content": {
+        "body": "Classic **Spanning Tree Protocol** is an industry standard — **IEEE 802.1D**. Because preventing Layer 2 loops is so important, switches from **all vendors run STP by default**, not just Cisco.\n\nSTP prevents Layer 2 loops by placing redundant ports in a **blocking state**, essentially disabling them. Those interfaces act as backups that can move to a **forwarding state** if an active interface fails.\n\n- **Forwarding** ports behave normally — they send and receive all traffic.\n- **Blocking** ports only send and receive STP messages, called **BPDUs** (Bridge Protocol Data Units), plus a few other specific frames.\n\nBy choosing which ports forward and which block, STP creates a **single path** to and from each point in the network.\n\n**A word about \"bridge\".** Before switches there were *bridges* — a transitional device between the hub and the switch. Bridges are obsolete and are not on the CCNA, but STP terminology still uses the word. Whenever you read \"bridge\" in an STP context, read it as **switch**."
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "BPDUs and the Bridge ID",
+      "order": 5,
+      "content": {
+        "body": "STP-enabled switches send **Hello BPDUs** out of all interfaces every **2 seconds** by default. If a switch receives a Hello BPDU on an interface, it knows another switch is on the other end — routers and PCs do not run STP and never send BPDUs.\n\nThe key field in the BPDU is the **Bridge ID**. **The switch with the lowest Bridge ID becomes the root bridge.**\n\n**Traditional Bridge ID:**\n\n| Field | Length |\n|---|---|\n| Bridge priority | 16 bits |\n| Switch MAC address | 48 bits |\n\nThe default bridge priority is **32768** on all switches, so by default the **lowest MAC address** wins the election.\n\n**Modern Bridge ID.** The 16-bit priority was split in two:\n\n| Field | Length |\n|---|---|\n| Bridge priority | 4 bits |\n| Extended System ID (= the VLAN ID) | 12 bits |\n| Switch MAC address | 48 bits |\n\nWhy embed the VLAN ID? Because Cisco switches run **PVST** — *Per-VLAN Spanning Tree* — a separate STP instance in each VLAN. One interface can be forwarding in VLAN 1 and blocking in VLAN 2. Embedding the VLAN ID gives the switch a different Bridge ID in every VLAN.\n\nThis is also why the default priority in VLAN 1 is actually **32769** — 32768 + the VLAN ID of 1."
+      }
+    },
+    {
+      "type": "callout",
+      "title": "Exam tip",
+      "order": 6,
+      "content": {
+        "body": "Because the extended system ID occupies the lower 12 bits and is fixed by the VLAN number, the bridge priority can only be changed in increments of 4096 — the value of the least significant bit of the 4-bit priority portion. Valid values are 0, 4096, 8192, 12288, 16384, 20480, 24576, 28672, 32768, ... 61440. The extended system ID is then added on top.",
+        "style": "exam_tip"
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "Step 1 — elect the root bridge",
+      "order": 7,
+      "content": {
+        "body": "**The switch with the lowest Bridge ID is elected root bridge.** This must happen first, because every later step depends on knowing where the root is.\n\n- **All ports on the root bridge are designated ports, in a forwarding state.**\n- Every other switch must have a path to reach the root bridge.\n\nWhen a switch is powered on it **assumes it is the root bridge**. It only gives up that claim when it receives a **superior BPDU** — one from a switch with a lower Bridge ID.\n\nOnce the topology has converged and all switches agree, **only the root bridge generates BPDUs**. Other switches forward the root's BPDUs but do not originate their own. (They all send BPDUs at the start only because they all initially believe they are the root.)\n\nPorts connected to PCs receive no BPDUs, so the switch knows there is no loop risk and puts them in a forwarding state."
+      }
+    },
+    {
+      "type": "table",
+      "title": "STP port costs — memorise these",
+      "order": 8,
+      "content": {
+        "headers": [
+          "Interface type",
+          "Speed",
+          "STP cost"
+        ],
+        "rows": [
+          [
+            "Ethernet",
+            "10 Mbps",
+            "100"
+          ],
+          [
+            "FastEthernet",
+            "100 Mbps",
+            "19"
+          ],
+          [
+            "GigabitEthernet",
+            "1 Gbps",
+            "4"
+          ],
+          [
+            "10 GigabitEthernet",
+            "10 Gbps",
+            "2"
+          ]
+        ]
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "Step 2 — each non-root switch selects a root port",
+      "order": 9,
+      "content": {
+        "body": "Every switch **except the root bridge** selects exactly **one root port**, and root ports are in a **forwarding state**.\n\nThe **root cost** is the total cost of the **outgoing** interfaces along the path to the root bridge. You do not count the cost of the receiving interface — only the sending one.\n\nHow it accumulates: the root bridge advertises a root cost of **0**. A neighbour receives that BPDU and, when it floods the BPDU onward, adds the cost of its own outgoing interface.\n\n**Example.** SW1 is the root. SW2 receives a cost of 0 on G0/1 directly from SW1; its own interface costs 4, so the total root cost via G0/1 is **4**. On G0/0 it receives a cost of 4 from SW3; adding its own 4 gives **8**. SW2 therefore selects **G0/1** as its root port.\n\n**Root port tie-breakers, in order:**\n\n1. Lowest **root cost**.\n2. Lowest **neighbour Bridge ID**.\n3. Lowest **port ID on the neighbour switch**.\n\nAnd an important rule: **the port across from a root port must be a designated port.** The root port is that switch's path to the root bridge, so the neighbour must not block it."
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "Port ID",
+      "order": 10,
+      "content": {
+        "body": "`show spanning-tree` lists a **Prio.Nbr** column — that is the STP **port ID**.\n\n**Port ID = port priority + port number.** Each port has a default priority of **128** and a unique port number (1 for G0/0, 2 for G0/1, and so on).\n\nJust as the MAC address breaks a tie when bridge priorities match, the **port number** breaks a tie when port priorities match. So `G0/0` is lower than `G1/0`, and `G0/3` is lower than `G1/2`.\n\n**Critical detail:** the tie-break uses the **neighbour switch's** port ID, not the local switch's. If SW3 has two links to SW1, SW3 selects whichever of its ports connects to the *lower-numbered port on SW1*."
+      }
+    },
+    {
+      "type": "explanation",
+      "title": "Step 3 — designated and non-designated ports",
+      "order": 11,
+      "content": {
+        "body": "So far both root ports and designated ports are forwarding — nothing is blocked yet. The remaining links need resolving.\n\n**The key rule: every collision domain has exactly one STP designated port.** With switches, each link is its own collision domain.\n\n- The SW1–SW2 link already has a designated port (SW1's, because SW1 is the root).\n- The SW1–SW3 link likewise.\n- PC links are all designated and forwarding, since PCs do not run STP.\n\nThat leaves the SW2–SW3 link, which has no designated port yet.\n\n**Designated port tie-breakers, in order:**\n\n1. The port on the switch with the lowest **root cost**.\n2. If tied, the port on the switch with the lowest **Bridge ID**.\n\nThe loser's port becomes **non-designated** and goes into a **blocking state** — and that is what breaks the Layer 2 loop."
+      }
+    },
+    {
+      "type": "table",
+      "title": "The complete classic STP process",
+      "order": 12,
+      "content": {
+        "headers": [
+          "Step",
+          "What is selected",
+          "Criteria, in order"
+        ],
+        "rows": [
+          [
+            "1",
+            "**Root bridge** — all its ports become designated / forwarding",
+            "Lowest Bridge ID (priority + extended system ID, then MAC address)"
+          ],
+          [
+            "2",
+            "**Root port** — one per non-root switch, forwarding",
+            "1. Lowest root cost  2. Lowest neighbour Bridge ID  3. Lowest neighbour port ID"
+          ],
+          [
+            "3",
+            "**Designated port** — one per collision domain, forwarding",
+            "1. Port on the switch with the lowest root cost  2. Port on the switch with the lowest Bridge ID"
+          ],
+          [
+            "4",
+            "**Non-designated port** — blocking",
+            "Every remaining port; this is what prevents the loop"
+          ]
+        ]
+      }
+    },
+    {
+      "type": "animation",
+      "title": "Building the loop-free topology",
+      "order": 13,
+      "content": {
+        "diagram_type": "topology",
+        "nodes": [
+          {
+            "id": "sw1",
+            "label": "SW1\n32769 / AAA",
+            "icon": "switch",
+            "x": 420,
+            "y": 90
+          },
+          {
+            "id": "sw2",
+            "label": "SW2\n32769 / BBB",
+            "icon": "switch",
+            "x": 230,
+            "y": 330
+          },
+          {
+            "id": "sw3",
+            "label": "SW3\n32769 / CCC",
+            "icon": "switch",
+            "x": 620,
+            "y": 330
+          }
+        ],
+        "links": [
+          {
+            "from": "sw1",
+            "to": "sw2",
+            "kind": "ethernet"
+          },
+          {
+            "from": "sw1",
+            "to": "sw3",
+            "kind": "ethernet"
+          },
+          {
+            "from": "sw2",
+            "to": "sw3",
+            "kind": "ethernet"
+          }
+        ],
+        "steps": [
+          {
+            "narration": "All three switches have the default priority 32769, so the MAC address decides. Hex A = 10, B = 11, C = 12, so SW1 has the lowest MAC — SW1 is the root bridge.",
+            "animate": {
+              "highlight": [
+                "sw1"
+              ],
+              "status": "ok"
+            }
+          },
+          {
+            "narration": "All ports on the root bridge become designated ports, in a forwarding state. SW1 advertises a root cost of 0.",
+            "animate": {
+              "flood": true,
+              "packet_from": "sw1",
+              "label": "cost 0",
+              "highlight": [
+                "sw1"
+              ]
+            }
+          },
+          {
+            "narration": "SW2 compares: via G0/1 direct to SW1 the cost is 0 + 4 = 4; via G0/0 through SW3 it is 4 + 4 = 8. G0/1 wins and becomes SW2's root port.",
+            "animate": {
+              "packet_from": "sw2",
+              "packet_to": "sw1",
+              "label": "root port",
+              "highlight": [
+                "sw2"
+              ]
+            }
+          },
+          {
+            "narration": "SW3 applies the same logic: cost 4 direct to SW1, cost 8 via SW2. Its G0/0 becomes the root port.",
+            "animate": {
+              "packet_from": "sw3",
+              "packet_to": "sw1",
+              "label": "root port",
+              "highlight": [
+                "sw3"
+              ]
+            }
+          },
+          {
+            "narration": "The SW2–SW3 link still needs one designated port. Root costs tie at 4, so the lower Bridge ID wins: SW2 (BBB) beats SW3 (CCC), so SW2's port is designated.",
+            "animate": {
+              "highlight": [
+                "sw2"
+              ],
+              "status": "ok"
+            }
+          },
+          {
+            "narration": "SW3's port on that link becomes non-designated and goes into a blocking state. The loop is broken — and if another link fails, STP re-converges and unblocks it.",
+            "animate": {
+              "packet_from": "sw3",
+              "packet_to": "sw2",
+              "label": "blocked",
+              "status": "fail",
+              "highlight": [
+                "sw3"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "callout",
+      "title": "Worked example to check yourself",
+      "order": 14,
+      "content": {
+        "body": "Given four switches where SW1 and SW3 both have priority 12289 and MAC addresses 014A.38F0.0000 and 014A.3820.0000, SW3 wins the root election — the first digits match, then F (15) is higher than 2. If instead one switch has priority 4097 and the others 32769, that switch wins outright: priority is always compared before the MAC address.",
+        "style": "note"
+      }
+    },
+    {
+      "order": 15,
+      "type": "commands",
+      "title": "Command reference: viewing spanning tree",
+      "content": {
+        "commands": [
+          {
+            "command": "show spanning-tree",
+            "mode": "privileged EXEC",
+            "syntax": "show spanning-tree",
+            "example": "SW1# show spanning-tree\nVLAN0001\n  Root ID    Priority    32769\n             Address     aaaa.aaaa.aaaa\nInterface  Role Sts Cost  Prio.Nbr\nGi0/0      Root FWD 4     128.1",
+            "description": "The central STP command. Shows, per VLAN, the root bridge's ID, this switch's own bridge ID, and every interface with its role, status, cost and port ID.",
+            "note": "Roles: Root, Desg (designated), Altn (alternate/blocking). Status: FWD (forwarding), BLK (blocking), LRN, LSN."
+          },
+          {
+            "command": "show spanning-tree vlan",
+            "mode": "privileged EXEC",
+            "syntax": "show spanning-tree vlan <vlan-id>",
+            "example": "SW1# show spanning-tree vlan 10",
+            "description": "Restricts the output to a single VLAN — essential on a switch running PVST+, where every VLAN has its own independent spanning tree."
+          },
+          {
+            "command": "show spanning-tree interface",
+            "mode": "privileged EXEC",
+            "syntax": "show spanning-tree interface <interface>",
+            "example": "SW1# show spanning-tree interface g0/0",
+            "description": "Shows the STP role, status and cost for one specific interface.",
+            "note": "Default port costs: 10 Mbps = 100, 100 Mbps = 19, 1 Gbps = 4, 10 Gbps = 2."
+          }
+        ]
+      }
     }
+  ],
+  "quiz": {
+    "questions": [
+      {
+        "order": 1,
+        "question": "Why do looping Layer 2 broadcast frames never stop on their own?",
+        "explanation": "The IP header has a TTL field that kills looping packets at Layer 3, but the Ethernet header has no TTL field. Nothing decrements or expires a looping frame, so it circulates until the network is saturated.",
+        "options": [
+          {
+            "label": "A",
+            "text": "Switches do not learn MAC addresses from broadcast frames",
+            "is_correct": false
+          },
+          {
+            "label": "B",
+            "text": "The Ethernet header has no TTL field",
+            "is_correct": true
+          },
+          {
+            "label": "C",
+            "text": "Broadcast frames have a destination MAC of all Fs",
+            "is_correct": false
+          },
+          {
+            "label": "D",
+            "text": "ARP replies are unicast",
+            "is_correct": false
+          }
+        ]
+      },
+      {
+        "order": 2,
+        "question": "Four switches all have the default configuration. Which becomes the root bridge?",
+        "explanation": "With identical bridge priorities (32769 in VLAN 1), the Bridge ID tie is broken by the MAC address. The switch with the lowest MAC address wins.",
+        "options": [
+          {
+            "label": "A",
+            "text": "The switch with the highest MAC address",
+            "is_correct": false
+          },
+          {
+            "label": "B",
+            "text": "The switch with the lowest MAC address",
+            "is_correct": true
+          },
+          {
+            "label": "C",
+            "text": "The switch that boots first",
+            "is_correct": false
+          },
+          {
+            "label": "D",
+            "text": "The switch with the most interfaces",
+            "is_correct": false
+          }
+        ]
+      },
+      {
+        "order": 3,
+        "question": "What is the STP cost of a FastEthernet interface?",
+        "explanation": "The classic STP costs are: 10 Mbps Ethernet = 100, 100 Mbps FastEthernet = 19, 1 Gbps = 4, 10 Gbps = 2.",
+        "options": [
+          {
+            "label": "A",
+            "text": "100",
+            "is_correct": false
+          },
+          {
+            "label": "B",
+            "text": "19",
+            "is_correct": true
+          },
+          {
+            "label": "C",
+            "text": "4",
+            "is_correct": false
+          },
+          {
+            "label": "D",
+            "text": "2",
+            "is_correct": false
+          }
+        ]
+      },
+      {
+        "order": 4,
+        "question": "SW3 has two links to SW1 and the root cost and neighbour Bridge ID are identical on both. How does SW3 choose its root port?",
+        "explanation": "The final tie-breaker is the port ID on the NEIGHBOUR switch, not the local switch. SW3 picks whichever of its ports connects to the lower-numbered port on SW1.",
+        "options": [
+          {
+            "label": "A",
+            "text": "It uses its own lowest local port ID",
+            "is_correct": false
+          },
+          {
+            "label": "B",
+            "text": "It uses the lowest port ID on the neighbour switch",
+            "is_correct": true
+          },
+          {
+            "label": "C",
+            "text": "It selects both as root ports",
+            "is_correct": false
+          },
+          {
+            "label": "D",
+            "text": "It blocks both ports",
+            "is_correct": false
+          }
+        ]
+      },
+      {
+        "order": 5,
+        "question": "Why is the default bridge priority 32769 rather than 32768 in VLAN 1?",
+        "explanation": "The 16-bit priority field is now split into a 4-bit priority and a 12-bit extended system ID holding the VLAN ID. The total is 32768 + 1 = 32769 in VLAN 1.",
+        "options": [
+          {
+            "label": "A",
+            "text": "The extended system ID adds the VLAN ID to the priority",
+            "is_correct": true
+          },
+          {
+            "label": "B",
+            "text": "The priority always increments by one after boot",
+            "is_correct": false
+          },
+          {
+            "label": "C",
+            "text": "32769 is the lowest valid priority",
+            "is_correct": false
+          },
+          {
+            "label": "D",
+            "text": "It includes the STP port priority",
+            "is_correct": false
+          }
+        ]
+      },
+      {
+        "order": 6,
+        "question": "In what increments can the STP bridge priority be configured?",
+        "explanation": "The extended system ID occupies the lower 12 bits and cannot be changed, so only the 4-bit priority portion is configurable — giving increments of 4096.",
+        "options": [
+          {
+            "label": "A",
+            "text": "1",
+            "is_correct": false
+          },
+          {
+            "label": "B",
+            "text": "128",
+            "is_correct": false
+          },
+          {
+            "label": "C",
+            "text": "4096",
+            "is_correct": true
+          },
+          {
+            "label": "D",
+            "text": "32768",
+            "is_correct": false
+          }
+        ]
+      },
+      {
+        "order": 7,
+        "question": "After STP converges, which switches generate BPDUs?",
+        "explanation": "Only the root bridge originates BPDUs after convergence. Other switches forward the root's BPDUs but do not generate their own. Every switch sends them initially because each one assumes it is the root.",
+        "options": [
+          {
+            "label": "A",
+            "text": "All switches, every 2 seconds",
+            "is_correct": false
+          },
+          {
+            "label": "B",
+            "text": "Only the root bridge; other switches forward its BPDUs",
+            "is_correct": true
+          },
+          {
+            "label": "C",
+            "text": "Only switches with blocking ports",
+            "is_correct": false
+          },
+          {
+            "label": "D",
+            "text": "Only switches with designated ports",
+            "is_correct": false
+          }
+        ]
+      },
+      {
+        "order": 8,
+        "question": "Two switches are connected by a link, both with an equal root cost. Which port becomes designated?",
+        "explanation": "Every collision domain must have exactly one designated port. The first criterion is the lowest root cost; when that ties, the port on the switch with the lower Bridge ID becomes designated and the other becomes non-designated (blocking).",
+        "options": [
+          {
+            "label": "A",
+            "text": "The port on the switch with the lower Bridge ID",
+            "is_correct": true
+          },
+          {
+            "label": "B",
+            "text": "The port with the lower local port number",
+            "is_correct": false
+          },
+          {
+            "label": "C",
+            "text": "Both ports become designated",
+            "is_correct": false
+          },
+          {
+            "label": "D",
+            "text": "Both ports are blocked",
+            "is_correct": false
+          }
+        ]
+      }
+    ]
+  }
 }

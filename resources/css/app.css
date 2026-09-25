@@ -84,6 +84,27 @@
     margin-bottom: 10px;
 }
 
+/* Command reference sub-heading + lead-in paragraph */
+.notes-h3 {
+    font-family: 'Caveat', cursive;
+    font-size: 22px;
+    font-weight: 700;
+    color: #14306b;
+    margin: 12px 0 6px;
+}
+.notes-p {
+    font-size: 18px;
+    line-height: 26px;
+    color: #1b2a52;
+    margin: 0 0 8px;
+}
+.notes-mode {
+    margin-top: 3px;
+    font-size: 13px;
+    line-height: 18px;
+    color: #4a5b82;
+}
+
 /* Markdown prose inside explanations */
 .notes-prose {
     font-size: 19px;

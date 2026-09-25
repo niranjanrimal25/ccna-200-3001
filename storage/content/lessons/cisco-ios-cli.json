@@ -199,6 +199,127 @@
         "body": "Always use `enable secret` rather than `enable password`. `service password-encryption` has **no effect** on `enable secret`. And remember the console defaults: **9600 baud, 8 data bits, 1 stop bit, no parity, no flow control**.",
         "style": "exam_tip"
       }
+    },
+    {
+      "order": 11,
+      "type": "commands",
+      "title": "Command reference: navigating and securing the IOS CLI",
+      "content": {
+        "commands": [
+          {
+            "command": "enable",
+            "mode": "user EXEC",
+            "syntax": "enable",
+            "example": "Router> enable\nRouter#",
+            "description": "Moves from user EXEC mode (>) to privileged EXEC mode (#), where all show and debug commands are available.",
+            "note": "Can be abbreviated to en. Use disable to go back down.",
+            "group": "Moving between modes"
+          },
+          {
+            "command": "configure terminal",
+            "mode": "privileged EXEC",
+            "syntax": "configure terminal",
+            "example": "Router# configure terminal\nRouter(config)#",
+            "description": "Enters global configuration mode, where changes to the device's running configuration are made.",
+            "note": "Commonly abbreviated conf t.",
+            "group": "Moving between modes"
+          },
+          {
+            "command": "exit",
+            "mode": "any config mode",
+            "syntax": "exit",
+            "example": "Router(config-if)# exit\nRouter(config)#",
+            "description": "Moves back one level — for example from interface config mode to global config mode.",
+            "note": "end (or Ctrl+Z) jumps straight back to privileged EXEC from any config mode.",
+            "group": "Moving between modes"
+          },
+          {
+            "command": "do",
+            "mode": "any config mode",
+            "syntax": "do <privileged-exec-command>",
+            "example": "Router(config)# do show ip interface brief",
+            "description": "Runs a privileged EXEC command (such as a show command) without leaving configuration mode.",
+            "group": "Moving between modes"
+          },
+          {
+            "command": "?",
+            "mode": "any mode",
+            "syntax": "?\n<partial-command> ?\n<command> ?",
+            "example": "Router# sh?\nshow\nRouter# show ?",
+            "description": "Context-sensitive help. On its own it lists every command available in the current mode; after a partial word it lists completions; after a full command it lists the next valid keywords.",
+            "note": "<cr> in the output means the command is complete as typed.",
+            "group": "Getting help"
+          },
+          {
+            "command": "no",
+            "mode": "any config mode",
+            "syntax": "no <command>",
+            "example": "Router(config)# no enable password",
+            "description": "Reverses a configuration command, removing it from the running configuration.",
+            "group": "Getting help"
+          },
+          {
+            "command": "hostname",
+            "mode": "global config",
+            "syntax": "hostname <name>",
+            "example": "Router(config)# hostname R1\nR1(config)#",
+            "description": "Sets the device name shown in the CLI prompt — essential for knowing which device you are configuring.",
+            "group": "Basic configuration"
+          },
+          {
+            "command": "enable password",
+            "mode": "global config",
+            "syntax": "enable password <password>",
+            "example": "Router(config)# enable password CCNA",
+            "description": "Sets the password required to enter privileged EXEC mode. Stored in plain text by default.",
+            "note": "Superseded by enable secret — if both are configured, enable secret is the one that applies.",
+            "group": "Securing access"
+          },
+          {
+            "command": "enable secret",
+            "mode": "global config",
+            "syntax": "enable secret <password>",
+            "example": "Router(config)# enable secret CCNA",
+            "description": "Sets the privileged EXEC password and stores it as a strong one-way hash (type 5 or better). This is the preferred command.",
+            "note": "Because the hash is one-way it cannot be reversed, unlike a type 7 password.",
+            "group": "Securing access"
+          },
+          {
+            "command": "service password-encryption",
+            "mode": "global config",
+            "syntax": "service password-encryption",
+            "example": "Router(config)# service password-encryption",
+            "description": "Encrypts plain-text passwords in the configuration file using Cisco type 7 encryption.",
+            "note": "Type 7 is weak and trivially reversible — it only protects against someone glancing at the screen.",
+            "group": "Securing access"
+          },
+          {
+            "command": "show running-config",
+            "mode": "privileged EXEC",
+            "syntax": "show running-config",
+            "example": "Router# show running-config",
+            "description": "Displays the active configuration currently held in RAM — including any changes not yet saved.",
+            "group": "Viewing and saving"
+          },
+          {
+            "command": "show startup-config",
+            "mode": "privileged EXEC",
+            "syntax": "show startup-config",
+            "example": "Router# show startup-config",
+            "description": "Displays the saved configuration held in NVRAM, which is loaded when the device boots.",
+            "group": "Viewing and saving"
+          },
+          {
+            "command": "copy running-config startup-config",
+            "mode": "privileged EXEC",
+            "syntax": "copy running-config startup-config",
+            "example": "Router# copy running-config startup-config\nDestination filename [startup-config]?",
+            "description": "Saves the running configuration to NVRAM so it survives a reload. Without this, all changes are lost on reboot.",
+            "note": "write memory (or just write) does exactly the same thing in fewer keystrokes.",
+            "group": "Viewing and saving"
+          }
+        ]
+      }
     }
   ],
   "quiz": {

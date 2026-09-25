@@ -26,11 +26,35 @@
       "title": "Host capacity by class",
       "order": 3,
       "content": {
-        "headers": ["Class", "Prefix length", "Host bits", "Total addresses", "Usable hosts"],
+        "headers": [
+          "Class",
+          "Prefix length",
+          "Host bits",
+          "Total addresses",
+          "Usable hosts"
+        ],
         "rows": [
-          ["A", "/8", "24", "16,777,216", "16,777,214"],
-          ["B", "/16", "16", "65,536", "65,534"],
-          ["C", "/24", "8", "256", "254"]
+          [
+            "A",
+            "/8",
+            "24",
+            "16,777,216",
+            "16,777,214"
+          ],
+          [
+            "B",
+            "/16",
+            "16",
+            "65,536",
+            "65,534"
+          ],
+          [
+            "C",
+            "/24",
+            "8",
+            "256",
+            "254"
+          ]
         ]
       }
     },
@@ -63,14 +87,42 @@
       "title": "Interface configuration commands",
       "order": 7,
       "content": {
-        "headers": ["Command", "Shortcut", "Purpose"],
+        "headers": [
+          "Command",
+          "Shortcut",
+          "Purpose"
+        ],
         "rows": [
-          ["enable", "en", "Enter privileged EXEC mode"],
-          ["configure terminal", "conf t", "Enter global configuration mode"],
-          ["interface gigabitethernet0/0", "int g0/0", "Enter interface config mode"],
-          ["ip address 10.0.0.1 255.0.0.0", "ip add 10.0.0.1 255.0.0.0", "Assign IP address and mask"],
-          ["no shutdown", "no shut", "Enable the interface"],
-          ["do show ip interface brief", "do sh ip int br", "Check status without leaving config mode"]
+          [
+            "enable",
+            "en",
+            "Enter privileged EXEC mode"
+          ],
+          [
+            "configure terminal",
+            "conf t",
+            "Enter global configuration mode"
+          ],
+          [
+            "interface gigabitethernet0/0",
+            "int g0/0",
+            "Enter interface config mode"
+          ],
+          [
+            "ip address 10.0.0.1 255.0.0.0",
+            "ip add 10.0.0.1 255.0.0.0",
+            "Assign IP address and mask"
+          ],
+          [
+            "no shutdown",
+            "no shut",
+            "Enable the interface"
+          ],
+          [
+            "do show ip interface brief",
+            "do sh ip int br",
+            "Check status without leaving config mode"
+          ]
         ]
       }
     },
@@ -90,6 +142,84 @@
         "body": "Remember the difference: **status = Layer 1** (is it shutdown? is a cable attached?), **protocol = Layer 2** (is Ethernet functioning with the neighbor?). And the default state: **router interfaces are administratively down**, **switch interfaces are not** — they come up automatically when connected.",
         "style": "exam_tip"
       }
+    },
+    {
+      "order": 10,
+      "type": "commands",
+      "title": "Command reference: configuring and verifying interfaces",
+      "content": {
+        "commands": [
+          {
+            "command": "interface",
+            "mode": "global config",
+            "syntax": "interface <type><slot>/<port>",
+            "example": "R1(config)# interface gigabitethernet0/0\nR1(config-if)#",
+            "description": "Enters interface configuration mode for the named interface, where addressing and other per-port settings are applied.",
+            "note": "Can be abbreviated, e.g. interface g0/0. From within interface config mode you can move directly to another interface without going back to global config.",
+            "group": "Configuration"
+          },
+          {
+            "command": "ip address",
+            "mode": "interface config",
+            "syntax": "ip address <address> <subnet-mask>",
+            "example": "R1(config-if)# ip address 10.255.255.254 255.0.0.0",
+            "description": "Assigns an IPv4 address and subnet mask to the interface.",
+            "note": "On Cisco devices the mask is entered in dotted decimal (255.0.0.0), not in slash notation (/8).",
+            "group": "Configuration"
+          },
+          {
+            "command": "no shutdown",
+            "mode": "interface config",
+            "syntax": "no shutdown",
+            "example": "R1(config-if)# no shutdown\n%LINK-3-UPDOWN: Interface GigabitEthernet0/0, changed state to up",
+            "description": "Enables the interface. Router interfaces are shut down by default, so this is required to bring them up.",
+            "note": "You should see two messages: a Layer 1 link message and a Layer 2 line protocol message.",
+            "group": "Configuration"
+          },
+          {
+            "command": "shutdown",
+            "mode": "interface config",
+            "syntax": "shutdown",
+            "example": "R1(config-if)# shutdown",
+            "description": "Administratively disables the interface, forcing it into the administratively down state.",
+            "group": "Configuration"
+          },
+          {
+            "command": "description",
+            "mode": "interface config",
+            "syntax": "description <text>",
+            "example": "R1(config-if)# description ## to SW1 ##",
+            "description": "Adds a free-text label to the interface. Purely documentation, but invaluable in a real network.",
+            "group": "Configuration"
+          },
+          {
+            "command": "show ip interface brief",
+            "mode": "privileged EXEC",
+            "syntax": "show ip interface brief",
+            "example": "R1# show ip interface brief\nGigabitEthernet0/0  10.255.255.254  YES manual  up  up",
+            "description": "Summarises every interface on one line: IP address, whether it is configured, and its Layer 1 / Layer 2 status.",
+            "note": "unassigned means no IP address; up/up means the interface is fully operational.",
+            "group": "Verification"
+          },
+          {
+            "command": "show interfaces",
+            "mode": "privileged EXEC",
+            "syntax": "show interfaces [<interface>]",
+            "example": "R1# show interfaces g0/0",
+            "description": "Displays detailed information for an interface — status, hardware (burned-in) MAC address, IP address and prefix length, duplex, speed and traffic counters.",
+            "note": "Without an interface name it prints the full detail for every interface.",
+            "group": "Verification"
+          },
+          {
+            "command": "show interfaces description",
+            "mode": "privileged EXEC",
+            "syntax": "show interfaces description",
+            "example": "R1# show interfaces description",
+            "description": "Lists every interface with its status and configured description in a compact table.",
+            "group": "Verification"
+          }
+        ]
+      }
     }
   ],
   "quiz": {
@@ -99,10 +229,26 @@
         "question": "PC1 has an IP address of 43.109.23.12/8. What is the network address?",
         "explanation": "With a /8 prefix, only the first octet is the network portion. Setting the host portion (the last three octets) to 0 gives 43.0.0.0.",
         "options": [
-          { "label": "A", "text": "43.0.0.0", "is_correct": true },
-          { "label": "B", "text": "43.109.0.0", "is_correct": false },
-          { "label": "C", "text": "43.109.23.0", "is_correct": false },
-          { "label": "D", "text": "0.0.0.0", "is_correct": false }
+          {
+            "label": "A",
+            "text": "43.0.0.0",
+            "is_correct": true
+          },
+          {
+            "label": "B",
+            "text": "43.109.0.0",
+            "is_correct": false
+          },
+          {
+            "label": "C",
+            "text": "43.109.23.0",
+            "is_correct": false
+          },
+          {
+            "label": "D",
+            "text": "0.0.0.0",
+            "is_correct": false
+          }
         ]
       },
       {
@@ -110,10 +256,26 @@
         "question": "PC4 has an IP address of 129.221.23.13/16. What is the maximum number of hosts in the network?",
         "explanation": "A /16 leaves 16 host bits, so 2¹⁶ − 2 = 65,536 − 2 = 65,534 usable host addresses.",
         "options": [
-          { "label": "A", "text": "65,536", "is_correct": false },
-          { "label": "B", "text": "65,534", "is_correct": true },
-          { "label": "C", "text": "16,384", "is_correct": false },
-          { "label": "D", "text": "254", "is_correct": false }
+          {
+            "label": "A",
+            "text": "65,536",
+            "is_correct": false
+          },
+          {
+            "label": "B",
+            "text": "65,534",
+            "is_correct": true
+          },
+          {
+            "label": "C",
+            "text": "16,384",
+            "is_correct": false
+          },
+          {
+            "label": "D",
+            "text": "254",
+            "is_correct": false
+          }
         ]
       },
       {
@@ -121,10 +283,26 @@
         "question": "PC8 has an IP address of 209.211.3.22/24. What is the network broadcast address?",
         "explanation": "With /24, the last octet is the host portion. Setting the host bits to 1 gives 209.211.3.255.",
         "options": [
-          { "label": "A", "text": "209.211.3.0", "is_correct": false },
-          { "label": "B", "text": "209.211.255.255", "is_correct": false },
-          { "label": "C", "text": "209.211.3.255", "is_correct": true },
-          { "label": "D", "text": "209.255.255.255", "is_correct": false }
+          {
+            "label": "A",
+            "text": "209.211.3.0",
+            "is_correct": false
+          },
+          {
+            "label": "B",
+            "text": "209.211.255.255",
+            "is_correct": false
+          },
+          {
+            "label": "C",
+            "text": "209.211.3.255",
+            "is_correct": true
+          },
+          {
+            "label": "D",
+            "text": "209.255.255.255",
+            "is_correct": false
+          }
         ]
       },
       {
@@ -132,10 +310,26 @@
         "question": "PC5 has an IP address of 2.71.209.233/8. What is the last usable address of the network?",
         "explanation": "The broadcast address is 2.255.255.255 (host portion all 1s). The last usable address is one below the broadcast: 2.255.255.254.",
         "options": [
-          { "label": "A", "text": "2.255.255.255", "is_correct": false },
-          { "label": "B", "text": "2.255.255.254", "is_correct": true },
-          { "label": "C", "text": "2.255.255.0", "is_correct": false },
-          { "label": "D", "text": "2.0.0.254", "is_correct": false }
+          {
+            "label": "A",
+            "text": "2.255.255.255",
+            "is_correct": false
+          },
+          {
+            "label": "B",
+            "text": "2.255.255.254",
+            "is_correct": true
+          },
+          {
+            "label": "C",
+            "text": "2.255.255.0",
+            "is_correct": false
+          },
+          {
+            "label": "D",
+            "text": "2.0.0.254",
+            "is_correct": false
+          }
         ]
       },
       {
@@ -143,10 +337,26 @@
         "question": "PC6 has an IP address of 155.200.201.141/16. What is the first usable address of the network?",
         "explanation": "The network address is 155.200.0.0 (host portion all 0s). The first usable address is one above it: 155.200.0.1.",
         "options": [
-          { "label": "A", "text": "155.200.0.1", "is_correct": true },
-          { "label": "B", "text": "155.200.0.0", "is_correct": false },
-          { "label": "C", "text": "155.200.1.0", "is_correct": false },
-          { "label": "D", "text": "155.200.255.254", "is_correct": false }
+          {
+            "label": "A",
+            "text": "155.200.0.1",
+            "is_correct": true
+          },
+          {
+            "label": "B",
+            "text": "155.200.0.0",
+            "is_correct": false
+          },
+          {
+            "label": "C",
+            "text": "155.200.1.0",
+            "is_correct": false
+          },
+          {
+            "label": "D",
+            "text": "155.200.255.254",
+            "is_correct": false
+          }
         ]
       }
     ]

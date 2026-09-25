@@ -172,6 +172,76 @@
         "body": "Remember: minimum Ethernet frame = **64 bytes**, minimum payload = **46 bytes**, padding (all zeroes) fills the gap. ARP request = broadcast, ARP reply = unicast. Ethernet types: IPv4 = **0x0800**, IPv6 = **0x86DD**, ARP = **0x0806**.",
         "style": "exam_tip"
       }
+    },
+    {
+      "order": 9,
+      "type": "commands",
+      "title": "Command reference: MAC address table and ARP",
+      "content": {
+        "commands": [
+          {
+            "command": "show mac address-table",
+            "mode": "privileged EXEC",
+            "syntax": "show mac address-table",
+            "example": "SW1# show mac address-table\n   10    aaaa.aa00.0001    DYNAMIC     Gi0/0",
+            "description": "Displays the switch's MAC address table: which MAC address was learned on which port, in which VLAN, and whether the entry is dynamic or static.",
+            "note": "This is the table the switch builds by reading the source MAC of every frame it receives.",
+            "group": "Viewing the tables"
+          },
+          {
+            "command": "show arp",
+            "mode": "privileged EXEC",
+            "syntax": "show arp",
+            "example": "R1# show arp",
+            "description": "Displays the device's ARP table — the mappings of known IP addresses to MAC addresses.",
+            "note": "show ip arp gives the same output on a router.",
+            "group": "Viewing the tables"
+          },
+          {
+            "command": "arp -a",
+            "mode": "PC command prompt",
+            "syntax": "arp -a",
+            "example": "C:\\> arp -a\n  192.168.1.3    aa-aa-aa-00-00-03   dynamic",
+            "description": "Displays the ARP table on a Windows PC, showing which IP-to-MAC mappings the host has learned.",
+            "note": "This is a host operating system command, not a Cisco IOS command.",
+            "group": "Viewing the tables"
+          },
+          {
+            "command": "ping",
+            "mode": "user or privileged EXEC",
+            "syntax": "ping <ip-address>",
+            "example": "C:\\> ping 192.168.1.3\nReply from 192.168.1.3: bytes=32 time<1ms",
+            "description": "Tests reachability to a destination. Sending a ping is the usual way to force an ARP request and populate the MAC address table.",
+            "note": "In IOS output, ! means a successful reply and . means a timeout.",
+            "group": "Testing"
+          },
+          {
+            "command": "clear mac address-table dynamic",
+            "mode": "privileged EXEC",
+            "syntax": "clear mac address-table dynamic",
+            "example": "SW1# clear mac address-table dynamic",
+            "description": "Deletes every dynamically learned entry from the MAC address table, forcing the switch to learn them again.",
+            "note": "Static entries are not removed.",
+            "group": "Clearing entries"
+          },
+          {
+            "command": "clear mac address-table dynamic address",
+            "mode": "privileged EXEC",
+            "syntax": "clear mac address-table dynamic address <mac-address>",
+            "example": "SW1# clear mac address-table dynamic address aaaa.aa00.0001",
+            "description": "Deletes one specific dynamically learned MAC address from the table.",
+            "group": "Clearing entries"
+          },
+          {
+            "command": "clear mac address-table dynamic interface",
+            "mode": "privileged EXEC",
+            "syntax": "clear mac address-table dynamic interface <interface>",
+            "example": "SW1# clear mac address-table dynamic interface g0/1",
+            "description": "Deletes all dynamically learned MAC addresses that were learned on one specific interface.",
+            "group": "Clearing entries"
+          }
+        ]
+      }
     }
   ],
   "quiz": {

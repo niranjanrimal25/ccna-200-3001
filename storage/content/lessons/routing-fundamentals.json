@@ -20,33 +20,108 @@
       "content": {
         "diagram_type": "topology",
         "nodes": [
-          { "id": "pc1", "label": "PC1", "icon": "pc", "x": 60, "y": 180 },
-          { "id": "r1", "label": "R1", "icon": "router", "x": 240, "y": 90 },
-          { "id": "r2", "label": "R2", "icon": "router", "x": 460, "y": 90 },
-          { "id": "r3", "label": "R3", "icon": "router", "x": 240, "y": 270 },
-          { "id": "r4", "label": "R4", "icon": "router", "x": 460, "y": 270 },
-          { "id": "pc4", "label": "PC4", "icon": "pc", "x": 640, "y": 180 }
+          {
+            "id": "pc1",
+            "label": "PC1",
+            "icon": "pc",
+            "x": 60,
+            "y": 180
+          },
+          {
+            "id": "r1",
+            "label": "R1",
+            "icon": "router",
+            "x": 240,
+            "y": 90
+          },
+          {
+            "id": "r2",
+            "label": "R2",
+            "icon": "router",
+            "x": 460,
+            "y": 90
+          },
+          {
+            "id": "r3",
+            "label": "R3",
+            "icon": "router",
+            "x": 240,
+            "y": 270
+          },
+          {
+            "id": "r4",
+            "label": "R4",
+            "icon": "router",
+            "x": 460,
+            "y": 270
+          },
+          {
+            "id": "pc4",
+            "label": "PC4",
+            "icon": "pc",
+            "x": 640,
+            "y": 180
+          }
         ],
         "links": [
-          { "from": "pc1", "to": "r1", "kind": "ethernet" },
-          { "from": "r1", "to": "r2", "kind": "wan" },
-          { "from": "r1", "to": "r3", "kind": "wan" },
-          { "from": "r2", "to": "r4", "kind": "wan" },
-          { "from": "r3", "to": "r4", "kind": "wan" },
-          { "from": "r4", "to": "pc4", "kind": "ethernet" }
+          {
+            "from": "pc1",
+            "to": "r1",
+            "kind": "ethernet"
+          },
+          {
+            "from": "r1",
+            "to": "r2",
+            "kind": "wan"
+          },
+          {
+            "from": "r1",
+            "to": "r3",
+            "kind": "wan"
+          },
+          {
+            "from": "r2",
+            "to": "r4",
+            "kind": "wan"
+          },
+          {
+            "from": "r3",
+            "to": "r4",
+            "kind": "wan"
+          },
+          {
+            "from": "r4",
+            "to": "pc4",
+            "kind": "ethernet"
+          }
         ],
         "steps": [
           {
             "narration": "Four routers form a WAN (wide area network). R1 and R4 each connect a LAN (192.168.1.0/24 for PC1, 192.168.4.0/24 for PC4). The router-to-router links are the WAN networks.",
-            "animate": { "highlight": ["r1", "r2", "r3", "r4"] }
+            "animate": {
+              "highlight": [
+                "r1",
+                "r2",
+                "r3",
+                "r4"
+              ]
+            }
           },
           {
             "narration": "The link between R1 and R2 is 192.168.12.0/24 (R1 .1, R2 .2); R1–R3 is 192.168.13.0/24 (R1 .1, R3 .3).",
-            "animate": { "packet_from": "r1", "packet_to": "r2", "label": "12.0/24" }
+            "animate": {
+              "packet_from": "r1",
+              "packet_to": "r2",
+              "label": "12.0/24"
+            }
           },
           {
             "narration": "R2–R4 is 192.168.24.0/24 (R2 .2, R4 .4); R3–R4 is 192.168.34.0/24 (R3 .3, R4 .4). Notice each router's address matches its number (R1 = .1, R2 = .2, …).",
-            "animate": { "packet_from": "r3", "packet_to": "r4", "label": "34.0/24" }
+            "animate": {
+              "packet_from": "r3",
+              "packet_to": "r4",
+              "label": "34.0/24"
+            }
           }
         ]
       }
@@ -88,12 +163,37 @@
       "title": "Route types summary",
       "order": 7,
       "content": {
-        "headers": ["Route type", "Code", "Mask", "What it matches"],
+        "headers": [
+          "Route type",
+          "Code",
+          "Mask",
+          "What it matches"
+        ],
         "rows": [
-          ["Connected", "C", "/24 (or configured mask)", "The whole network on the interface"],
-          ["Local", "L", "/32", "Only the interface's own IP address"],
-          ["Static", "S", "Configured", "A manually configured destination"],
-          ["OSPF", "O", "Learned", "A destination learned via OSPF"]
+          [
+            "Connected",
+            "C",
+            "/24 (or configured mask)",
+            "The whole network on the interface"
+          ],
+          [
+            "Local",
+            "L",
+            "/32",
+            "Only the interface's own IP address"
+          ],
+          [
+            "Static",
+            "S",
+            "Configured",
+            "A manually configured destination"
+          ],
+          [
+            "OSPF",
+            "O",
+            "Learned",
+            "A destination learned via OSPF"
+          ]
         ]
       }
     },
@@ -105,6 +205,38 @@
         "body": "Remember the pair: configuring an IP address + `no shutdown` adds a **Connected** route (to the network) and a **Local** route (to the interface's own address). And the router-forwarding rules: **never flood**; **drop** if no route matches; pick the **most specific (longest-prefix)** route when several match.",
         "style": "exam_tip"
       }
+    },
+    {
+      "order": 9,
+      "type": "commands",
+      "title": "Command reference: viewing the routing table",
+      "content": {
+        "commands": [
+          {
+            "command": "show ip route",
+            "mode": "privileged EXEC",
+            "syntax": "show ip route",
+            "example": "R1# show ip route\nC  192.168.1.0/24 is directly connected, GigabitEthernet0/2\nL  192.168.1.1/32 is directly connected, GigabitEthernet0/2",
+            "description": "Displays the IPv4 routing table — every destination network the router knows and how it reaches them.",
+            "note": "Each code letter identifies the source of the route: C = connected, L = local, S = static, O = OSPF, D = EIGRP, R = RIP."
+          },
+          {
+            "command": "ip address",
+            "mode": "interface config",
+            "syntax": "ip address <address> <subnet-mask>",
+            "example": "R1(config-if)# ip address 192.168.1.1 255.255.255.0",
+            "description": "Configuring an address on an up/up interface automatically creates two routing table entries: a connected route (C) for the network and a local route (L) for the interface's own address.",
+            "note": "The local route is always a /32 host route."
+          },
+          {
+            "command": "no shutdown",
+            "mode": "interface config",
+            "syntax": "no shutdown",
+            "example": "R1(config-if)# no shutdown",
+            "description": "Brings the interface up. Connected and local routes only appear in the routing table while the interface is up/up."
+          }
+        ]
+      }
     }
   ],
   "quiz": {
@@ -114,10 +246,26 @@
         "question": "The IP address configured on a router interface will appear in the routing table as what kind of route?",
         "explanation": "Configuring an IP address (and enabling the interface) adds two routes: a connected route (to the network) and a local route (to the exact IP address). The interface's own IP address appears as a local route.",
         "options": [
-          { "label": "A", "text": "Connected", "is_correct": false },
-          { "label": "B", "text": "Static", "is_correct": false },
-          { "label": "C", "text": "Local", "is_correct": true },
-          { "label": "D", "text": "Dynamic", "is_correct": false }
+          {
+            "label": "A",
+            "text": "Connected",
+            "is_correct": false
+          },
+          {
+            "label": "B",
+            "text": "Static",
+            "is_correct": false
+          },
+          {
+            "label": "C",
+            "text": "Local",
+            "is_correct": true
+          },
+          {
+            "label": "D",
+            "text": "Dynamic",
+            "is_correct": false
+          }
         ]
       },
       {
@@ -125,10 +273,26 @@
         "question": "R1 has a local route to 192.168.3.25/32. What will R1 do when it receives a packet destined for 192.168.3.25?",
         "explanation": "A local /32 route means that address is configured on one of R1's own interfaces. Packets to it are for R1 itself, so R1 receives the packet rather than forwarding it.",
         "options": [
-          { "label": "A", "text": "Forward it out G0/2", "is_correct": false },
-          { "label": "B", "text": "Receive the packet for itself", "is_correct": true },
-          { "label": "C", "text": "Flood it out all interfaces", "is_correct": false },
-          { "label": "D", "text": "Drop the packet", "is_correct": false }
+          {
+            "label": "A",
+            "text": "Forward it out G0/2",
+            "is_correct": false
+          },
+          {
+            "label": "B",
+            "text": "Receive the packet for itself",
+            "is_correct": true
+          },
+          {
+            "label": "C",
+            "text": "Flood it out all interfaces",
+            "is_correct": false
+          },
+          {
+            "label": "D",
+            "text": "Drop the packet",
+            "is_correct": false
+          }
         ]
       },
       {
@@ -136,10 +300,26 @@
         "question": "How does a router behave when it receives a packet for which it has no matching route?",
         "explanation": "Unlike switches, which flood frames with unknown destinations (unknown unicast), routers never flood. If no route matches, the router drops the packet.",
         "options": [
-          { "label": "A", "text": "It floods the packet out all interfaces", "is_correct": false },
-          { "label": "B", "text": "It drops the packet", "is_correct": true },
-          { "label": "C", "text": "It sends it to the default gateway", "is_correct": false },
-          { "label": "D", "text": "It broadcasts an ARP request", "is_correct": false }
+          {
+            "label": "A",
+            "text": "It floods the packet out all interfaces",
+            "is_correct": false
+          },
+          {
+            "label": "B",
+            "text": "It drops the packet",
+            "is_correct": true
+          },
+          {
+            "label": "C",
+            "text": "It sends it to the default gateway",
+            "is_correct": false
+          },
+          {
+            "label": "D",
+            "text": "It broadcasts an ARP request",
+            "is_correct": false
+          }
         ]
       },
       {
@@ -147,10 +327,26 @@
         "question": "Which two types of routes are automatically added to the routing table when you configure an IP address on an interface and enable it?",
         "explanation": "In `show ip route`, C stands for Connected and L for Local. Both are added automatically when you configure an IP address on an interface and bring it up with `no shutdown`.",
         "options": [
-          { "label": "A", "text": "Connected (C) and Local (L)", "is_correct": true },
-          { "label": "B", "text": "Static (S) and Dynamic (D)", "is_correct": false },
-          { "label": "C", "text": "Local (L) and Static (S)", "is_correct": false },
-          { "label": "D", "text": "Connected (C) and OSPF (O)", "is_correct": false }
+          {
+            "label": "A",
+            "text": "Connected (C) and Local (L)",
+            "is_correct": true
+          },
+          {
+            "label": "B",
+            "text": "Static (S) and Dynamic (D)",
+            "is_correct": false
+          },
+          {
+            "label": "C",
+            "text": "Local (L) and Static (S)",
+            "is_correct": false
+          },
+          {
+            "label": "D",
+            "text": "Connected (C) and OSPF (O)",
+            "is_correct": false
+          }
         ]
       },
       {
@@ -158,10 +354,26 @@
         "question": "R1's routing table has routes to 10.0.1.0/24 and 10.0.1.23/32. It receives a packet destined for 10.0.1.23. How many routes match, and which is selected?",
         "explanation": "Both routes match destination 10.0.1.23. The most specific matching route is the /32 local route to 10.0.1.23, so that route is selected — R1 receives the packet for itself.",
         "options": [
-          { "label": "A", "text": "One match: 10.0.1.0/24", "is_correct": false },
-          { "label": "B", "text": "One match: 10.0.1.23/32", "is_correct": false },
-          { "label": "C", "text": "Two matches; the /32 route is most specific", "is_correct": true },
-          { "label": "D", "text": "No match; the packet is dropped", "is_correct": false }
+          {
+            "label": "A",
+            "text": "One match: 10.0.1.0/24",
+            "is_correct": false
+          },
+          {
+            "label": "B",
+            "text": "One match: 10.0.1.23/32",
+            "is_correct": false
+          },
+          {
+            "label": "C",
+            "text": "Two matches; the /32 route is most specific",
+            "is_correct": true
+          },
+          {
+            "label": "D",
+            "text": "No match; the packet is dropped",
+            "is_correct": false
+          }
         ]
       }
     ]
