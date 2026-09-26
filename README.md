@@ -82,6 +82,20 @@ explanation.
 To add more commands, edit `storage/content/commands-extra.json` — it is keyed
 by topic slug and read at request time, so **no reseed is needed**.
 
+### PDF export
+
+The **Download PDF reference** button on that page produces
+`CCNA-Cisco-Command-Reference.pdf` — a ~33 page, section-wise study guide with
+a contents page, every topic as a chapter, and each command shown with its
+mode, day badge, syntax, worked example and explanation.
+
+Unlike the per-lesson notebook export (`resources/js/notes-pdf.js`, which
+rasterises the page with html2canvas), this one draws directly into jsPDF
+(`resources/js/commands-pdf.js`). With ~200 commands the rendered element is
+taller than the browser's maximum canvas height, so rasterising would fail or
+badly blur the text. Drawing the PDF instead keeps the text crisp, selectable
+and searchable, and lets entries break cleanly across pages.
+
 ## Lessons
 
 `yes` in the last column means the lesson ends with a command reference section

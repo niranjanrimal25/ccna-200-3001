@@ -4,6 +4,7 @@ import routerLabData from './router-sim.js';
 import notesPdfData from './notes-pdf.js';
 import practiceLabData from './pt-lab.js';
 import subnettingData from './subnetting.js';
+import commandsPdfData from './commands-pdf.js';
 
 window.Alpine = Alpine;
 
@@ -258,5 +259,6 @@ Alpine.data('routerLab', routerLabData);
 Alpine.data('notesPdf', notesPdfData);
 Alpine.data('practiceLab', practiceLabData);
 Alpine.data('subnetting', subnettingData);
+Alpine.data('commandsPdf', commandsPdfData);
 
 Alpine.start();

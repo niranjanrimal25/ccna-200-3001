@@ -12,7 +12,27 @@
                 Every command used across the {{ count($days) }} lessons, organised by topic, plus the other
                 commands you are expected to know for each one. {{ $total }} commands in total.
             </p>
+
+            {{-- PDF export --}}
+            <div x-data="commandsPdf" class="mt-5">
+                <button @click="download()" :disabled="busy"
+                        class="inline-flex items-center gap-2 rounded-md border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm font-medium text-zinc-200 transition-colors hover:border-teal-600 hover:bg-zinc-800 disabled:opacity-50">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v12m0 0l-4-4m4 4l4-4M4 20h16" />
+                    </svg>
+                    <span x-show="!busy">Download PDF reference</span>
+                    <span x-show="busy" x-cloak>Building PDF…</span>
+                </button>
+                <p class="mt-2 text-xs text-zinc-600">
+                    Section-wise study notes: every command grouped by topic with its mode, syntax,
+                    a worked example and an explanation. Includes a contents page.
+                </p>
+                <p x-show="error" x-cloak class="mt-2 rounded-md border border-rose-900/60 bg-rose-900/20 px-3 py-2 text-xs text-rose-200" x-text="error"></p>
+            </div>
         </header>
+
+        {{-- Data for the PDF generator --}}
+        <script type="application/json" id="commands-pdf-data">{!! json_encode($pdfData, JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE) !!}</script>
 
         {{-- Search --}}
         <div class="sticky top-0 z-20 -mx-5 mb-5 border-b border-zinc-900 bg-zinc-950/95 px-5 py-3 backdrop-blur">

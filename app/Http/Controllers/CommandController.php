@@ -115,9 +115,38 @@ class CommandController extends Controller
         return view('commands.index', [
             'topicBlocks' => $groupsByTopic,
             'allHaystacks' => $allHaystacks,
+            'pdfData' => $this->pdfData($groupsByTopic),
             'total' => array_sum(array_column($groupsByTopic, 'count')),
             'days' => Lesson::with('topic.domain')->orderBy('order')->get(),
         ]);
+    }
+
+    /**
+     * A flat, JSON-friendly version of the reference for the PDF generator.
+     * Eloquent models are reduced to scalars so the payload stays small.
+     *
+     * @param  array<int, array<string, mixed>>  $blocks
+     * @return array<int, array<string, mixed>>
+     */
+    private function pdfData(array $blocks): array
+    {
+        return array_map(fn ($block) => [
+            'topic' => $block['topic']->title,
+            'count' => $block['count'],
+            'groups' => array_map(fn ($label, $commands) => [
+                'label' => $label,
+                'commands' => array_map(fn ($cmd) => [
+                    'command' => $cmd['command'] ?? '',
+                    'mode' => $cmd['mode'] ?? '',
+                    'syntax' => $cmd['syntax'] ?? '',
+                    'example' => $cmd['example'] ?? '',
+                    'description' => $cmd['description'] ?? '',
+                    'note' => $cmd['note'] ?? '',
+                    'days' => array_keys($cmd['days'] ?? []),
+                    'extra' => (bool) ($cmd['extra'] ?? false),
+                ], $commands),
+            ], array_keys($block['groups']), $block['groups']),
+        ], $blocks);
     }
 
     /**
