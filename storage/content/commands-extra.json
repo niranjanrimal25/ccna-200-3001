@@ -1,0 +1,813 @@
+{
+  "_comment": "Essential commands for each topic that are not (yet) taught in a lesson. Merged into the Commands reference page by CommandController, and shown with an 'Extra' badge. Keyed by topic slug.",
+
+  "network-devices": [
+    {
+      "group": "Discovering neighbours (CDP)",
+      "command": "show cdp neighbors",
+      "mode": "privileged EXEC",
+      "syntax": "show cdp neighbors",
+      "example": "R1# show cdp neighbors\nDevice ID  Local Intrfce  Holdtme  Capability  Platform  Port ID\nSW1        Gig 0/0        143      S I         WS-C3560  Gig 0/1",
+      "description": "Lists directly connected Cisco devices discovered by CDP, showing the local and remote interface, the device type and the platform.",
+      "note": "CDP is Cisco proprietary and enabled by default. It is the fastest way to map an unfamiliar network."
+    },
+    {
+      "group": "Discovering neighbours (CDP)",
+      "command": "show cdp neighbors detail",
+      "mode": "privileged EXEC",
+      "syntax": "show cdp neighbors detail",
+      "example": "R1# show cdp neighbors detail",
+      "description": "Adds the neighbour's IP address and full IOS version to the summary output — useful when you need to Telnet or SSH onward to a device you have not documented.",
+      "note": "show cdp entry <device-id> shows the detail for one specific neighbour."
+    },
+    {
+      "group": "Discovering neighbours (CDP)",
+      "command": "no cdp run",
+      "mode": "global config",
+      "syntax": "no cdp run\ncdp run",
+      "example": "R1(config)# no cdp run",
+      "description": "Disables CDP globally on the device. Because CDP advertises platform and version information, it is normally disabled on interfaces facing untrusted networks.",
+      "note": "no cdp enable in interface config mode disables CDP on one interface only."
+    },
+    {
+      "group": "Discovering neighbours (LLDP)",
+      "command": "lldp run",
+      "mode": "global config",
+      "syntax": "lldp run",
+      "example": "R1(config)# lldp run",
+      "description": "Enables LLDP, the vendor-neutral (IEEE 802.1AB) equivalent of CDP. Unlike CDP it is disabled by default on Cisco devices.",
+      "note": "Use LLDP in multi-vendor networks where CDP will not see non-Cisco devices."
+    },
+    {
+      "group": "Discovering neighbours (LLDP)",
+      "command": "show lldp neighbors",
+      "mode": "privileged EXEC",
+      "syntax": "show lldp neighbors [detail]",
+      "example": "R1# show lldp neighbors",
+      "description": "Lists neighbours discovered by LLDP.",
+      "note": "lldp transmit and lldp receive control LLDP per interface and can be set independently."
+    }
+  ],
+
+  "interfaces-and-cables": [
+    {
+      "group": "Inspecting hardware",
+      "command": "show version",
+      "mode": "privileged EXEC",
+      "syntax": "show version",
+      "example": "R1# show version",
+      "description": "Shows the IOS version, uptime, hardware model, installed interfaces, amount of memory and the configuration register.",
+      "note": "The first command to run on an unfamiliar device."
+    },
+    {
+      "group": "Inspecting hardware",
+      "command": "show interfaces capabilities",
+      "mode": "privileged EXEC",
+      "syntax": "show interfaces [<interface>] capabilities",
+      "example": "SW1# show interfaces g0/1 capabilities",
+      "description": "Lists what an interface physically supports — the speeds, duplex settings and media types available on that port.",
+      "note": "Useful for confirming whether a port can actually run at the speed you are trying to configure."
+    },
+    {
+      "group": "Cabling problems",
+      "command": "show interfaces status err-disabled",
+      "mode": "privileged EXEC",
+      "syntax": "show interfaces status err-disabled",
+      "example": "SW1# show interfaces status err-disabled",
+      "description": "Lists only the ports currently in the err-disabled state, together with the reason each one was disabled.",
+      "note": null
+    },
+    {
+      "group": "Cabling problems",
+      "command": "mdix auto",
+      "mode": "interface config",
+      "syntax": "mdix auto",
+      "example": "SW1(config-if)# mdix auto",
+      "description": "Enables automatic MDI/MDIX crossover detection, so the port works with either a straight-through or a crossover cable.",
+      "note": "Enabled by default on modern switches, which is why cable type rarely matters any more."
+    }
+  ],
+
+  "tcp-ip-model": [
+    {
+      "group": "Inspecting connections",
+      "command": "show tcp brief",
+      "mode": "privileged EXEC",
+      "syntax": "show tcp brief [all]",
+      "example": "R1# show tcp brief",
+      "description": "Lists the device's active TCP connections with local and remote socket addresses and connection state.",
+      "note": "Shows the transport layer in action — each entry is an IP address and port pair."
+    },
+    {
+      "group": "Inspecting connections",
+      "command": "netstat -an",
+      "mode": "PC command prompt",
+      "syntax": "netstat -an",
+      "example": "C:\\> netstat -an",
+      "description": "Lists a host's open TCP and UDP sockets with their local and foreign addresses and states — the host-side view of the transport layer.",
+      "note": "A host OS command, not Cisco IOS."
+    },
+    {
+      "group": "Name resolution",
+      "command": "nslookup",
+      "mode": "PC command prompt",
+      "syntax": "nslookup <hostname>",
+      "example": "C:\\> nslookup www.cisco.com",
+      "description": "Queries DNS to resolve a hostname to an IP address, demonstrating the application layer service that almost all traffic depends on.",
+      "note": null
+    },
+    {
+      "group": "Name resolution",
+      "command": "ip name-server",
+      "mode": "global config",
+      "syntax": "ip name-server <dns-server-ip>",
+      "example": "R1(config)# ip name-server 8.8.8.8",
+      "description": "Tells the Cisco device which DNS server to use when resolving names typed at the CLI.",
+      "note": "Pair with ip domain-lookup. Many engineers instead run no ip domain-lookup to stop the router trying to resolve mistyped commands."
+    }
+  ],
+
+  "ios-cli": [
+    {
+      "group": "Console and remote access",
+      "command": "line console 0",
+      "mode": "global config",
+      "syntax": "line console 0",
+      "example": "R1(config)# line console 0\nR1(config-line)# password cisco\nR1(config-line)# login",
+      "description": "Enters line configuration mode for the console port, where the console password is set. login tells the device to actually prompt for it.",
+      "note": "Without the login command the password is configured but never requested."
+    },
+    {
+      "group": "Console and remote access",
+      "command": "line vty 0 4",
+      "mode": "global config",
+      "syntax": "line vty <first> <last>",
+      "example": "R1(config)# line vty 0 4\nR1(config-line)# login local\nR1(config-line)# transport input ssh",
+      "description": "Configures the virtual terminal lines used for Telnet and SSH sessions. The numbers are how many simultaneous remote sessions are allowed.",
+      "note": "transport input ssh restricts the lines to SSH, blocking plain-text Telnet."
+    },
+    {
+      "group": "Console and remote access",
+      "command": "username ... secret",
+      "mode": "global config",
+      "syntax": "username <name> secret <password>",
+      "example": "R1(config)# username admin secret CCNA123",
+      "description": "Creates a local user account with a hashed password, for use with login local on the vty or console lines.",
+      "note": "username ... password stores the password in plain text — prefer secret."
+    },
+    {
+      "group": "Console and remote access",
+      "command": "crypto key generate rsa",
+      "mode": "global config",
+      "syntax": "crypto key generate rsa modulus <bits>",
+      "example": "R1(config)# ip domain-name example.com\nR1(config)# crypto key generate rsa modulus 2048",
+      "description": "Generates the RSA key pair that SSH requires. A hostname and a domain name must be configured first, because they form the key's name.",
+      "note": "A modulus of at least 768 bits is required for SSH version 2; 2048 is the sensible modern choice."
+    },
+    {
+      "group": "Console and remote access",
+      "command": "ip ssh version 2",
+      "mode": "global config",
+      "syntax": "ip ssh version 2",
+      "example": "R1(config)# ip ssh version 2",
+      "description": "Forces the device to accept only SSH version 2, which is the secure version.",
+      "note": null
+    },
+    {
+      "group": "Quality-of-life settings",
+      "command": "no ip domain-lookup",
+      "mode": "global config",
+      "syntax": "no ip domain-lookup",
+      "example": "R1(config)# no ip domain-lookup",
+      "description": "Stops the device treating a mistyped command as a hostname and trying to resolve it via DNS — which otherwise hangs the CLI for a minute.",
+      "note": "One of the first commands most engineers type in a lab."
+    },
+    {
+      "group": "Quality-of-life settings",
+      "command": "logging synchronous",
+      "mode": "line config",
+      "syntax": "logging synchronous",
+      "example": "R1(config-line)# logging synchronous",
+      "description": "Stops console log messages from interrupting what you are typing — the command line is reprinted after any message appears.",
+      "note": null
+    },
+    {
+      "group": "Quality-of-life settings",
+      "command": "exec-timeout",
+      "mode": "line config",
+      "syntax": "exec-timeout <minutes> [seconds]",
+      "example": "R1(config-line)# exec-timeout 0 0",
+      "description": "Sets how long a session can be idle before it is logged out automatically. 0 0 disables the timeout entirely.",
+      "note": "Disabling the timeout is convenient in a lab but a security risk in production."
+    },
+    {
+      "group": "Quality-of-life settings",
+      "command": "banner motd",
+      "mode": "global config",
+      "syntax": "banner motd <delimiter><message><delimiter>",
+      "example": "R1(config)# banner motd #Authorised access only#",
+      "description": "Sets the message-of-the-day banner shown before login. Legally important: it is how unauthorised access is warned against.",
+      "note": "The delimiter can be any character not used in the message itself."
+    },
+    {
+      "group": "Quality-of-life settings",
+      "command": "terminal length 0",
+      "mode": "privileged EXEC",
+      "syntax": "terminal length <lines>",
+      "example": "R1# terminal length 0",
+      "description": "Removes the --More-- pagination so long output scrolls out in one go — ideal when capturing a full configuration.",
+      "note": "Applies to the current session only."
+    },
+    {
+      "group": "Files and reloading",
+      "command": "show flash",
+      "mode": "privileged EXEC",
+      "syntax": "show flash\ndir flash:",
+      "example": "R1# show flash",
+      "description": "Lists the contents of flash memory, including the IOS image files and their sizes.",
+      "note": null
+    },
+    {
+      "group": "Files and reloading",
+      "command": "erase startup-config",
+      "mode": "privileged EXEC",
+      "syntax": "erase startup-config",
+      "example": "R1# erase startup-config\nR1# reload",
+      "description": "Deletes the saved configuration from NVRAM. Followed by a reload, this returns the device to factory defaults.",
+      "note": "On a switch also delete vlan.dat, or the VLAN database will survive the reset."
+    },
+    {
+      "group": "Files and reloading",
+      "command": "reload",
+      "mode": "privileged EXEC",
+      "syntax": "reload [in <minutes>] [cancel]",
+      "example": "R1# reload in 5",
+      "description": "Restarts the device. reload in 5 schedules a restart in five minutes — a safety net when making a risky remote change, as the device will reboot to the saved config if you lock yourself out.",
+      "note": "reload cancel aborts a scheduled reload once you have confirmed the change worked."
+    },
+    {
+      "group": "Files and reloading",
+      "command": "show history",
+      "mode": "privileged EXEC",
+      "syntax": "show history",
+      "example": "R1# show history",
+      "description": "Lists the recently entered commands for the current session.",
+      "note": "The up and down arrow keys, or Ctrl+P and Ctrl+N, recall them one at a time."
+    }
+  ],
+
+  "ethernet-lan-switching": [
+    {
+      "group": "MAC address table",
+      "command": "mac address-table static",
+      "mode": "global config",
+      "syntax": "mac address-table static <mac-address> vlan <vlan-id> interface <interface>",
+      "example": "SW1(config)# mac address-table static aaaa.aa00.0001 vlan 10 interface g0/1",
+      "description": "Manually pins a MAC address to a port and VLAN. The entry never ages out and is not affected by clear mac address-table dynamic.",
+      "note": null
+    },
+    {
+      "group": "MAC address table",
+      "command": "mac address-table aging-time",
+      "mode": "global config",
+      "syntax": "mac address-table aging-time <seconds>",
+      "example": "SW1(config)# mac address-table aging-time 600",
+      "description": "Sets how long an unused dynamic MAC entry is kept before being removed. The default is 300 seconds.",
+      "note": null
+    },
+    {
+      "group": "MAC address table",
+      "command": "show mac address-table count",
+      "mode": "privileged EXEC",
+      "syntax": "show mac address-table count",
+      "example": "SW1# show mac address-table count",
+      "description": "Shows how many dynamic, static and total MAC addresses are in the table, and how much table space remains.",
+      "note": "A sudden spike in dynamic entries can indicate a MAC flooding attack."
+    },
+    {
+      "group": "Traffic counters",
+      "command": "show interfaces counters",
+      "mode": "privileged EXEC",
+      "syntax": "show interfaces counters [errors]",
+      "example": "SW1# show interfaces counters errors",
+      "description": "Per-interface totals of frames in and out; the errors form shows CRC errors, runts, giants and collisions.",
+      "note": "Rising CRC errors usually mean a cabling or duplex problem. Collisions on a full-duplex link indicate a duplex mismatch."
+    },
+    {
+      "group": "Traffic counters",
+      "command": "clear counters",
+      "mode": "privileged EXEC",
+      "syntax": "clear counters [<interface>]",
+      "example": "SW1# clear counters g0/1",
+      "description": "Resets interface statistics to zero so you can see whether errors are still increasing right now, rather than having accumulated over months of uptime.",
+      "note": null
+    }
+  ],
+
+  "ip-addressing": [
+    {
+      "group": "Addressing options",
+      "command": "ip address dhcp",
+      "mode": "interface config",
+      "syntax": "ip address dhcp",
+      "example": "R1(config-if)# ip address dhcp",
+      "description": "Makes the interface obtain its IPv4 address from a DHCP server instead of using a static address.",
+      "note": "Common on the outside interface of a small-office router."
+    },
+    {
+      "group": "Addressing options",
+      "command": "ip address secondary",
+      "mode": "interface config",
+      "syntax": "ip address <address> <mask> secondary",
+      "example": "R1(config-if)# ip address 192.168.2.1 255.255.255.0 secondary",
+      "description": "Adds an additional IP address to an interface so it can serve two subnets on the same physical network.",
+      "note": null
+    },
+    {
+      "group": "Switch management address",
+      "command": "interface vlan 1",
+      "mode": "global config",
+      "syntax": "interface vlan <vlan-id>\n ip address <address> <mask>\n no shutdown",
+      "example": "SW1(config)# interface vlan 1\nSW1(config-if)# ip address 192.168.1.10 255.255.255.0\nSW1(config-if)# no shutdown",
+      "description": "Gives a Layer 2 switch a management IP address, so it can be reached by SSH, Telnet or SNMP. The switch still does not route.",
+      "note": "A Layer 2 switch has exactly one active management SVI."
+    },
+    {
+      "group": "Switch management address",
+      "command": "ip default-gateway",
+      "mode": "global config",
+      "syntax": "ip default-gateway <ip-address>",
+      "example": "SW1(config)# ip default-gateway 192.168.1.1",
+      "description": "Tells a Layer 2 switch where to send management traffic destined off its own subnet.",
+      "note": "Only used when ip routing is disabled. A Layer 3 switch uses a default route instead."
+    },
+    {
+      "group": "Verification",
+      "command": "show ip interface",
+      "mode": "privileged EXEC",
+      "syntax": "show ip interface [<interface>]",
+      "example": "R1# show ip interface g0/0",
+      "description": "Detailed Layer 3 information for an interface: address, broadcast address, MTU, and which features such as access lists or proxy ARP are active.",
+      "note": "Different from show ip interface brief, which is only a one-line summary."
+    },
+    {
+      "group": "Verification",
+      "command": "traceroute",
+      "mode": "user or privileged EXEC",
+      "syntax": "traceroute <ip-address>",
+      "example": "R1# traceroute 8.8.8.8",
+      "description": "Shows each router hop along the path to a destination, which is how you find where connectivity actually breaks.",
+      "note": "On Windows the command is tracert."
+    }
+  ],
+
+  "switch-interfaces": [
+    {
+      "group": "Port security",
+      "command": "switchport port-security",
+      "mode": "interface config",
+      "syntax": "switchport port-security",
+      "example": "SW1(config-if)# switchport mode access\nSW1(config-if)# switchport port-security",
+      "description": "Enables port security, restricting which and how many MAC addresses may send frames into the port.",
+      "note": "The port must be a static access or trunk port first — port security cannot be enabled on a dynamic (DTP) port."
+    },
+    {
+      "group": "Port security",
+      "command": "switchport port-security maximum",
+      "mode": "interface config",
+      "syntax": "switchport port-security maximum <number>",
+      "example": "SW1(config-if)# switchport port-security maximum 2",
+      "description": "Sets how many MAC addresses the port may learn. The default is 1.",
+      "note": "Allow 2 where an IP phone and a PC share a port."
+    },
+    {
+      "group": "Port security",
+      "command": "switchport port-security mac-address sticky",
+      "mode": "interface config",
+      "syntax": "switchport port-security mac-address {<mac> | sticky}",
+      "example": "SW1(config-if)# switchport port-security mac-address sticky",
+      "description": "Learns the connected device's MAC address dynamically and writes it into the running configuration, so it persists if saved.",
+      "note": "Remember to save, or sticky addresses are lost on reload."
+    },
+    {
+      "group": "Port security",
+      "command": "switchport port-security violation",
+      "mode": "interface config",
+      "syntax": "switchport port-security violation {shutdown | restrict | protect}",
+      "example": "SW1(config-if)# switchport port-security violation restrict",
+      "description": "Chooses what happens on a violation: shutdown err-disables the port (the default), restrict drops the traffic and logs it, protect drops it silently.",
+      "note": "Exam point: only shutdown and restrict generate a log message and increment the violation counter."
+    },
+    {
+      "group": "Port security",
+      "command": "show port-security",
+      "mode": "privileged EXEC",
+      "syntax": "show port-security [interface <interface>] [address]",
+      "example": "SW1# show port-security interface f0/1",
+      "description": "Shows the port security configuration and status: violation mode, maximum and current MAC count, and the violation counter.",
+      "note": null
+    },
+    {
+      "group": "Unused ports",
+      "command": "switchport mode access + shutdown",
+      "mode": "interface config",
+      "syntax": "interface range <range>\n switchport mode access\n switchport access vlan <unused-vlan>\n shutdown",
+      "example": "SW1(config)# interface range f0/13-24\nSW1(config-if-range)# switchport mode access\nSW1(config-if-range)# switchport access vlan 999\nSW1(config-if-range)# shutdown",
+      "description": "The standard hardening recipe for unused switch ports: force them to access mode, park them in an unused black-hole VLAN, and shut them down.",
+      "note": null
+    }
+  ],
+
+  "ipv4-header": [
+    {
+      "group": "Testing fragmentation and MTU",
+      "command": "ping df-bit",
+      "mode": "privileged EXEC",
+      "syntax": "ping <ip-address> size <bytes> df-bit",
+      "example": "R1# ping 192.168.1.2 size 1500 df-bit",
+      "description": "Sends a ping with the Don't Fragment flag set. If the packet is too large for a link along the path it is dropped rather than fragmented, which is how you discover the real path MTU.",
+      "note": "Directly exercises the DF bit in the IPv4 header's Flags field."
+    },
+    {
+      "group": "Testing fragmentation and MTU",
+      "command": "ping repeat",
+      "mode": "privileged EXEC",
+      "syntax": "ping <ip-address> repeat <count>",
+      "example": "R1# ping 192.168.1.2 repeat 100",
+      "description": "Sends a specific number of echo requests instead of the default five — useful for spotting intermittent loss.",
+      "note": null
+    },
+    {
+      "group": "Testing fragmentation and MTU",
+      "command": "mtu / ip mtu",
+      "mode": "interface config",
+      "syntax": "mtu <bytes>\nip mtu <bytes>",
+      "example": "R1(config-if)# ip mtu 1400",
+      "description": "Sets the largest packet the interface will send. mtu applies to the whole frame; ip mtu applies to IPv4 packets only.",
+      "note": "Lowering the IP MTU is a common fix for tunnels, where extra headers push packets over the physical limit."
+    },
+    {
+      "group": "Inspecting the header",
+      "command": "debug ip packet",
+      "mode": "privileged EXEC",
+      "syntax": "debug ip packet [detail]",
+      "example": "R1# debug ip packet detail\nR1# undebug all",
+      "description": "Prints per-packet information as the router processes it, including source, destination and protocol from the IPv4 header.",
+      "note": "Use with great care on a live device — it is CPU intensive and can overwhelm a busy router. Always follow with undebug all."
+    },
+    {
+      "group": "Inspecting the header",
+      "command": "show ip traffic",
+      "mode": "privileged EXEC",
+      "syntax": "show ip traffic",
+      "example": "R1# show ip traffic",
+      "description": "Summarises IP statistics, including counts of fragmented packets, bad checksums and TTL-expired packets.",
+      "note": null
+    }
+  ],
+
+  "routing": [
+    {
+      "group": "Examining the table",
+      "command": "show ip route <address>",
+      "mode": "privileged EXEC",
+      "syntax": "show ip route <ip-address>",
+      "example": "R1# show ip route 192.168.4.10\nRouting entry for 192.168.4.0/24",
+      "description": "Shows exactly which routing table entry would be used for one specific destination — the quickest way to confirm longest-prefix matching.",
+      "note": "Far more reliable than reading the whole table and guessing which route wins."
+    },
+    {
+      "group": "Examining the table",
+      "command": "show ip route longer-prefixes",
+      "mode": "privileged EXEC",
+      "syntax": "show ip route <network> <mask> longer-prefixes",
+      "example": "R1# show ip route 192.168.0.0 255.255.0.0 longer-prefixes",
+      "description": "Lists every route that falls inside the given range — useful for checking summarisation.",
+      "note": null
+    },
+    {
+      "group": "Examining the table",
+      "command": "show ip protocols",
+      "mode": "privileged EXEC",
+      "syntax": "show ip protocols",
+      "example": "R1# show ip protocols",
+      "description": "Summarises every dynamic routing protocol running on the device: which networks it advertises, its neighbours, and its administrative distance.",
+      "note": null
+    },
+    {
+      "group": "Examining the table",
+      "command": "clear ip route *",
+      "mode": "privileged EXEC",
+      "syntax": "clear ip route {* | <network>}",
+      "example": "R1# clear ip route *",
+      "description": "Flushes the routing table and forces it to be rebuilt.",
+      "note": "Disruptive on a production router — routes are relearned, which briefly interrupts forwarding."
+    },
+    {
+      "group": "Floating static routes",
+      "command": "ip route with administrative distance",
+      "mode": "global config",
+      "syntax": "ip route <network> <mask> <next-hop> <administrative-distance>",
+      "example": "R1(config)# ip route 0.0.0.0 0.0.0.0 203.0.113.2\nR1(config)# ip route 0.0.0.0 0.0.0.0 198.51.100.2 5",
+      "description": "Adds a backup static route with a worse administrative distance. It stays out of the routing table until the preferred route disappears — a floating static route.",
+      "note": "Default administrative distances: connected 0, static 1, EIGRP 90, OSPF 110, RIP 120."
+    },
+    {
+      "group": "IPv6 routing",
+      "command": "ipv6 unicast-routing",
+      "mode": "global config",
+      "syntax": "ipv6 unicast-routing",
+      "example": "R1(config)# ipv6 unicast-routing",
+      "description": "Enables IPv6 routing. A router forwards IPv4 by default but will not forward IPv6 until this is configured.",
+      "note": "The IPv6 counterpart of the ip routing requirement on a Layer 3 switch."
+    },
+    {
+      "group": "IPv6 routing",
+      "command": "ipv6 route",
+      "mode": "global config",
+      "syntax": "ipv6 route <prefix>/<length> <next-hop>",
+      "example": "R1(config)# ipv6 route 2001:db8:4::/64 2001:db8:13::3",
+      "description": "Creates an IPv6 static route. The structure mirrors ip route, except the prefix length is written in slash notation.",
+      "note": "The IPv6 default route is ::/0, the equivalent of 0.0.0.0 0.0.0.0."
+    },
+    {
+      "group": "IPv6 routing",
+      "command": "show ipv6 route",
+      "mode": "privileged EXEC",
+      "syntax": "show ipv6 route",
+      "example": "R1# show ipv6 route",
+      "description": "Displays the IPv6 routing table.",
+      "note": null
+    }
+  ],
+
+  "life-of-a-packet": [
+    {
+      "group": "Following the path",
+      "command": "traceroute",
+      "mode": "user or privileged EXEC",
+      "syntax": "traceroute <ip-address>",
+      "example": "R1# traceroute 192.168.4.10",
+      "description": "Reveals every Layer 3 hop a packet passes through, which is the life of a packet made visible.",
+      "note": "It works by sending packets with increasing TTL values and collecting the ICMP Time Exceeded replies."
+    },
+    {
+      "group": "Following the path",
+      "command": "show ip arp",
+      "mode": "privileged EXEC",
+      "syntax": "show ip arp",
+      "example": "R1# show ip arp",
+      "description": "Shows the IP-to-MAC mappings the router knows. Every hop must resolve the next hop's MAC address before it can build the frame.",
+      "note": "clear arp-cache empties the table and forces fresh ARP requests."
+    },
+    {
+      "group": "Following the path",
+      "command": "show ip cef",
+      "mode": "privileged EXEC",
+      "syntax": "show ip cef [<prefix>]",
+      "example": "R1# show ip cef 192.168.4.0",
+      "description": "Shows the Cisco Express Forwarding table — the optimised structure the router actually consults when forwarding, derived from the routing and ARP tables.",
+      "note": null
+    }
+  ],
+
+  "subnetting": [
+    {
+      "group": "Checking your maths on a device",
+      "command": "show ip interface brief",
+      "mode": "privileged EXEC",
+      "syntax": "show ip interface brief",
+      "example": "R1# show ip interface brief",
+      "description": "Lists the addresses actually configured, so you can confirm your subnet plan matches the deployment.",
+      "note": null
+    },
+    {
+      "group": "Checking your maths on a device",
+      "command": "ip route (summary route)",
+      "mode": "global config",
+      "syntax": "ip route <summary-network> <summary-mask> <next-hop>",
+      "example": "R1(config)# ip route 192.168.0.0 255.255.252.0 10.0.0.2",
+      "description": "A summary (aggregate) route covers several contiguous subnets with one entry — the practical payoff of understanding VLSM and CIDR.",
+      "note": "The summary mask must be short enough to cover every subnet but no shorter, or you will attract traffic for addresses you do not own."
+    },
+    {
+      "group": "Checking your maths on a device",
+      "command": "ipconfig",
+      "mode": "PC command prompt",
+      "syntax": "ipconfig [/all]",
+      "example": "C:\\> ipconfig /all",
+      "description": "Shows a host's address, subnet mask and default gateway — the three values your subnet plan has to get right.",
+      "note": "A wrong mask is a classic cause of a host that can reach some destinations but not others."
+    }
+  ],
+
+  "vlans": [
+    {
+      "group": "Inspecting VLANs",
+      "command": "show vlan id",
+      "mode": "privileged EXEC",
+      "syntax": "show vlan id <vlan-id>",
+      "example": "SW1# show vlan id 10",
+      "description": "Shows the detail for one VLAN only, including every port assigned to it.",
+      "note": null
+    },
+    {
+      "group": "Inspecting VLANs",
+      "command": "show interfaces switchport",
+      "mode": "privileged EXEC",
+      "syntax": "show interfaces <interface> switchport",
+      "example": "SW1# show interfaces g0/1 switchport",
+      "description": "The definitive per-port Layer 2 view: administrative and operational mode, access VLAN, native VLAN and the allowed VLAN list.",
+      "note": "Use this when a port is not behaving as the configuration suggests it should."
+    },
+    {
+      "group": "Voice VLANs",
+      "command": "switchport voice vlan",
+      "mode": "interface config",
+      "syntax": "switchport voice vlan <vlan-id>",
+      "example": "SW1(config-if)# switchport mode access\nSW1(config-if)# switchport access vlan 10\nSW1(config-if)# switchport voice vlan 20",
+      "description": "Lets one access port carry both an untagged data VLAN for the PC and a tagged voice VLAN for an IP phone daisy-chained in front of it.",
+      "note": "A common exam scenario: the port is an access port, yet it carries two VLANs."
+    },
+    {
+      "group": "Security hardening",
+      "command": "vlan dot1q tag native",
+      "mode": "global config",
+      "syntax": "vlan dot1q tag native",
+      "example": "SW1(config)# vlan dot1q tag native",
+      "description": "Forces even native VLAN frames to be tagged on trunks, which defeats VLAN hopping by double tagging.",
+      "note": "The usual alternative is to set the native VLAN to an unused VLAN that carries no hosts."
+    },
+    {
+      "group": "Security hardening",
+      "command": "shutdown (VLAN)",
+      "mode": "VLAN config",
+      "syntax": "vlan <vlan-id>\n shutdown",
+      "example": "SW1(config)# vlan 10\nSW1(config-vlan)# shutdown",
+      "description": "Administratively disables a whole VLAN. All traffic in it stops and any SVI for it goes down.",
+      "note": "One of the four conditions an SVI needs to reach up/up is that its VLAN is not shut down."
+    }
+  ],
+
+  "dtp-and-vtp": [
+    {
+      "group": "Verifying DTP",
+      "command": "show dtp interface",
+      "mode": "privileged EXEC",
+      "syntax": "show dtp interface <interface>",
+      "example": "SW1# show dtp interface g0/0",
+      "description": "Shows the DTP state of a port, including the negotiation timers and how many DTP frames have been exchanged.",
+      "note": null
+    },
+    {
+      "group": "VTP",
+      "command": "vtp pruning",
+      "mode": "global config",
+      "syntax": "vtp pruning",
+      "example": "SW1(config)# vtp pruning",
+      "description": "Stops broadcast and unknown-unicast flooding for a VLAN being sent down trunks toward switches that have no ports in that VLAN, saving bandwidth.",
+      "note": "Configured on a VTP server and propagated to the whole domain."
+    },
+    {
+      "group": "VTP",
+      "command": "show vtp password",
+      "mode": "privileged EXEC",
+      "syntax": "show vtp password",
+      "example": "SW1# show vtp password",
+      "description": "Displays the configured VTP domain password.",
+      "note": "A mismatched password is a frequent reason a switch silently fails to join the domain."
+    },
+    {
+      "group": "VTP",
+      "command": "Resetting the revision number",
+      "mode": "global config",
+      "syntax": "vtp mode transparent\nvtp mode server",
+      "example": "SW1(config)# vtp mode transparent\nSW1(config)# vtp mode server",
+      "description": "Switching to transparent mode and back resets the configuration revision number to zero.",
+      "note": "Always do this before connecting a used switch to a live network — otherwise a high revision number can overwrite the entire domain's VLAN database."
+    }
+  ],
+
+  "spanning-tree": [
+    {
+      "group": "Quick status checks",
+      "command": "show spanning-tree summary",
+      "mode": "privileged EXEC",
+      "syntax": "show spanning-tree summary",
+      "example": "SW1# show spanning-tree summary",
+      "description": "One-screen overview: the STP mode in use, which optional features are enabled by default, and how many ports are blocking, listening, learning and forwarding per VLAN.",
+      "note": null
+    },
+    {
+      "group": "Quick status checks",
+      "command": "show spanning-tree root",
+      "mode": "privileged EXEC",
+      "syntax": "show spanning-tree root",
+      "example": "SW1# show spanning-tree root",
+      "description": "Lists, for every VLAN, the root bridge ID, the root path cost, the root port and the current timer values.",
+      "note": "The fastest way to confirm the root bridge is where you intended it to be."
+    },
+    {
+      "group": "Quick status checks",
+      "command": "show spanning-tree blockedports",
+      "mode": "privileged EXEC",
+      "syntax": "show spanning-tree blockedports",
+      "example": "SW1# show spanning-tree blockedports",
+      "description": "Lists only the ports STP is currently blocking — the places where your redundant links are being held in reserve.",
+      "note": null
+    },
+    {
+      "group": "Timers",
+      "command": "spanning-tree vlan hello-time",
+      "mode": "global config",
+      "syntax": "spanning-tree vlan <vlan-id> hello-time <1-10>",
+      "example": "SW1(config)# spanning-tree vlan 1 hello-time 2",
+      "description": "Sets how often BPDUs are sent. The default is 2 seconds.",
+      "note": "Timers are dictated by the root bridge, so configure them there."
+    },
+    {
+      "group": "Timers",
+      "command": "spanning-tree vlan forward-time",
+      "mode": "global config",
+      "syntax": "spanning-tree vlan <vlan-id> forward-time <4-30>",
+      "example": "SW1(config)# spanning-tree vlan 1 forward-time 15",
+      "description": "Sets how long a port spends in each of the listening and learning states. The default is 15 seconds each.",
+      "note": "Max age 20 + listening 15 + learning 15 = the well-known 50 second convergence time."
+    },
+    {
+      "group": "Timers",
+      "command": "spanning-tree vlan max-age",
+      "mode": "global config",
+      "syntax": "spanning-tree vlan <vlan-id> max-age <6-40>",
+      "example": "SW1(config)# spanning-tree vlan 1 max-age 20",
+      "description": "Sets how long a switch keeps a BPDU before deciding the neighbour is gone. The default is 20 seconds.",
+      "note": null
+    },
+    {
+      "group": "Rapid PVST+",
+      "command": "spanning-tree link-type point-to-point",
+      "mode": "interface config",
+      "syntax": "spanning-tree link-type {point-to-point | shared}",
+      "example": "SW1(config-if)# spanning-tree link-type point-to-point",
+      "description": "Tells Rapid PVST+ the link is point-to-point so it can use the fast proposal/agreement handshake instead of waiting out the timers.",
+      "note": "Inferred from duplex: full duplex is treated as point-to-point, half duplex as shared."
+    },
+    {
+      "group": "Rapid PVST+",
+      "command": "clear spanning-tree detected-protocols",
+      "mode": "privileged EXEC",
+      "syntax": "clear spanning-tree detected-protocols [interface <interface>]",
+      "example": "SW1# clear spanning-tree detected-protocols",
+      "description": "Forces a port that fell back to legacy 802.1D to retry Rapid PVST+, after the old switch that caused the fallback has been removed.",
+      "note": null
+    }
+  ],
+
+  "stp-toolkit": [
+    {
+      "group": "Finding problems",
+      "command": "show spanning-tree inconsistentports",
+      "mode": "privileged EXEC",
+      "syntax": "show spanning-tree inconsistentports",
+      "example": "SW1# show spanning-tree inconsistentports",
+      "description": "Lists every port currently blocked by Root Guard, Loop Guard or a native VLAN mismatch, with the inconsistency type for each.",
+      "note": "The single best command for auditing the STP toolkit across a switch."
+    },
+    {
+      "group": "Finding problems",
+      "command": "show errdisable detect",
+      "mode": "privileged EXEC",
+      "syntax": "show errdisable detect",
+      "example": "SW1# show errdisable detect",
+      "description": "Lists every condition the switch will err-disable a port for, and whether detection is enabled for each.",
+      "note": "Pairs with show errdisable recovery, which shows whether automatic recovery is enabled."
+    },
+    {
+      "group": "Recovery",
+      "command": "errdisable recovery cause all",
+      "mode": "global config",
+      "syntax": "errdisable recovery cause all",
+      "example": "SW1(config)# errdisable recovery cause all",
+      "description": "Enables automatic recovery for every err-disable cause at once, rather than naming them one by one.",
+      "note": "Convenient, but it can mask a genuine fault that keeps re-triggering. Prefer enabling specific causes."
+    },
+    {
+      "group": "Other guards",
+      "command": "spanning-tree etherchannel guard misconfig",
+      "mode": "global config",
+      "syntax": "spanning-tree etherchannel guard misconfig",
+      "example": "SW1(config)# spanning-tree etherchannel guard misconfig",
+      "description": "Err-disables ports when it detects an EtherChannel that has been misconfigured on one side only — a common cause of Layer 2 loops.",
+      "note": "Enabled by default on most switches."
+    },
+    {
+      "group": "Other guards",
+      "command": "udld enable",
+      "mode": "global config",
+      "syntax": "udld {enable | aggressive}",
+      "example": "SW1(config)# udld aggressive",
+      "description": "UDLD detects unidirectional links by exchanging keepalives and can disable the port. It solves the same problem as Loop Guard, but by detecting the fault directly rather than reacting to missing BPDUs.",
+      "note": "UDLD and Loop Guard are complementary and are often deployed together on fibre links."
+    }
+  ]
+}

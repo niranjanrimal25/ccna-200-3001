@@ -63,6 +63,25 @@ To add a brand-new lesson you need three things:
 | Pages render unstyled | Assets not built. `npm run build` |
 | Lesson loads but a section is blank | The section `type` has no matching Blade file in `resources/views/components/sections/` |
 
+## Cisco Commands reference
+
+A dedicated **Cisco Commands** page lives at `/commands` (linked from the sidebar
+under *Reference*, below the day list). It merges two sources into one
+topic-wise index of 203 commands:
+
+1. every `commands` section from the lessons — so the page can never drift out
+   of sync with the course content;
+2. `storage/content/commands-extra.json` — a curated set of important commands
+   per topic that the lessons do not cover yet, shown with an `EXTRA` badge.
+
+Commands taught in more than one lesson are deduplicated and carry a day badge
+for each lesson they appear in. The page supports live multi-term search, and
+each topic and command expands to show mode, syntax, a worked example and an
+explanation.
+
+To add more commands, edit `storage/content/commands-extra.json` — it is keyed
+by topic slug and read at request time, so **no reseed is needed**.
+
 ## Lessons
 
 `yes` in the last column means the lesson ends with a command reference section

@@ -63,6 +63,23 @@
                         </ul>
 
                         <div class="mt-6 px-2 pb-1 text-xs font-semibold uppercase tracking-wider text-zinc-500">
+                            Reference
+                        </div>
+                        <ul class="mt-0.5 space-y-0.5">
+                            <li>
+                                <a href="{{ route('commands.index') }}"
+                                   @class([
+                                       'flex items-center gap-2 rounded-md px-3 py-1.5 text-sm transition-colors',
+                                       'bg-teal-600/20 text-teal-300' => request()->routeIs('commands.index'),
+                                       'text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200' => ! request()->routeIs('commands.index'),
+                                   ])>
+                                    <span>⌨</span>
+                                    <span>Cisco Commands</span>
+                                </a>
+                            </li>
+                        </ul>
+
+                        <div class="mt-6 px-2 pb-1 text-xs font-semibold uppercase tracking-wider text-zinc-500">
                             Labs
                         </div>
                         <ul class="mt-0.5 space-y-0.5">
@@ -114,6 +131,23 @@
                                 </div>
                             @endforeach
                         @endforeach
+
+                        <div class="mt-6 px-2 pb-1 text-xs font-semibold uppercase tracking-wider text-zinc-500">
+                            Reference
+                        </div>
+                        <ul class="mt-0.5 space-y-0.5">
+                            <li>
+                                <a href="{{ route('commands.index') }}"
+                                   @class([
+                                       'flex items-center gap-2 rounded-md px-3 py-1.5 text-sm transition-colors',
+                                       'bg-teal-600/20 text-teal-300' => request()->routeIs('commands.index'),
+                                       'text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200' => ! request()->routeIs('commands.index'),
+                                   ])>
+                                    <span>⌨</span>
+                                    <span>Cisco Commands</span>
+                                </a>
+                            </li>
+                        </ul>
 
                         <div class="mt-6 px-2 pb-1 text-xs font-semibold uppercase tracking-wider text-zinc-500">
                             Labs

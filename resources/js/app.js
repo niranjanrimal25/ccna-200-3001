@@ -195,6 +195,65 @@ Alpine.data('quizApp', (questions) => ({
     },
 }));
 
+/**
+ * Cisco command reference page: live client-side filtering across every
+ * command, plus copy-to-clipboard for the worked examples.
+ */
+Alpine.data('commandReference', (haystacks = []) => ({
+    q: '',
+    copied: null,
+
+    /** Does this pre-built search string match the current query? */
+    matches(haystack) {
+        const needle = this.q.trim().toLowerCase();
+        if (!needle) return true;
+        // Every whitespace-separated term must appear, so "show vlan" narrows.
+        return needle.split(/\s+/).every((term) => haystack.includes(term));
+    },
+
+    /** How many commands are currently visible, for the empty state. */
+    get visible() {
+        const needle = this.q.trim().toLowerCase();
+        if (!needle) return haystacks.length;
+        const terms = needle.split(/\s+/);
+        return haystacks.filter((h) => terms.every((t) => h.includes(t))).length;
+    },
+
+    copy(el, id) {
+        if (!el) return;
+        const text = el.innerText;
+        const done = () => {
+            this.copied = id;
+            setTimeout(() => {
+                if (this.copied === id) this.copied = null;
+            }, 1200);
+        };
+
+        if (navigator.clipboard?.writeText) {
+            navigator.clipboard.writeText(text).then(done).catch(() => fallbackCopy(text, done));
+        } else {
+            fallbackCopy(text, done);
+        }
+    },
+}));
+
+function fallbackCopy(text, done) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.position = 'absolute';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.select();
+    try {
+        document.execCommand('copy');
+        done();
+    } catch (e) {
+        /* clipboard unavailable */
+    }
+    document.body.removeChild(ta);
+}
+
 Alpine.data('routerLab', routerLabData);
 Alpine.data('notesPdf', notesPdfData);
 Alpine.data('practiceLab', practiceLabData);
