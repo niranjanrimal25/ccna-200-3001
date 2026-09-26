@@ -85,16 +85,30 @@ by topic slug and read at request time, so **no reseed is needed**.
 ### PDF export
 
 The **Download PDF reference** button on that page produces
-`CCNA-Cisco-Command-Reference.pdf` — a ~33 page, section-wise study guide with
-a contents page, every topic as a chapter, and each command shown with its
-mode, day badge, syntax, worked example and explanation.
+`CCNA-Cisco-Command-Reference.pdf` — a 46 page, section-wise study guide:
+a title page, a contents page with command counts and page numbers, then one
+chapter per topic. Every command is shown with its mode, day badge, syntax,
+a worked example and an explanation.
+
+It is laid out for **printing on paper**:
+
+- no background fill and no ruled lines, so it does not flood the page with
+  toner and stays legible in greyscale;
+- balanced margins with extra room on the binding edge, and all content kept
+  clear of the 8 mm unprintable edge most printers have;
+- each topic starts on a fresh page, so a single chapter can be printed alone
+  and double-sided printing stays tidy;
+- running heads naming the current topic, and centred page numbers;
+- a serif face for prose, sans for headings, monospace for commands;
+- headings are never orphaned and command entries are never split across a
+  page break.
 
 Unlike the per-lesson notebook export (`resources/js/notes-pdf.js`, which
 rasterises the page with html2canvas), this one draws directly into jsPDF
 (`resources/js/commands-pdf.js`). With ~200 commands the rendered element is
 taller than the browser's maximum canvas height, so rasterising would fail or
 badly blur the text. Drawing the PDF instead keeps the text crisp, selectable
-and searchable, and lets entries break cleanly across pages.
+and searchable.
 
 ## Lessons
 
